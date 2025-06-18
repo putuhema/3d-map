@@ -1,5 +1,7 @@
 import { Compass } from "@/components/Compass";
 import { CoordinateDisplay } from "@/components/CoordinateDisplay";
+import { type Building, buildings as initialBuildings } from "@/data/building";
+import { type Corridor, corridors as initialCorridors } from "@/data/corridor";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
@@ -7,26 +9,16 @@ export const Route = createFileRoute("/")({
 });
 
 import { BuildingRenderer } from "@/components/BuildingRenderer";
-import {
-	type Building,
-	BuildingTools,
-	type Corridor,
-} from "@/components/BuildingTools";
+import { BuildingTools } from "@/components/BuildingTools";
 import { GridSystem } from "@/components/GridSystem";
-import { rooms } from "@/data/room";
 import {
-	Html,
 	KeyboardControls,
-	Line,
 	OrbitControls,
-	OrthographicCamera,
 	PerspectiveCamera,
-	Text,
-	useKeyboardControls,
 } from "@react-three/drei";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
-import { Color, type Mesh, type MeshStandardMaterial, Vector3 } from "three";
+import { Canvas } from "@react-three/fiber";
+import { useCallback, useEffect, useState } from "react";
+import { Vector3 } from "three";
 
 // Keyboard controls map
 const keyboardMap = [
@@ -36,517 +28,29 @@ const keyboardMap = [
 	{ name: "rightward", keys: ["ArrowRight", "KeyD"] },
 ];
 
-// Player component
-function Player({
-	position,
-	onPositionChange,
-	walkMode,
-}: {
-	position: Vector3;
-	onPositionChange: (pos: Vector3) => void;
-	walkMode: boolean;
-}) {
-	const playerRef = useRef<Mesh>(null);
-	const { camera } = useThree();
-	const [, get] = useKeyboardControls();
-
-	useFrame((state, delta) => {
-		if (!walkMode || !playerRef.current) return;
-
-		try {
-			const controls = get();
-			if (!controls) return;
-
-			const { forward, backward, leftward, rightward } = controls;
-			const velocity = new Vector3();
-			const speed = 3;
-
-			if (forward) velocity.z -= speed * delta;
-			if (backward) velocity.z += speed * delta;
-			if (leftward) velocity.x -= speed * delta;
-			if (rightward) velocity.x += speed * delta;
-
-			// Apply movement with collision detection
-			const currentPos = playerRef.current.position;
-			const newPosition = currentPos.clone().add(velocity);
-
-			// Simple collision detection - keep player in corridors
-			const isInCorridor = checkIfInCorridor(newPosition.x, newPosition.z);
-			if (isInCorridor) {
-				playerRef.current.position.copy(newPosition);
-				onPositionChange(newPosition.clone());
-
-				// Update camera to follow player (third-person view)
-				if (camera) {
-					camera.position.set(
-						newPosition.x,
-						newPosition.y + 2,
-						newPosition.z + 3,
-					);
-					camera.lookAt(newPosition.x, newPosition.y + 1, newPosition.z);
-				}
-			}
-		} catch (error) {
-			console.warn("Player movement error:", error);
-		}
-	});
-
-	// Simple corridor detection
-	function checkIfInCorridor(x: number, z: number) {
-		// Main horizontal corridors
-		if (
-			(Math.abs(z - 0) < 0.6 && Math.abs(x) < 6) ||
-			(Math.abs(z - 3) < 0.6 && Math.abs(x) < 6) ||
-			(Math.abs(z - 6) < 0.6 && Math.abs(x) < 6) ||
-			(Math.abs(z - 9) < 0.6 && Math.abs(x) < 6) ||
-			(Math.abs(z - 12) < 0.6 && Math.abs(x) < 4)
-		) {
-			return true;
-		}
-
-		// Main vertical corridors
-		if (
-			(Math.abs(x + 4.5) < 0.6 && z >= -1 && z <= 10) ||
-			(Math.abs(x + 1.5) < 0.6 && z >= -1 && z <= 10) ||
-			(Math.abs(x - 1.5) < 0.6 && z >= -1 && z <= 10) ||
-			(Math.abs(x) < 0.6 && z >= 7 && z <= 14)
-		) {
-			return true;
-		}
-
-		// Entrance area
-		if (Math.abs(x) < 1.5 && z >= 13 && z <= 16) {
-			return true;
-		}
-
-		return false;
-	}
-
-	if (!walkMode) return null;
-
-	return (
-		<mesh
-			ref={playerRef}
-			position={[position.x, position.y, position.z]}
-			castShadow
-		>
-			<capsuleGeometry args={[0.05, 0.1]} />
-			<meshStandardMaterial color="#4f46e5" />
-		</mesh>
-	);
-}
-
-// Room component with 3D height
-function Room({
-	name,
-	position,
-	size,
-	color,
-	isHovered,
-	onHover,
-	onLeave,
-}: {
-	name: string;
-	position: number[];
-	size: number[];
-	color: string;
-	isHovered: boolean;
-	onHover: (name: string) => void;
-	onLeave: () => void;
-}) {
-	const mesh = useRef<Mesh>(null);
-	// Make rooms taller for 3D effect - adjust height based on room type
-	const height =
-		name === "OK" ? 0.8 : name === "ICU" || name === "Radiologi" ? 0.6 : 0.4;
-	const actualSize = [size[0], height, size[2]];
-
-	useFrame(() => {
-		if (mesh.current) {
-			try {
-				const material = mesh.current.material as MeshStandardMaterial;
-				if (material) {
-					if (isHovered) {
-						material.color.set(new Color("#fbbf24"));
-						material.emissive.set(new Color("#f59e0b"));
-						material.emissiveIntensity = 0.2;
-					} else {
-						material.color.set(new Color(color));
-						material.emissive.set(new Color("#000000"));
-						material.emissiveIntensity = 0;
-					}
-				}
-			} catch (error) {
-				console.warn("Room material error:", error);
-			}
-		}
-	});
-
-	return (
-		<group position={[position[0], position[1] + height / 2, position[2]]}>
-			<mesh
-				ref={mesh}
-				onPointerOver={(e) => {
-					e.stopPropagation();
-					onHover(name);
-				}}
-				onPointerOut={() => onLeave()}
-				castShadow
-				receiveShadow
-			>
-				<boxGeometry args={actualSize as [number, number, number]} />
-				<meshStandardMaterial color={color} />
-			</mesh>
-			<Text
-				position={[0, height / 2 + 0.1, 0]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				fontSize={0.15}
-				color="black"
-				anchorX="center"
-				anchorY="middle"
-				maxWidth={size[0] * 2}
-				textAlign="center"
-			>
-				{name}
-			</Text>
-		</group>
-	);
-}
-
-function InfoPanel({
-	hoveredRoom,
-	walkMode,
-}: { hoveredRoom: string | null; walkMode: boolean }) {
-	if (!hoveredRoom) return null;
-
-	return (
-		<Html
-			position={[0, 0, 0]}
-			transform={false}
-			style={{
-				position: "fixed",
-				top: walkMode ? "20px" : "120px",
-				right: "20px",
-				zIndex: 1000,
-			}}
-		>
-			<div className="w-64 rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
-				<h3 className="mb-2 font-bold text-emerald-700 text-lg">
-					{hoveredRoom}
-				</h3>
-				<p className="text-gray-600 text-sm">{getDescription(hoveredRoom)}</p>
-			</div>
-		</Html>
-	);
-}
-
-// Helper function to get room descriptions
-function getDescription(roomName: string) {
-	const descriptions: Record<string, string> = {
-		"Kelas I": "First class patient ward with premium facilities",
-		"Kelas II": "Second class patient ward",
-		"R. Anak": "Pediatric department for children's healthcare",
-		Interna: "Internal medicine department",
-		Perksa: "Examination room",
-		"G. Bersalin": "Maternity ward",
-		"ISO-TB": "Tuberculosis isolation ward",
-		ICU: "Intensive Care Unit for critical patients",
-		K_umroh: "Umrah preparation services",
-		OK: "Operating room for surgical procedures",
-		Lab: "Laboratory for medical tests and analysis",
-		Apotek: "Pharmacy for medication dispensing",
-		Radiologi: "Radiology department for imaging services",
-		Farmasi: "Pharmacy storage and preparation area",
-		Entrance: "Main hospital entrance",
-		Laundry: "Hospital laundry services",
-		"Tranfus Darah": "Blood transfusion services",
-		WC: "Restroom facilities",
-		RM: "Medical Records department",
-		Server: "IT server room",
-	};
-
-	return descriptions[roomName] || "Hospital department";
-}
-
-// Camera positions
 const cameraPositions = {
 	topDown: { position: [0, 15, 6] as [number, number, number] },
 	perspective: { position: [-10, 8, 15] as [number, number, number] },
 };
 
-// Navigation path finding
-function findPath(start: Vector3, end: Vector3): Vector3[] {
-	// Convert room positions to grid coordinates
-	const gridSize = 1.5; // Size of each grid cell
-	const startGrid = {
-		x: Math.round(start.x / gridSize),
-		z: Math.round(start.z / gridSize),
-	};
-	const endGrid = {
-		x: Math.round(end.x / gridSize),
-		z: Math.round(end.z / gridSize),
-	};
-
-	// A* pathfinding implementation
-	const openSet = new Set<string>();
-	const closedSet = new Set<string>();
-	const cameFrom = new Map<string, string>();
-	const gScore = new Map<string, number>();
-	const fScore = new Map<string, number>();
-
-	const startKey = `${startGrid.x},${startGrid.z}`;
-	const endKey = `${endGrid.x},${endGrid.z}`;
-
-	openSet.add(startKey);
-	gScore.set(startKey, 0);
-	fScore.set(startKey, heuristic(startGrid, endGrid));
-
-	while (openSet.size > 0) {
-		let current = "";
-		let lowestFScore = Number.POSITIVE_INFINITY;
-
-		for (const key of openSet) {
-			const score = fScore.get(key) ?? Number.POSITIVE_INFINITY;
-			if (score < lowestFScore) {
-				lowestFScore = score;
-				current = key;
-			}
-		}
-
-		if (current === endKey) {
-			return reconstructPath(cameFrom, current, gridSize);
-		}
-
-		openSet.delete(current);
-		closedSet.add(current);
-
-		const [x, z] = current.split(",").map(Number);
-		const neighbors = getNeighbors(x, z);
-
-		for (const neighbor of neighbors) {
-			const neighborKey = `${neighbor.x},${neighbor.z}`;
-			if (closedSet.has(neighborKey)) continue;
-
-			const tentativeGScore =
-				(gScore.get(current) ?? Number.POSITIVE_INFINITY) + 1;
-
-			if (!openSet.has(neighborKey)) {
-				openSet.add(neighborKey);
-			} else if (
-				tentativeGScore >= (gScore.get(neighborKey) ?? Number.POSITIVE_INFINITY)
-			) {
-				continue;
-			}
-
-			cameFrom.set(neighborKey, current);
-			gScore.set(neighborKey, tentativeGScore);
-			fScore.set(neighborKey, tentativeGScore + heuristic(neighbor, endGrid));
-		}
-	}
-
-	return []; // No path found
-}
-
-function heuristic(
-	a: { x: number; z: number },
-	b: { x: number; z: number },
-): number {
-	return Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
-}
-
-function getNeighbors(x: number, z: number): { x: number; z: number }[] {
-	return [
-		{ x: x + 1, z },
-		{ x: x - 1, z },
-		{ x, z: z + 1 },
-		{ x, z: z - 1 },
-	].filter(({ x, z }) => isWalkable(x, z));
-}
-
-function isWalkable(x: number, z: number): boolean {
-	// Check if the position is in a corridor
-	const posX = x * 1.5;
-	const posZ = z * 1.5;
-
-	// Main horizontal corridors
-	if (
-		(Math.abs(posZ - 0) < 0.6 && Math.abs(posX) < 6) ||
-		(Math.abs(posZ - 3) < 0.6 && Math.abs(posX) < 6) ||
-		(Math.abs(posZ - 6) < 0.6 && Math.abs(posX) < 6) ||
-		(Math.abs(posZ - 9) < 0.6 && Math.abs(posX) < 6) ||
-		(Math.abs(posZ - 12) < 0.6 && Math.abs(posX) < 4)
-	) {
-		return true;
-	}
-
-	// Main vertical corridors
-	if (
-		(Math.abs(posX + 4.5) < 0.6 && posZ >= -1 && posZ <= 10) ||
-		(Math.abs(posX + 1.5) < 0.6 && posZ >= -1 && posZ <= 10) ||
-		(Math.abs(posX - 1.5) < 0.6 && posZ >= -1 && posZ <= 10) ||
-		(Math.abs(posX) < 0.6 && posZ >= 7 && posZ <= 14)
-	) {
-		return true;
-	}
-
-	// Entrance area
-	if (Math.abs(posX) < 1.5 && posZ >= 13 && posZ <= 16) {
-		return true;
-	}
-
-	return false;
-}
-
-function reconstructPath(
-	cameFrom: Map<string, string>,
-	current: string,
-	gridSize: number,
-): Vector3[] {
-	const path: Vector3[] = [];
-	let currentKey = current;
-
-	while (cameFrom.has(currentKey)) {
-		const [x, z] = currentKey.split(",").map(Number);
-		path.unshift(new Vector3(x * gridSize, 0.1, z * gridSize));
-		const nextKey = cameFrom.get(currentKey);
-		if (!nextKey) break;
-		currentKey = nextKey;
-	}
-
-	const [x, z] = currentKey.split(",").map(Number);
-	path.unshift(new Vector3(x * gridSize, 0.1, z * gridSize));
-
-	return path;
-}
-
-// Navigation path component
-function NavigationPath({ path }: { path: Vector3[] }) {
-	if (path.length === 0) return null;
-
-	return (
-		<Line points={path} color="#4f46e5" lineWidth={3} opacity={0.8} transparent>
-			<lineBasicMaterial color="#4f46e5" linewidth={3} />
-		</Line>
-	);
-}
-
-// Navigation directions component
-function NavigationDirections({
-	path,
-	currentPosition,
-}: {
-	path: Vector3[];
-	currentPosition: Vector3;
-}) {
-	if (path.length === 0) return null;
-
-	const getDirection = (current: Vector3, next: Vector3): string => {
-		const dx = next.x - current.x;
-		const dz = next.z - current.z;
-
-		if (Math.abs(dx) > Math.abs(dz)) {
-			return dx > 0 ? "Turn right" : "Turn left";
-		}
-		return dz > 0 ? "Go straight" : "Turn around";
-	};
-
-	const currentIndex = path.findIndex(
-		(point) =>
-			Math.abs(point.x - currentPosition.x) < 0.5 &&
-			Math.abs(point.z - currentPosition.z) < 0.5,
-	);
-
-	if (currentIndex === -1 || currentIndex === path.length - 1) return null;
-
-	const nextPoint = path[currentIndex + 1];
-	const direction = getDirection(currentPosition, nextPoint);
-	const distance = Math.round(currentPosition.distanceTo(nextPoint) * 10);
-
-	return (
-		<Html
-			position={[0, 0, 0]}
-			transform={false}
-			style={{
-				position: "fixed",
-				bottom: "20px",
-				left: "50%",
-				transform: "translateX(-50%)",
-				zIndex: 1000,
-			}}
-		>
-			<div className="rounded-lg border border-gray-200 bg-white/90 p-4 shadow-lg backdrop-blur-sm">
-				<div className="font-semibold text-emerald-700 text-lg">
-					{direction}
-				</div>
-				<div className="text-gray-600 text-sm">
-					{distance} meters to next turn
-				</div>
-			</div>
-		</Html>
-	);
-}
-
-// Navigation UI component
-function NavigationUI({
-	onSelectDestination,
-	selectedRoom,
-}: {
-	onSelectDestination: (room: string) => void;
-	selectedRoom: string | null;
-}) {
-	return (
-		<Html
-			position={[0, 0, 0]}
-			transform={false}
-			style={{
-				position: "fixed",
-				top: "20px",
-				left: "20px",
-				zIndex: 1000,
-			}}
-		>
-			<div className="w-64 rounded-lg border border-gray-200 bg-white/90 p-4 shadow-lg backdrop-blur-sm">
-				<h3 className="mb-2 font-semibold text-emerald-700 text-lg">
-					Navigation
-				</h3>
-				<div className="space-y-2">
-					<select
-						className="w-full rounded-md border p-2"
-						onChange={(e) => onSelectDestination(e.target.value)}
-						value={selectedRoom || ""}
-					>
-						<option value="">Select destination...</option>
-						{rooms.map((room) => (
-							<option key={room.name} value={room.name}>
-								{room.name}
-							</option>
-						))}
-					</select>
-				</div>
-			</div>
-		</Html>
-	);
-}
-
 // Main component
 export default function HospitalMap() {
-	const [hoveredRoom, setHoveredRoom] = useState<string | null>(null);
 	const [viewMode, setViewMode] = useState<"topDown" | "perspective" | "walk">(
 		"perspective",
 	);
 	const [cameraMode, setCameraMode] = useState<"free" | "topDown">("free");
 	const [playerPosition, setPlayerPosition] = useState(new Vector3(0, 0.6, 15));
-	const [selectedDestination, setSelectedDestination] = useState<string | null>(
-		null,
-	);
-	const [navigationPath, setNavigationPath] = useState<Vector3[]>([]);
 	const [userLocation, setUserLocation] = useState<{
 		lat: number;
 		lng: number;
 	} | null>(null);
-	console.log(userLocation);
 	const [locationError, setLocationError] = useState<string | null>(null);
-	const [buildings, setBuildings] = useState<Building[]>([]);
-	const [corridors, setCorridors] = useState<Corridor[]>([]);
+	const [buildings, setBuildings] = useState<Building[]>(
+		() => initialBuildings as Building[],
+	);
+	const [corridors, setCorridors] = useState<Corridor[]>(
+		() => initialCorridors as Corridor[],
+	);
 	const [toolMode, setToolMode] = useState<"place" | "remove" | "corridor">(
 		"place",
 	);
@@ -559,7 +63,19 @@ export default function HospitalMap() {
 		1, 1, 1,
 	]);
 	const [buildingColor, setBuildingColor] = useState("#4f46e5");
-
+	const [selectedBuildings, setSelectedBuildings] = useState<string[]>([]);
+	const [pathCorridorIds, setPathCorridorIds] = useState<string[]>([]);
+	const [directions, setDirections] = useState<string[]>([]);
+	const [hoveredCellCoords, setHoveredCellCoords] = useState<{
+		x: number;
+		y: number;
+		z: number;
+	} | null>(null);
+	const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
+		null,
+	);
+	const [showBuildings, setShowBuildings] = useState(true);
+	const [editMode, setEditMode] = useState(false);
 	useEffect(() => {
 		const storedBuildings = localStorage.getItem("buildings");
 		const storedCorridors = localStorage.getItem("corridors");
@@ -579,32 +95,24 @@ export default function HospitalMap() {
 		}
 	}, []);
 
-	// Save buildings to localStorage whenever they change
 	useEffect(() => {
 		localStorage.setItem("buildings", JSON.stringify(buildings));
 	}, [buildings]);
 
-	// Save corridors to localStorage whenever they change
 	useEffect(() => {
 		localStorage.setItem("corridors", JSON.stringify(corridors));
 	}, [corridors]);
 
-	// Add geolocation detection
 	useEffect(() => {
 		if ("geolocation" in navigator) {
 			navigator.geolocation.getCurrentPosition(
 				(position) => {
 					const { latitude, longitude } = position.coords;
-					console.log(latitude, longitude);
 					setUserLocation({ lat: latitude, lng: longitude });
 
-					// Convert GPS coordinates to map coordinates
-					// This is a simple conversion - you might want to adjust these values
-					// based on your actual map's coordinate system
 					const mapX = (longitude - 106.8451) * 1000; // Adjust based on your map's center longitude
 					const mapZ = (latitude - -6.2088) * 1000; // Adjust based on your map's center latitude
 
-					// Set player position to user's location
 					setPlayerPosition(new Vector3(mapX, 0.6, mapZ));
 				},
 				(error) => {
@@ -624,22 +132,37 @@ export default function HospitalMap() {
 		}
 	}, []);
 
+	useEffect(() => {
+		if (corridors.length === 0 || buildings.length === 0) return;
+		const threshold = 1; // max distance to snap
+		const endpoints = corridors.flatMap((c) => [c.start, c.end]);
+		let changed = false;
+		const snappedBuildings = buildings.map((b) => {
+			const [bx, by, bz] = b.position;
+			let closest: [number, number, number] | null = null;
+			let minDist = Number.POSITIVE_INFINITY;
+			for (const [ex, , ez] of endpoints) {
+				const dist = Math.hypot(bx - ex, bz - ez);
+				if (dist < minDist) {
+					minDist = dist;
+					closest = [ex, by, ez];
+				}
+			}
+			if (
+				closest &&
+				minDist < threshold &&
+				(bx !== closest[0] || bz !== closest[2])
+			) {
+				changed = true;
+				return { ...b, position: closest };
+			}
+			return b;
+		});
+		if (changed) setBuildings(snappedBuildings);
+	}, [corridors, buildings]);
+
 	const handlePlayerPositionChange = (newPosition: Vector3) => {
 		setPlayerPosition(newPosition);
-	};
-
-	const handleSelectDestination = (roomName: string) => {
-		setSelectedDestination(roomName);
-		const destinationRoom = rooms.find((room) => room.name === roomName);
-		if (destinationRoom) {
-			const destination = new Vector3(
-				destinationRoom.position[0],
-				0,
-				destinationRoom.position[2],
-			);
-			const path = findPath(playerPosition, destination);
-			setNavigationPath(path);
-		}
 	};
 
 	const handleBuildingPlace = (building: Building) => {
@@ -694,8 +217,82 @@ export default function HospitalMap() {
 		}
 	};
 
+	// Helper: Find building by id
+	const getBuildingById = useCallback(
+		(id: string) => buildings.find((b) => b.id === id),
+		[buildings],
+	);
+
+	// Helper: Check if two positions are equal (ignoring y)
+	function positionsEqual(
+		a: [number, number, number],
+		b: [number, number, number],
+	) {
+		return Math.abs(a[0] - b[0]) < 0.01 && Math.abs(a[2] - b[2]) < 0.01;
+	}
+
+	// Helper: Generate a key for a position using only x and z
+	function posKey(pos: [number, number, number]) {
+		return `${pos[0]},${pos[2]}`;
+	}
+
+	// Pathfinding: BFS over corridors
+	function findCorridorPath(
+		corridors: Corridor[],
+		startPos: [number, number, number],
+		endPos: [number, number, number],
+	): string[] {
+		// Build adjacency list: Map position string -> corridor ids
+		const posToCorridors = new Map<
+			string,
+			{ corridor: Corridor; nextPos: [number, number, number] }[]
+		>();
+		for (const corridor of corridors) {
+			const startKey = posKey(corridor.start);
+			const endKey = posKey(corridor.end);
+			if (!posToCorridors.has(startKey)) posToCorridors.set(startKey, []);
+			if (!posToCorridors.has(endKey)) posToCorridors.set(endKey, []);
+			posToCorridors.get(startKey)?.push({ corridor, nextPos: corridor.end });
+			posToCorridors.get(endKey)?.push({ corridor, nextPos: corridor.start });
+		}
+		// BFS
+		const queue: { pos: [number, number, number]; path: string[] }[] = [
+			{ pos: [startPos[0], 0, startPos[2]], path: [] },
+		];
+		const visited = new Set<string>();
+		while (queue.length > 0) {
+			// biome-ignore lint/style/noNonNullAssertion: <explanation>
+			const { pos, path } = queue.shift()!;
+			const key = posKey(pos);
+			if (positionsEqual(pos, [endPos[0], 0, endPos[2]])) return path;
+			if (visited.has(key)) continue;
+			visited.add(key);
+			for (const neighbor of posToCorridors.get(key) || []) {
+				const nextPos: [number, number, number] = [
+					neighbor.nextPos[0],
+					0,
+					neighbor.nextPos[2],
+				];
+				if (!visited.has(posKey(nextPos))) {
+					queue.push({
+						pos: nextPos,
+						path: [...path, neighbor.corridor.id],
+					});
+				}
+			}
+		}
+		return [];
+	}
+
 	return (
-		<div className="h-screen w-full">
+		<div
+			className="relative h-screen w-full"
+			onMouseMove={(e) => {
+				if (hoveredCellCoords) {
+					setMousePos({ x: e.clientX, y: e.clientY });
+				}
+			}}
+		>
 			<div className="absolute top-24 left-4 z-10 flex flex-col gap-2">
 				<div className="rounded-md bg-white/90 p-3 shadow-md backdrop-blur-sm">
 					{locationError && (
@@ -741,6 +338,24 @@ export default function HospitalMap() {
 						>
 							Walk Mode
 						</button>
+						<label className="ml-2 flex items-center gap-1 text-sm">
+							<input
+								type="checkbox"
+								checked={showBuildings}
+								onChange={(e) => setShowBuildings(e.target.checked)}
+								className="accent-emerald-600"
+							/>
+							Show Buildings
+						</label>
+						<label className="ml-2 flex items-center gap-1 text-sm">
+							<input
+								type="checkbox"
+								checked={editMode}
+								onChange={(e) => setEditMode(e.target.checked)}
+								className="accent-emerald-600"
+							/>
+							Edit Mode
+						</label>
 					</div>
 					{viewMode === "walk" && (
 						<div className="mt-2 text-gray-600 text-xs">
@@ -806,59 +421,83 @@ export default function HospitalMap() {
 					/>
 					<directionalLight position={[-5, 8, -10]} intensity={0.3} />
 
-					{/* Floor */}
-					{/* <mesh
-						rotation={[-Math.PI / 2, 0, 0]}
-						position={[0, 0, 6]}
-						receiveShadow
-					>
-						<planeGeometry args={[20, 25]} />
-						<meshStandardMaterial color="#f5f5f5" />
-					</mesh> */}
-
-					{/* Player */}
-					<Player
-						position={playerPosition}
-						onPositionChange={handlePlayerPositionChange}
-						walkMode={viewMode === "walk"}
-					/>
-
-					{/* Navigation */}
-					{/* <NavigationPath path={navigationPath} />
-					{viewMode === "walk" && (
-						<NavigationDirections
-							path={navigationPath}
-							currentPosition={playerPosition}
-						/>
-					)}
-					<NavigationUI
-						onSelectDestination={handleSelectDestination}
-						selectedRoom={selectedDestination}
-					/> */}
-
-					{/* <InfoPanel hoveredRoom={hoveredRoom} walkMode={viewMode === "walk"} /> */}
-
 					<BuildingRenderer
 						buildings={buildings}
 						corridors={corridors}
 						onBuildingClick={(id) => {
+							console.log(getBuildingById(id));
 							if (toolMode === "remove") {
 								handleBuildingRemove(id);
+								return;
+							}
+							if (selectedBuildings.length === 0) {
+								setSelectedBuildings([id]);
+								setPathCorridorIds([]);
+								setDirections([]);
+							} else if (selectedBuildings.length === 1) {
+								if (selectedBuildings[0] === id) return;
+								const first = getBuildingById(selectedBuildings[0]);
+								const second = getBuildingById(id);
+								if (first && second) {
+									// Normalize y to 0 for pathfinding
+									const path = findCorridorPath(
+										corridors,
+										[first.position[0], 0, first.position[2]],
+										[second.position[0], 0, second.position[2]],
+									);
+									setPathCorridorIds(path);
+									if (path.length === 0) {
+										setDirections([
+											"No path found between the selected buildings.",
+										]);
+									} else {
+										const steps = path.map((corridorId, idx) => {
+											const corridor = corridors.find(
+												(c) => c.id === corridorId,
+											);
+											if (!corridor) return "";
+											const from =
+												idx === 0
+													? [first.position[0], 0, first.position[2]]
+													: [
+															corridors.find((c) => c.id === path[idx - 1])
+																?.end[0] ?? 0,
+															0,
+															corridors.find((c) => c.id === path[idx - 1])
+																?.end[2] ?? 0,
+														];
+											const to = [corridor.end[0], 0, corridor.end[2]];
+											return `Take corridor ${corridorId} from (${from}) to (${to})`;
+										});
+										setDirections(steps);
+									}
+								}
+								setSelectedBuildings([]);
+							} else {
+								setSelectedBuildings([id]);
+								setPathCorridorIds([]);
+								setDirections([]);
 							}
 						}}
+						highlightedCorridorIds={pathCorridorIds}
+						highlightedBuildingIds={selectedBuildings}
+						showBuildings={showBuildings}
 					/>
 
 					<GridSystem
 						gridSize={100}
 						cellSize={1}
 						onCellClick={(x: number, y: number) => {
-							// handleGridClick(x, y, 100);
+							if (editMode) {
+								handleGridClick(x, y, 100);
+							}
 						}}
+						onCellHover={(coords) => setHoveredCellCoords(coords)}
 					/>
 				</Canvas>
 			</KeyboardControls>
 
-			{/* <BuildingTools
+			<BuildingTools
 				onBuildingPlace={handleBuildingPlace}
 				onBuildingRemove={handleBuildingRemove}
 				onCorridorDraw={handleCorridorDraw}
@@ -873,7 +512,7 @@ export default function HospitalMap() {
 				buildings={buildings}
 				corridors={corridors}
 				onCorridorRemove={handleCorridorRemove}
-			/> */}
+			/>
 
 			<div className="absolute top-6 right-6 z-20">
 				<Compass direction={0} />
@@ -885,6 +524,41 @@ export default function HospitalMap() {
 					z={playerPosition.z}
 				/>
 			</div>
+
+			{directions.length > 0 && (
+				<div className="absolute bottom-6 left-6 z-20 rounded bg-white/90 p-4 shadow">
+					<h3 className="mb-2 font-bold">Directions</h3>
+					<ol className="ml-4 list-decimal">
+						{directions.map((step) => (
+							<li key={step}>{step}</li>
+						))}
+					</ol>
+					<button
+						className="mt-2 rounded bg-gray-200 px-3 py-1"
+						onClick={() => {
+							setSelectedBuildings([]);
+							setPathCorridorIds([]);
+							setDirections([]);
+						}}
+						type="button"
+					>
+						Clear Selection
+					</button>
+				</div>
+			)}
+
+			{hoveredCellCoords && mousePos && (
+				<div
+					className="pointer-events-none fixed z-50"
+					style={{ left: mousePos.x + 16, top: mousePos.y + 16 }}
+				>
+					<CoordinateDisplay
+						x={hoveredCellCoords.x}
+						y={hoveredCellCoords.y}
+						z={hoveredCellCoords.z}
+					/>
+				</div>
+			)}
 		</div>
 	);
 }

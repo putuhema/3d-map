@@ -1,19 +1,6 @@
+import type { Building } from "@/data/building";
+import type { Corridor } from "@/data/corridor";
 import { useState } from "react";
-
-export type Building = {
-	id: string;
-	name: string;
-	position: [number, number, number];
-	size: [number, number, number];
-	color: string;
-};
-
-export type Corridor = {
-	id: string;
-	start: [number, number, number];
-	end: [number, number, number];
-	width: number;
-};
 
 type ToolMode = "place" | "remove" | "corridor";
 

@@ -1,0 +1,178 @@
+export type Building = {
+	id: string;
+	name: string;
+	position: [number, number, number];
+	size: [number, number, number];
+	color: string;
+};
+
+export const buildings = [
+	{
+		id: "bd3ea5d4-6e33-44ae-bab0-fbbcf37d2bf3",
+		name: "New Building",
+		position: [3.5, 0.5, 15.5],
+		size: [3, 1, 5],
+		color: "#4f46e5",
+	},
+	{
+		id: "d0ebd30f-6459-4598-ba6c-54bb0a5d89e5",
+		name: "New Building",
+		position: [10.5, 0.5, 13.5],
+		size: [7, 1, 3],
+		color: "#4f46e5",
+	},
+	{
+		id: "8881f834-0907-47a0-9d91-19d400b6c56f",
+		name: "New Building",
+		position: [12.5, 0.5, 16.5],
+		size: [3, 1, 3],
+		color: "#4f46e5",
+	},
+	{
+		id: "ca580db2-2ba9-403e-8829-0c6d5485f409",
+		name: "New Building",
+		position: [8.5, 0.5, 17.5],
+		size: [2, 1, 2],
+		color: "#4f46e5",
+	},
+	{
+		id: "94385c5f-2fb0-4e15-a1f5-c550bbc98c7c",
+		name: "New Building",
+		position: [-6.5, 0.5, 12.5],
+		size: [7, 1, 3],
+		color: "#4f46e5",
+	},
+	{
+		id: "bc7767d7-e545-4cc8-979c-0319a6a6ad7e",
+		name: "New Building",
+		position: [-12.5, 0.5, 8.5],
+		size: [4, 1, 3],
+		color: "#4f46e5",
+	},
+	{
+		id: "dedc9b27-b1d0-411a-b75d-81afcf2713aa",
+		name: "New Building",
+		position: [4.5, 0.5, -6.5],
+		size: [4, 1, 5],
+		color: "#4f46e5",
+	},
+	{
+		id: "cf0da4b8-051b-4c72-8997-3886848c3519",
+		name: "New Building",
+		position: [4.5, 0.5, 1.5],
+		size: [4, 1, 9],
+		color: "#e64c4c",
+	},
+	{
+		id: "0340e2ef-ea9e-49b1-8cad-c504b54f7dad",
+		name: "New Building",
+		position: [-12.5, 0.5, 12.5],
+		size: [3, 1, 3],
+		color: "#e64c4c",
+	},
+	{
+		id: "0bf2254a-f353-44e4-ae9c-8356debb71bf",
+		name: "New Building",
+		position: [-10.5, 0.5, -1.5],
+		size: [11, 1, 11],
+		color: "#e64c4c",
+	},
+	{
+		id: "9cc01bf9-7c9e-499e-9ea6-1051bcdab2dd",
+		name: "New Building",
+		position: [-0.5, 0.5, 12.5],
+		size: [3, 1, 3],
+		color: "#e64c4c",
+	},
+	{
+		id: "c872fd99-b722-4ddb-839b-807c062514bb",
+		name: "New Building",
+		position: [-1, 0.5, -7.5],
+		size: [4, 1, 5],
+		color: "#e64c4c",
+	},
+	{
+		id: "5ec470e4-3c83-4bab-9fb9-e2a477ab10c8",
+		name: "New Building",
+		position: [-12.5, 0.5, -12],
+		size: [3, 1, 2],
+		color: "#e64c4c",
+	},
+	{
+		id: "64bbd5a9-aed5-4c6b-977a-72c00a4f2a62",
+		name: "New Building",
+		position: [-1, 0.5, -14.5],
+		size: [4, 1, 3],
+		color: "#e64c4c",
+	},
+	{
+		id: "ac1098be-2374-4511-93ba-0e81c504b24c",
+		name: "New Building",
+		position: [7.5, 0.5, -15],
+		size: [7, 1, 4],
+		color: "#e64c4c",
+	},
+	{
+		id: "733d217b-ab1a-4e3d-95e0-1fbaea066512",
+		name: "New Building",
+		position: [15, 0.5, -16.5],
+		size: [4, 1, 7],
+		color: "#e64c4c",
+	},
+	{
+		id: "303cc16c-b206-48b8-afb8-a25d35cb2c15",
+		name: "New Building",
+		position: [6.5, 0.5, -19.5],
+		size: [9, 1, 3],
+		color: "#e64c4c",
+	},
+	{
+		id: "da93acd7-6d51-42b3-a219-649ad33af505",
+		name: "New Building",
+		position: [6.5, 0.5, -23.5],
+		size: [9, 1, 3],
+		color: "#e64c4c",
+	},
+	{
+		id: "bbdefe35-78b8-4a39-991d-f1d4cdc465e0",
+		name: "New Building",
+		position: [6.5, 0.5, -27.5],
+		size: [9, 1, 3],
+		color: "#e64c4c",
+	},
+	{
+		id: "c152dc9b-7547-4483-a1ca-63b973659dc8",
+		name: "New Building",
+		position: [-3.5, 0.5, -23.5],
+		size: [9, 1, 3],
+		color: "#e64c4c",
+	},
+	{
+		id: "327e3bdf-2cae-4b2c-a436-69054efc64ff",
+		name: "New Building",
+		position: [-4.5, 0.5, -19.5],
+		size: [11, 1, 3],
+		color: "#e64c4c",
+	},
+	{
+		id: "6f66e375-8704-4681-bcbb-d4247fbe6d86",
+		name: "New Building",
+		position: [-0.5, 0.5, 26.5],
+		size: [3, 1, 3],
+		color: "#009966",
+	},
+	{
+		id: "744d2b5c-c0dc-4dd2-9720-7f4fc009c718",
+		name: "New Building",
+		position: [4.5, 0.5, 9.5],
+		size: [4, 1, 5],
+		color: "#4f46e5",
+	},
+	{
+		id: "5fa1adf2-01a1-4517-ac48-6a4d51134141",
+		name: "Poli",
+		position: [-1.5, 0.5, 0.5],
+		size: [4, 1, 9],
+		color: "#4f46e5",
+	},
+];

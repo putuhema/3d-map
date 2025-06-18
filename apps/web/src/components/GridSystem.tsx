@@ -9,12 +9,17 @@ interface GridSystemProps {
 	cellSize: number;
 	onCellClick: (x: number, y: number) => void;
 	locked?: boolean;
+	/**
+	 * Called with the world coordinates of the hovered cell, or null if not hovering any cell.
+	 */
+	onCellHover?: (coords: { x: number; y: number; z: number } | null) => void;
 }
 
 export function GridSystem({
 	gridSize,
 	cellSize,
 	onCellClick,
+	onCellHover,
 }: GridSystemProps) {
 	const gridRef = useRef<Group>(null);
 	const [hoveredCell, setHoveredCell] = useState<[number, number] | null>(null);
@@ -64,13 +69,22 @@ export function GridSystem({
 		// Check if within grid bounds
 		if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
 			setHoveredCell([gridX, gridY]);
+			if (onCellHover) {
+				// Calculate world coordinates of cell center
+				const x = gridX * cellSize - halfSize + cellSize / 2;
+				const y = 0;
+				const z = gridY * cellSize - halfSize + cellSize / 2;
+				onCellHover({ x, y, z });
+			}
 		} else {
 			setHoveredCell(null);
+			if (onCellHover) onCellHover(null);
 		}
 	};
 
 	const handlePointerOut = () => {
 		setHoveredCell(null);
+		if (onCellHover) onCellHover(null);
 	};
 
 	return (
@@ -87,7 +101,6 @@ export function GridSystem({
 				<meshBasicMaterial transparent opacity={0} />
 			</mesh>
 
-			{/* Hover highlight */}
 			{hoveredCell && (
 				<mesh
 					rotation={[-Math.PI / 2, 0, 0]}

@@ -1,19 +1,26 @@
+import type { Building } from "@/data/building";
+import type { Corridor } from "@/data/corridor";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { MeshStandardMaterial, Vector3 } from "three";
 import type { Mesh } from "three";
-import type { Building, Corridor } from "./BuildingTools";
 
 interface BuildingRendererProps {
 	buildings: Building[];
 	corridors: Corridor[];
 	onBuildingClick?: (id: string) => void;
+	highlightedCorridorIds?: string[];
+	highlightedBuildingIds?: string[];
+	showBuildings?: boolean;
 }
 
 export function BuildingRenderer({
 	buildings,
 	corridors,
 	onBuildingClick,
+	highlightedCorridorIds = [],
+	highlightedBuildingIds = [],
+	showBuildings = true,
 }: BuildingRendererProps) {
 	const buildingRefs = useRef<Map<string, Mesh>>(new Map());
 
@@ -26,30 +33,50 @@ export function BuildingRenderer({
 		() => new MeshStandardMaterial({ color: "#d4d4d8" }),
 		[],
 	);
+	const highlightedMaterial = useMemo(
+		() => new MeshStandardMaterial({ color: "#22d3ee" }),
+		[],
+	);
+	const highlightedBuildingMaterial = useMemo(
+		() => new MeshStandardMaterial({ color: "#f59e42" }),
+		[],
+	);
 
 	return (
 		<group>
-			{buildings.map((building) => (
-				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-				<mesh
-					key={building.id}
-					ref={(ref) => {
-						if (ref) buildingRefs.current.set(building.id, ref);
-					}}
-					position={new Vector3(...building.position)}
-					scale={new Vector3(...building.size)}
-					onClick={(e) => handleBuildingClick(building.id, e)}
-					castShadow
-					receiveShadow
-				>
-					<boxGeometry args={[1, 1, 1]} />
-					<meshStandardMaterial
-						color={building.color}
-						metalness={0.1}
-						roughness={0.5}
-					/>
-				</mesh>
-			))}
+			{showBuildings &&
+				buildings.map((building) => (
+					// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+					<mesh
+						key={building.id}
+						ref={(ref) => {
+							if (ref) buildingRefs.current.set(building.id, ref);
+						}}
+						position={new Vector3(...building.position)}
+						scale={new Vector3(...building.size)}
+						onClick={(e) => handleBuildingClick(building.id, e)}
+						castShadow
+						receiveShadow
+					>
+						<boxGeometry args={[1, 1, 1]} />
+						<meshStandardMaterial
+							color={building.color}
+							metalness={0.1}
+							roughness={0.5}
+							attach="material"
+						/>
+						{highlightedBuildingIds.includes(building.id) && (
+							<meshStandardMaterial
+								color="#f59e42"
+								metalness={0.3}
+								roughness={0.3}
+								transparent={true}
+								opacity={0.6}
+								attach="material"
+							/>
+						)}
+					</mesh>
+				))}
 
 			{corridors.map((corridor) => {
 				const startXZ = new Vector3(corridor.start[0], 0, corridor.start[2]);
@@ -70,7 +97,11 @@ export function BuildingRenderer({
 						rotation={[-Math.PI / 2, 0, angle]}
 						scale={[1, 1, 1]}
 						receiveShadow
-						material={corridorMaterial}
+						material={
+							highlightedCorridorIds.includes(corridor.id)
+								? highlightedMaterial
+								: corridorMaterial
+						}
 					>
 						<planeGeometry args={[length, corridor.width]} />
 					</mesh>
