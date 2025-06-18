@@ -625,18 +625,13 @@ function NavigationUI({
 	);
 }
 
-interface GridSystemProps {
-	gridSize: number;
-	cellSize: number;
-	onCellClick: (x: number, y: number) => void;
-}
-
 // Main component
 export default function HospitalMap() {
 	const [hoveredRoom, setHoveredRoom] = useState<string | null>(null);
 	const [viewMode, setViewMode] = useState<"topDown" | "perspective" | "walk">(
 		"perspective",
 	);
+	const [cameraMode, setCameraMode] = useState<"free" | "topDown">("free");
 	const [playerPosition, setPlayerPosition] = useState(new Vector3(0, 0.6, 15));
 	const [selectedDestination, setSelectedDestination] = useState<string | null>(
 		null,
@@ -647,7 +642,6 @@ export default function HospitalMap() {
 		lng: number;
 	} | null>(null);
 	const [locationError, setLocationError] = useState<string | null>(null);
-	const controlsRef = useRef(null);
 	const [buildings, setBuildings] = useState<Building[]>([]);
 	const [corridors, setCorridors] = useState<Corridor[]>([]);
 	const [toolMode, setToolMode] = useState<"place" | "remove" | "corridor">(
@@ -745,14 +739,15 @@ export default function HospitalMap() {
 				color: buildingColor,
 			});
 		} else if (toolMode === "corridor") {
+			console.log("Drawing corridor", isDrawingCorridor, { x, y });
 			if (!isDrawingCorridor) {
-				setCorridorStart([x - 24.5, 0, y - 24.5]); // Align with grid cells
+				setCorridorStart([x - 24.5, 0, y - 24.5]); // y is always 0
 				setIsDrawingCorridor(true);
 			} else if (corridorStart) {
 				handleCorridorDraw({
 					id: crypto.randomUUID(),
-					start: corridorStart,
-					end: [x - 24.5, 0, y - 24.5], // Align with grid cells
+					start: [corridorStart[0], 0, corridorStart[2]], // force y=0
+					end: [x - 24.5, 0, y - 24.5], // force y=0
 					width: 0.9,
 				});
 				setIsDrawingCorridor(false);
@@ -853,14 +848,13 @@ export default function HospitalMap() {
 					/>
 					{viewMode !== "walk" && (
 						<OrbitControls
-							ref={controlsRef}
 							target={[0, 0, 6]}
-							enableRotate={viewMode === "perspective"}
+							enableRotate={cameraMode === "free"}
 							enablePan={true}
 							enableZoom={true}
 							minDistance={5}
 							maxDistance={25}
-							maxPolarAngle={Math.PI / 2 - 0.1}
+							maxPolarAngle={cameraMode === "topDown" ? 0 : Math.PI / 2 - 0.1}
 						/>
 					)}
 

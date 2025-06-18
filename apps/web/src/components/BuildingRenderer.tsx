@@ -17,7 +17,6 @@ export function BuildingRenderer({
 	onBuildingClick,
 }: BuildingRendererProps) {
 	const buildingRefs = useRef<Map<string, Mesh>>(new Map());
-	console.log("Buildings to render:", buildings);
 
 	const handleBuildingClick = (id: string, event: ThreeEvent<MouseEvent>) => {
 		event.stopPropagation();
@@ -32,7 +31,6 @@ export function BuildingRenderer({
 
 	return (
 		<group>
-			{/* Render Buildings */}
 			{buildings.map((building) => (
 				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 				<mesh
@@ -55,26 +53,33 @@ export function BuildingRenderer({
 				</mesh>
 			))}
 
-			{/* Render Corridors */}
 			{corridors.map((corridor) => {
-				const start = new Vector3(...corridor.start);
-				const end = new Vector3(...corridor.end);
-				const length = start.distanceTo(end);
+				// Always render corridors flat on the x/z plane
+				const startXZ = new Vector3(corridor.start[0], 0, corridor.start[2]);
+				const endXZ = new Vector3(corridor.end[0], 0, corridor.end[2]);
+				const length = startXZ.distanceTo(endXZ);
 				const midPoint = new Vector3()
-					.addVectors(start, end)
+					.addVectors(startXZ, endXZ)
 					.multiplyScalar(0.5);
-
-				// Calculate the direction vector
-				const direction = new Vector3().subVectors(end, start).normalize();
-
-				// Calculate the rotation angle
+				const direction = new Vector3().subVectors(endXZ, startXZ).normalize();
 				const angle = Math.atan2(direction.z, direction.x);
+
+				console.log("Rendering corridor:", {
+					start: corridor.start,
+					end: corridor.end,
+					startXZ,
+					endXZ,
+					length,
+				});
+
+				if (length === 0) return null; // Skip degenerate/vertical corridors
 
 				return (
 					<mesh
 						key={corridor.id}
 						position={[midPoint.x, 0.01, midPoint.z]}
-						rotation={[-Math.PI / 2, angle, 0]}
+						rotation={[-Math.PI / 2, 0, angle]}
+						scale={[1, 1, 1]}
 						receiveShadow
 						material={corridorMaterial}
 					>

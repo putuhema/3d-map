@@ -79,13 +79,12 @@ export function BuildingTools({
 	};
 
 	return (
-		<div className="fixed top-24 left-4 z-10 flex flex-col gap-4">
-			<div className="rounded-lg border border-gray-200 bg-white/90 p-4 shadow-lg backdrop-blur-sm">
+		<div className="fixed top-24 right-4 z-10 flex flex-col gap-4">
+			<div className="w-[350px] rounded-lg border border-gray-200 bg-white/90 p-4 shadow-lg backdrop-blur-sm">
 				<h3 className="mb-4 font-semibold text-emerald-700 text-lg">
 					Building Tools
 				</h3>
 
-				{/* Mode Selection */}
 				<div className="mb-4 flex gap-2">
 					<button
 						type="button"
@@ -96,7 +95,7 @@ export function BuildingTools({
 						}`}
 						onClick={() => onModeChange("place")}
 					>
-						Place Building
+						Place
 					</button>
 					<button
 						type="button"
@@ -107,7 +106,7 @@ export function BuildingTools({
 						}`}
 						onClick={() => onModeChange("remove")}
 					>
-						Remove Building
+						Remove
 					</button>
 					<button
 						type="button"
@@ -118,11 +117,10 @@ export function BuildingTools({
 						}`}
 						onClick={() => onModeChange("corridor")}
 					>
-						Draw Corridor
+						Corridor
 					</button>
 				</div>
 
-				{/* Building Placement Settings */}
 				{selectedMode === "place" && (
 					<div className="space-y-3">
 						<div>
@@ -148,7 +146,7 @@ export function BuildingTools({
 							>
 								Size (Width, Height, Depth)
 							</label>
-							<div className="flex gap-2">
+							<div className="grid grid-cols-3 gap-2">
 								<input
 									id="building-size-width"
 									type="number"

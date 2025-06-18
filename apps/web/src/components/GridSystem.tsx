@@ -1,6 +1,6 @@
 import { Line } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Vector3 } from "three";
 import type { Group } from "three";
 
@@ -17,6 +17,7 @@ export function GridSystem({
 	onCellClick,
 }: GridSystemProps) {
 	const gridRef = useRef<Group>(null);
+	const [hoveredCell, setHoveredCell] = useState<[number, number] | null>(null);
 
 	// Calculate grid lines
 	const gridLines: Vector3[][] = [];
@@ -50,6 +51,28 @@ export function GridSystem({
 		}
 	};
 
+	const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
+		event.stopPropagation();
+
+		// Get pointer position in world coordinates
+		const point = event.point;
+
+		// Convert to grid coordinates
+		const gridX = Math.round((point.x + halfSize) / cellSize);
+		const gridY = Math.round((point.z + halfSize) / cellSize);
+
+		// Check if within grid bounds
+		if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
+			setHoveredCell([gridX, gridY]);
+		} else {
+			setHoveredCell(null);
+		}
+	};
+
+	const handlePointerOut = () => {
+		setHoveredCell(null);
+	};
+
 	return (
 		<group ref={gridRef}>
 			{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
@@ -57,10 +80,27 @@ export function GridSystem({
 				rotation={[-Math.PI / 2, 0, 0]}
 				position={[0, 0.01, 0]}
 				onClick={handleClick}
+				onPointerMove={handlePointerMove}
+				onPointerOut={handlePointerOut}
 			>
 				<planeGeometry args={[gridSize * cellSize, gridSize * cellSize]} />
 				<meshBasicMaterial transparent opacity={0} />
 			</mesh>
+
+			{/* Hover highlight */}
+			{hoveredCell && (
+				<mesh
+					rotation={[-Math.PI / 2, 0, 0]}
+					position={[
+						hoveredCell[0] * cellSize - halfSize + cellSize / 2,
+						0.02,
+						hoveredCell[1] * cellSize - halfSize + cellSize / 2,
+					]}
+				>
+					<planeGeometry args={[cellSize * 0.95, cellSize * 0.95]} />
+					<meshBasicMaterial color="#4f46e5" transparent opacity={0.3} />
+				</mesh>
+			)}
 
 			{gridLines.map((line, i) => {
 				const isHorizontal = i <= gridSize;
