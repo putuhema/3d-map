@@ -1,5 +1,6 @@
 import type { Building } from "@/data/building";
 import type { Corridor } from "@/data/corridor";
+import type { Room } from "@/data/room";
 import { Line } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
@@ -9,7 +10,8 @@ import type { Mesh } from "three";
 interface BuildingRendererProps {
 	buildings: Building[];
 	corridors: Corridor[];
-	onBuildingClick?: (id: string) => void;
+	rooms: Room[];
+	onBuildingClick?: (id: string, roomId?: string) => void;
 	highlightedCorridorIds?: string[];
 	highlightedBuildingIds?: string[];
 	showBuildings?: boolean;
@@ -18,6 +20,7 @@ interface BuildingRendererProps {
 export function BuildingRenderer({
 	buildings,
 	corridors,
+	rooms,
 	onBuildingClick,
 	highlightedCorridorIds = [],
 	highlightedBuildingIds = [],
@@ -25,9 +28,13 @@ export function BuildingRenderer({
 }: BuildingRendererProps) {
 	const buildingRefs = useRef<Map<string, Mesh>>(new Map());
 
-	const handleBuildingClick = (id: string, event: ThreeEvent<MouseEvent>) => {
+	const handleBuildingClick = (
+		id: string,
+		roomId: string | undefined,
+		event: ThreeEvent<MouseEvent>,
+	) => {
 		event.stopPropagation();
-		onBuildingClick?.(id);
+		onBuildingClick?.(id, roomId);
 	};
 
 	const corridorMaterial = useMemo(
@@ -47,7 +54,7 @@ export function BuildingRenderer({
 						}}
 						position={new Vector3(...building.position)}
 						scale={new Vector3(...building.size)}
-						onClick={(e) => handleBuildingClick(building.id, e)}
+						onClick={(e) => handleBuildingClick(building.id, undefined, e)}
 						castShadow
 						receiveShadow
 					>
@@ -57,6 +64,8 @@ export function BuildingRenderer({
 							metalness={0.1}
 							roughness={0.5}
 							attach="material"
+							transparent={true}
+							opacity={0.4}
 						/>
 						{highlightedBuildingIds.includes(building.id) && (
 							<meshStandardMaterial
@@ -64,12 +73,24 @@ export function BuildingRenderer({
 								metalness={0.3}
 								roughness={0.3}
 								transparent={true}
-								opacity={0.6}
+								opacity={0.3}
 								attach="material"
 							/>
 						)}
 					</mesh>
 				))}
+
+			{rooms.map((room) => (
+				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+				<mesh
+					key={room.id}
+					position={new Vector3(...room.position)}
+					onClick={(e) => handleBuildingClick(room.id, room.id, e)}
+				>
+					<boxGeometry args={[1, 1, 1]} />
+					<meshStandardMaterial color={room.color} />
+				</mesh>
+			))}
 
 			{corridors.map((corridor) => {
 				const startXZ = new Vector3(corridor.start[0], 0, corridor.start[2]);

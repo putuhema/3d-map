@@ -2,6 +2,7 @@ import { Compass } from "@/components/Compass";
 import { CoordinateDisplay } from "@/components/CoordinateDisplay";
 import { type Building, buildings as initialBuildings } from "@/data/building";
 import { type Corridor, corridors as initialCorridors } from "@/data/corridor";
+import { type Room, rooms as initialRooms } from "@/data/room";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
@@ -51,9 +52,10 @@ export default function HospitalMap() {
 	const [corridors, setCorridors] = useState<Corridor[]>(
 		() => initialCorridors as Corridor[],
 	);
-	const [toolMode, setToolMode] = useState<"place" | "remove" | "corridor">(
-		"place",
-	);
+	const [rooms, setRooms] = useState<Room[]>(() => initialRooms as Room[]);
+	const [toolMode, setToolMode] = useState<
+		"place" | "remove" | "corridor" | "room"
+	>("room");
 	const [isDrawingCorridor, setIsDrawingCorridor] = useState(false);
 	const [corridorStart, setCorridorStart] = useState<
 		[number, number, number] | null
@@ -79,6 +81,7 @@ export default function HospitalMap() {
 	useEffect(() => {
 		const storedBuildings = localStorage.getItem("buildings");
 		const storedCorridors = localStorage.getItem("corridors");
+		const storedRooms = localStorage.getItem("rooms");
 		if (storedBuildings) {
 			try {
 				setBuildings(JSON.parse(storedBuildings));
@@ -93,6 +96,13 @@ export default function HospitalMap() {
 				console.warn("Failed to parse stored corridors", e);
 			}
 		}
+		if (storedRooms) {
+			try {
+				setRooms(JSON.parse(storedRooms));
+			} catch (e) {
+				console.warn("Failed to parse stored rooms", e);
+			}
+		}
 	}, []);
 
 	useEffect(() => {
@@ -102,6 +112,10 @@ export default function HospitalMap() {
 	useEffect(() => {
 		localStorage.setItem("corridors", JSON.stringify(corridors));
 	}, [corridors]);
+
+	useEffect(() => {
+		localStorage.setItem("rooms", JSON.stringify(rooms));
+	}, [rooms]);
 
 	useEffect(() => {
 		if ("geolocation" in navigator) {
@@ -161,10 +175,6 @@ export default function HospitalMap() {
 		if (changed) setBuildings(snappedBuildings);
 	}, [corridors, buildings]);
 
-	const handlePlayerPositionChange = (newPosition: Vector3) => {
-		setPlayerPosition(newPosition);
-	};
-
 	const handleBuildingPlace = (building: Building) => {
 		setBuildings((prev) => [...prev, building]);
 	};
@@ -173,12 +183,20 @@ export default function HospitalMap() {
 		setBuildings((prev) => prev.filter((b) => b.id !== id));
 	};
 
+	const handleRoomRemove = (id: string) => {
+		setRooms((prev) => prev.filter((r) => r.id !== id));
+	};
+
 	const handleCorridorDraw = (corridor: Corridor) => {
 		setCorridors((prev) => [...prev, corridor]);
 	};
 
 	const handleCorridorRemove = (id: string) => {
 		setCorridors((prev) => prev.filter((c) => c.id !== id));
+	};
+
+	const handleRoomPlace = (room: Room) => {
+		setRooms((prev) => [...prev, room]);
 	};
 
 	const handleGridClick = (x: number, y: number, gridSize = 100) => {
@@ -193,6 +211,19 @@ export default function HospitalMap() {
 				id: crypto.randomUUID(),
 				name: buildingName || "New Building",
 				position: [adjustedX, 0.5, adjustedZ], // Adjusted position
+				size: buildingSize,
+				color: buildingColor,
+			});
+		} else if (toolMode === "room") {
+			const centerX = x - (gridSize / 2 - 0.5);
+			const centerZ = y - (gridSize / 2 - 0.5);
+
+			const adjustedX = centerX - (buildingSize[0] - 1) / 2;
+			const adjustedZ = centerZ - (buildingSize[2] - 1) / 2;
+			handleRoomPlace({
+				id: crypto.randomUUID(),
+				name: buildingName || "New Room",
+				position: [adjustedX, 0.5, adjustedZ],
 				size: buildingSize,
 				color: buildingColor,
 			});
@@ -424,10 +455,14 @@ export default function HospitalMap() {
 					<BuildingRenderer
 						buildings={buildings}
 						corridors={corridors}
-						onBuildingClick={(id) => {
-							console.log(getBuildingById(id));
+						rooms={rooms}
+						onBuildingClick={(id, roomId) => {
 							if (toolMode === "remove") {
-								handleBuildingRemove(id);
+								if (roomId) {
+									handleRoomRemove(roomId);
+								} else {
+									// handleBuildingRemove(id);
+								}
 								return;
 							}
 							if (selectedBuildings.length === 0) {
@@ -498,9 +533,6 @@ export default function HospitalMap() {
 			</KeyboardControls>
 
 			<BuildingTools
-				onBuildingPlace={handleBuildingPlace}
-				onBuildingRemove={handleBuildingRemove}
-				onCorridorDraw={handleCorridorDraw}
 				selectedMode={toolMode}
 				onModeChange={setToolMode}
 				buildingName={buildingName}

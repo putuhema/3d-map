@@ -2,12 +2,9 @@ import type { Building } from "@/data/building";
 import type { Corridor } from "@/data/corridor";
 import { useState } from "react";
 
-type ToolMode = "place" | "remove" | "corridor";
+type ToolMode = "place" | "remove" | "corridor" | "room";
 
 interface BuildingToolsProps {
-	onBuildingPlace: (building: Building) => void;
-	onBuildingRemove: (id: string) => void;
-	onCorridorDraw: (corridor: Corridor) => void;
 	onCorridorRemove: (id: string) => void;
 	selectedMode: ToolMode;
 	onModeChange: (mode: ToolMode) => void;
@@ -207,9 +204,6 @@ function Minimap({
 }
 
 export function BuildingTools({
-	onBuildingPlace,
-	onBuildingRemove,
-	onCorridorDraw,
 	onCorridorRemove,
 	selectedMode,
 	onModeChange,
@@ -224,40 +218,8 @@ export function BuildingTools({
 }: BuildingToolsProps) {
 	const [corridorWidth, setCorridorWidth] = useState(1.2);
 
-	const handlePlaceBuilding = (position: [number, number, number]) => {
-		if (!buildingName) return;
-
-		const building: Building = {
-			id: crypto.randomUUID(),
-			name: buildingName,
-			position,
-			size: buildingSize,
-			color: buildingColor,
-		};
-
-		onBuildingPlace(building);
-	};
-
-	const handleRemoveBuilding = (id: string) => {
-		onBuildingRemove(id);
-	};
-
 	const handleRemoveCorridor = (id: string) => {
 		onCorridorRemove(id);
-	};
-
-	const handleDrawCorridor = (
-		start: [number, number, number],
-		end: [number, number, number],
-	) => {
-		const corridor: Corridor = {
-			id: crypto.randomUUID(),
-			start,
-			end,
-			width: corridorWidth,
-		};
-
-		onCorridorDraw(corridor);
 	};
 
 	return (
@@ -309,9 +271,20 @@ export function BuildingTools({
 					>
 						Corridor
 					</button>
+					<button
+						type="button"
+						className={`rounded-md px-3 py-1.5 font-medium text-sm ${
+							selectedMode === "room"
+								? "bg-emerald-600 text-white"
+								: "bg-gray-200 text-gray-700"
+						}`}
+						onClick={() => onModeChange("room")}
+					>
+						Room
+					</button>
 				</div>
 
-				{selectedMode === "place" && (
+				{(selectedMode === "place" || selectedMode === "room") && (
 					<div className="space-y-3">
 						<div>
 							<label
