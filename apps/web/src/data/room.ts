@@ -117,13 +117,6 @@ export const rooms = [
 		size: [0.8, 0.2, 0.8],
 		color: "#b8e6b8",
 	},
-
-	{
-		name: "P.Gizi",
-		position: [0, 0, 6.5],
-		size: [0.8, 0.2, 0.8],
-		color: "#b8e6b8",
-	},
 	{
 		name: "P.Anak",
 		position: [0, 0, 9.7],
@@ -152,12 +145,6 @@ export const rooms = [
 	{
 		name: "P.Interna",
 		position: [1.5, 0, 8.1],
-		size: [0.8, 0.2, 0.8],
-		color: "#b8e6b8",
-	},
-	{
-		name: "P.Obgyn",
-		position: [1.5, 0, 8.9],
 		size: [0.8, 0.2, 0.8],
 		color: "#b8e6b8",
 	},

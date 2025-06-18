@@ -4,6 +4,13 @@ export const Route = createFileRoute("/")({
 	component: HospitalMap,
 });
 
+import { BuildingRenderer } from "@/components/BuildingRenderer";
+import {
+	type Building,
+	BuildingTools,
+	type Corridor,
+} from "@/components/BuildingTools";
+import { GridSystem } from "@/components/GridSystem";
 import { rooms } from "@/data/room";
 import {
 	Html,
@@ -15,7 +22,7 @@ import {
 	useKeyboardControls,
 } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Color, type Mesh, type MeshStandardMaterial, Vector3 } from "three";
 
 // Keyboard controls map
@@ -120,7 +127,7 @@ function Player({
 			position={[position.x, position.y, position.z]}
 			castShadow
 		>
-			<capsuleGeometry args={[0.3, 1.2]} />
+			<capsuleGeometry args={[0.05, 0.1]} />
 			<meshStandardMaterial color="#4f46e5" />
 		</mesh>
 	);
@@ -618,6 +625,12 @@ function NavigationUI({
 	);
 }
 
+interface GridSystemProps {
+	gridSize: number;
+	cellSize: number;
+	onCellClick: (x: number, y: number) => void;
+}
+
 // Main component
 export default function HospitalMap() {
 	const [hoveredRoom, setHoveredRoom] = useState<string | null>(null);
@@ -629,7 +642,60 @@ export default function HospitalMap() {
 		null,
 	);
 	const [navigationPath, setNavigationPath] = useState<Vector3[]>([]);
+	const [userLocation, setUserLocation] = useState<{
+		lat: number;
+		lng: number;
+	} | null>(null);
+	const [locationError, setLocationError] = useState<string | null>(null);
 	const controlsRef = useRef(null);
+	const [buildings, setBuildings] = useState<Building[]>([]);
+	const [corridors, setCorridors] = useState<Corridor[]>([]);
+	const [toolMode, setToolMode] = useState<"place" | "remove" | "corridor">(
+		"place",
+	);
+	const [isDrawingCorridor, setIsDrawingCorridor] = useState(false);
+	const [corridorStart, setCorridorStart] = useState<
+		[number, number, number] | null
+	>(null);
+	const [buildingName, setBuildingName] = useState("");
+	const [buildingSize, setBuildingSize] = useState<[number, number, number]>([
+		1, 1, 1,
+	]);
+	const [buildingColor, setBuildingColor] = useState("#4f46e5");
+
+	// // Add geolocation detection
+	// useEffect(() => {
+	// 	if ("geolocation" in navigator) {
+	// 		navigator.geolocation.getCurrentPosition(
+	// 			(position) => {
+	// 				const { latitude, longitude } = position.coords;
+	// 				setUserLocation({ lat: latitude, lng: longitude });
+
+	// 				// Convert GPS coordinates to map coordinates
+	// 				// This is a simple conversion - you might want to adjust these values
+	// 				// based on your actual map's coordinate system
+	// 				const mapX = (longitude - 106.8451) * 1000; // Adjust based on your map's center longitude
+	// 				const mapZ = (latitude - -6.2088) * 1000; // Adjust based on your map's center latitude
+
+	// 				// Set player position to user's location
+	// 				setPlayerPosition(new Vector3(mapX, 0.6, mapZ));
+	// 			},
+	// 			(error) => {
+	// 				setLocationError(
+	// 					`Unable to retrieve your location: ${error.message}`,
+	// 				);
+	// 				console.error("Geolocation error:", error);
+	// 			},
+	// 			{
+	// 				enableHighAccuracy: true,
+	// 				timeout: 5000,
+	// 				maximumAge: 0,
+	// 			},
+	// 		);
+	// 	} else {
+	// 		setLocationError("Geolocation is not supported by your browser");
+	// 	}
+	// }, []);
 
 	const handlePlayerPositionChange = (newPosition: Vector3) => {
 		setPlayerPosition(newPosition);
@@ -649,10 +715,65 @@ export default function HospitalMap() {
 		}
 	};
 
+	const handleBuildingPlace = (building: Building) => {
+		setBuildings((prev) => [...prev, building]);
+	};
+
+	const handleBuildingRemove = (id: string) => {
+		setBuildings((prev) => prev.filter((b) => b.id !== id));
+	};
+
+	const handleCorridorDraw = (corridor: Corridor) => {
+		setCorridors((prev) => [...prev, corridor]);
+	};
+
+	const handleGridClick = (x: number, y: number) => {
+		if (toolMode === "place") {
+			// Calculate the center position based on building size
+			const centerX = x - 24.5;
+			const centerZ = y - 24.5;
+
+			// Adjust position to center the building on the grid
+			const adjustedX = centerX - (buildingSize[0] - 1) / 2;
+			const adjustedZ = centerZ - (buildingSize[2] - 1) / 2;
+
+			handleBuildingPlace({
+				id: crypto.randomUUID(),
+				name: buildingName || "New Building",
+				position: [adjustedX, 0.5, adjustedZ], // Adjusted position
+				size: buildingSize,
+				color: buildingColor,
+			});
+		} else if (toolMode === "corridor") {
+			if (!isDrawingCorridor) {
+				setCorridorStart([x - 24.5, 0, y - 24.5]); // Align with grid cells
+				setIsDrawingCorridor(true);
+			} else if (corridorStart) {
+				handleCorridorDraw({
+					id: crypto.randomUUID(),
+					start: corridorStart,
+					end: [x - 24.5, 0, y - 24.5], // Align with grid cells
+					width: 0.9,
+				});
+				setIsDrawingCorridor(false);
+				setCorridorStart(null);
+			}
+		}
+	};
+
 	return (
 		<div className="h-screen w-full">
 			<div className="absolute top-24 left-4 z-10 flex flex-col gap-2">
 				<div className="rounded-md bg-white/90 p-3 shadow-md backdrop-blur-sm">
+					{locationError && (
+						<div className="mb-2 text-red-600 text-sm">{locationError}</div>
+					)}
+					{userLocation && (
+						<div className="mb-2 text-emerald-600 text-sm">
+							Your location: {userLocation.lat.toFixed(6)},{" "}
+							{userLocation.lng.toFixed(6)}
+						</div>
+					)}
 					<div className="mb-2 flex items-center gap-2">
 						<button
 							type="button"
@@ -699,7 +820,27 @@ export default function HospitalMap() {
 			</div>
 
 			<KeyboardControls map={keyboardMap}>
-				<Canvas shadows>
+				<Canvas
+					shadows
+					dpr={[1, 2]} // Limit pixel ratio for better performance
+					gl={{
+						antialias: true,
+						powerPreference: "high-performance",
+						stencil: false,
+						depth: true,
+					}}
+					camera={{
+						fov: 45,
+						near: 0.1,
+						far: 1000,
+						position:
+							viewMode === "walk"
+								? [playerPosition.x, playerPosition.y + 2, playerPosition.z + 3]
+								: cameraPositions[
+										viewMode === "topDown" ? "topDown" : "perspective"
+									].position,
+					}}
+				>
 					<PerspectiveCamera
 						makeDefault
 						position={
@@ -734,17 +875,17 @@ export default function HospitalMap() {
 					<directionalLight position={[-5, 8, -10]} intensity={0.3} />
 
 					{/* Floor */}
-					<mesh
+					{/* <mesh
 						rotation={[-Math.PI / 2, 0, 0]}
 						position={[0, 0, 6]}
 						receiveShadow
 					>
 						<planeGeometry args={[20, 25]} />
 						<meshStandardMaterial color="#f5f5f5" />
-					</mesh>
+					</mesh> */}
 
 					{/* Corridors */}
-					<Corridors />
+					{/* <Corridors /> */}
 
 					{/* Player */}
 					<Player
@@ -754,7 +895,7 @@ export default function HospitalMap() {
 					/>
 
 					{/* Rooms */}
-					{rooms.map((room) => (
+					{/* {rooms.map((room) => (
 						<Room
 							key={room.name}
 							{...room}
@@ -762,10 +903,10 @@ export default function HospitalMap() {
 							onHover={(name: string) => setHoveredRoom(name)}
 							onLeave={() => setHoveredRoom(null)}
 						/>
-					))}
+					))} */}
 
 					{/* Navigation */}
-					<NavigationPath path={navigationPath} />
+					{/* <NavigationPath path={navigationPath} />
 					{viewMode === "walk" && (
 						<NavigationDirections
 							path={navigationPath}
@@ -775,12 +916,45 @@ export default function HospitalMap() {
 					<NavigationUI
 						onSelectDestination={handleSelectDestination}
 						selectedRoom={selectedDestination}
-					/>
+					/> */}
 
 					{/* Info panel */}
-					<InfoPanel hoveredRoom={hoveredRoom} walkMode={viewMode === "walk"} />
+					{/* <InfoPanel hoveredRoom={hoveredRoom} walkMode={viewMode === "walk"} /> */}
+
+					{/* Add BuildingRenderer */}
+					<BuildingRenderer
+						buildings={buildings}
+						corridors={corridors}
+						onBuildingClick={(id) => {
+							if (toolMode === "remove") {
+								handleBuildingRemove(id);
+							}
+						}}
+					/>
+
+					<GridSystem
+						gridSize={50}
+						cellSize={1}
+						onCellClick={(x: number, y: number) => {
+							handleGridClick(x, y);
+						}}
+					/>
 				</Canvas>
 			</KeyboardControls>
+
+			<BuildingTools
+				onBuildingPlace={handleBuildingPlace}
+				onBuildingRemove={handleBuildingRemove}
+				onCorridorDraw={handleCorridorDraw}
+				selectedMode={toolMode}
+				onModeChange={setToolMode}
+				buildingName={buildingName}
+				onBuildingNameChange={setBuildingName}
+				buildingSize={buildingSize}
+				onBuildingSizeChange={setBuildingSize}
+				buildingColor={buildingColor}
+				onBuildingColorChange={setBuildingColor}
+			/>
 		</div>
 	);
 }
