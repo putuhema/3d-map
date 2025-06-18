@@ -107,6 +107,24 @@ export function BuildingRenderer({
 					</mesh>
 				);
 			})}
+
+			{corridors.map((corridor) => {
+				return [0, 1].map((i) => {
+					const point = i === 0 ? corridor.start : corridor.end;
+					return (
+						<mesh
+							key={`${corridor.id}-joint-${i}`}
+							position={[point[0], -0.01, point[2]]}
+							receiveShadow
+						>
+							<cylinderGeometry
+								args={[corridor.width / 2, corridor.width / 2, 0.05, 16]}
+							/>
+							<meshStandardMaterial color="#d4d4d8" />
+						</mesh>
+					);
+				});
+			})}
 		</group>
 	);
 }
