@@ -560,6 +560,35 @@ export default function HospitalMap() {
 	]);
 	const [buildingColor, setBuildingColor] = useState("#4f46e5");
 
+	useEffect(() => {
+		const storedBuildings = localStorage.getItem("buildings");
+		const storedCorridors = localStorage.getItem("corridors");
+		if (storedBuildings) {
+			try {
+				setBuildings(JSON.parse(storedBuildings));
+			} catch (e) {
+				console.warn("Failed to parse stored buildings", e);
+			}
+		}
+		if (storedCorridors) {
+			try {
+				setCorridors(JSON.parse(storedCorridors));
+			} catch (e) {
+				console.warn("Failed to parse stored corridors", e);
+			}
+		}
+	}, []);
+
+	// Save buildings to localStorage whenever they change
+	useEffect(() => {
+		localStorage.setItem("buildings", JSON.stringify(buildings));
+	}, [buildings]);
+
+	// Save corridors to localStorage whenever they change
+	useEffect(() => {
+		localStorage.setItem("corridors", JSON.stringify(corridors));
+	}, [corridors]);
+
 	// Add geolocation detection
 	useEffect(() => {
 		if ("geolocation" in navigator) {
