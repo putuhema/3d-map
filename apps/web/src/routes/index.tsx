@@ -1,3 +1,5 @@
+import { Compass } from "@/components/Compass";
+import { CoordinateDisplay } from "@/components/CoordinateDisplay";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
@@ -541,6 +543,7 @@ export default function HospitalMap() {
 		lat: number;
 		lng: number;
 	} | null>(null);
+	console.log(userLocation);
 	const [locationError, setLocationError] = useState<string | null>(null);
 	const [buildings, setBuildings] = useState<Building[]>([]);
 	const [corridors, setCorridors] = useState<Corridor[]>([]);
@@ -557,39 +560,40 @@ export default function HospitalMap() {
 	]);
 	const [buildingColor, setBuildingColor] = useState("#4f46e5");
 
-	// // Add geolocation detection
-	// useEffect(() => {
-	// 	if ("geolocation" in navigator) {
-	// 		navigator.geolocation.getCurrentPosition(
-	// 			(position) => {
-	// 				const { latitude, longitude } = position.coords;
-	// 				setUserLocation({ lat: latitude, lng: longitude });
+	// Add geolocation detection
+	useEffect(() => {
+		if ("geolocation" in navigator) {
+			navigator.geolocation.getCurrentPosition(
+				(position) => {
+					const { latitude, longitude } = position.coords;
+					console.log(latitude, longitude);
+					setUserLocation({ lat: latitude, lng: longitude });
 
-	// 				// Convert GPS coordinates to map coordinates
-	// 				// This is a simple conversion - you might want to adjust these values
-	// 				// based on your actual map's coordinate system
-	// 				const mapX = (longitude - 106.8451) * 1000; // Adjust based on your map's center longitude
-	// 				const mapZ = (latitude - -6.2088) * 1000; // Adjust based on your map's center latitude
+					// Convert GPS coordinates to map coordinates
+					// This is a simple conversion - you might want to adjust these values
+					// based on your actual map's coordinate system
+					const mapX = (longitude - 106.8451) * 1000; // Adjust based on your map's center longitude
+					const mapZ = (latitude - -6.2088) * 1000; // Adjust based on your map's center latitude
 
-	// 				// Set player position to user's location
-	// 				setPlayerPosition(new Vector3(mapX, 0.6, mapZ));
-	// 			},
-	// 			(error) => {
-	// 				setLocationError(
-	// 					`Unable to retrieve your location: ${error.message}`,
-	// 				);
-	// 				console.error("Geolocation error:", error);
-	// 			},
-	// 			{
-	// 				enableHighAccuracy: true,
-	// 				timeout: 5000,
-	// 				maximumAge: 0,
-	// 			},
-	// 		);
-	// 	} else {
-	// 		setLocationError("Geolocation is not supported by your browser");
-	// 	}
-	// }, []);
+					// Set player position to user's location
+					setPlayerPosition(new Vector3(mapX, 0.6, mapZ));
+				},
+				(error) => {
+					setLocationError(
+						`Unable to retrieve your location: ${error.message}`,
+					);
+					console.error("Geolocation error:", error);
+				},
+				{
+					enableHighAccuracy: true,
+					timeout: 5000,
+					maximumAge: 0,
+				},
+			);
+		} else {
+			setLocationError("Geolocation is not supported by your browser");
+		}
+	}, []);
 
 	const handlePlayerPositionChange = (newPosition: Vector3) => {
 		setPlayerPosition(newPosition);
@@ -850,6 +854,19 @@ export default function HospitalMap() {
 				corridors={corridors}
 				onCorridorRemove={handleCorridorRemove}
 			/>
+
+			{/* Compass overlay */}
+			<div className="absolute top-6 right-6 z-20">
+				<Compass direction={0} />
+			</div>
+			{/* Coordinate display overlay */}
+			<div className="absolute right-6 bottom-6 z-20">
+				<CoordinateDisplay
+					x={playerPosition.x}
+					y={playerPosition.y}
+					z={playerPosition.z}
+				/>
+			</div>
 		</div>
 	);
 }
