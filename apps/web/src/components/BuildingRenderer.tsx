@@ -1,5 +1,6 @@
 import type { Building } from "@/data/building";
 import type { Corridor } from "@/data/corridor";
+import { Line } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import { MeshStandardMaterial, Vector3 } from "three";
@@ -31,14 +32,6 @@ export function BuildingRenderer({
 
 	const corridorMaterial = useMemo(
 		() => new MeshStandardMaterial({ color: "#d4d4d8" }),
-		[],
-	);
-	const highlightedMaterial = useMemo(
-		() => new MeshStandardMaterial({ color: "#22d3ee" }),
-		[],
-	);
-	const highlightedBuildingMaterial = useMemo(
-		() => new MeshStandardMaterial({ color: "#f59e42" }),
 		[],
 	);
 
@@ -91,20 +84,30 @@ export function BuildingRenderer({
 				if (length === 0) return null;
 
 				return (
-					<mesh
-						key={corridor.id}
-						position={[midPoint.x, 0.01, midPoint.z]}
-						rotation={[-Math.PI / 2, 0, angle]}
-						scale={[1, 1, 1]}
-						receiveShadow
-						material={
-							highlightedCorridorIds.includes(corridor.id)
-								? highlightedMaterial
-								: corridorMaterial
-						}
-					>
-						<planeGeometry args={[length, corridor.width]} />
-					</mesh>
+					<>
+						<mesh
+							key={corridor.id}
+							position={[midPoint.x, 0.01, midPoint.z]}
+							rotation={[-Math.PI / 2, 0, angle]}
+							scale={[1, 1, 1]}
+							receiveShadow
+							material={corridorMaterial}
+						>
+							<planeGeometry args={[length, corridor.width]} />
+						</mesh>
+						{highlightedCorridorIds.includes(corridor.id) && (
+							<Line
+								key={`${corridor.id}-line`}
+								points={[
+									[corridor.start[0], 0.05, corridor.start[2]],
+									[corridor.end[0], 0.05, corridor.end[2]],
+								]}
+								color="#22d3ee"
+								lineWidth={3}
+								dashed={false}
+							/>
+						)}
+					</>
 				);
 			})}
 
@@ -114,7 +117,7 @@ export function BuildingRenderer({
 					return (
 						<mesh
 							key={`${corridor.id}-joint-${i}`}
-							position={[point[0], -0.01, point[2]]}
+							position={[point[0], -0.001, point[2]]}
 							receiveShadow
 						>
 							<cylinderGeometry
