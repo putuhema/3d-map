@@ -1,7 +1,6 @@
-import { Line } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import { BoxGeometry, MeshStandardMaterial, Vector3 } from "three";
+import { MeshStandardMaterial, Vector3 } from "three";
 import type { Mesh } from "three";
 import type { Building, Corridor } from "./BuildingTools";
 
@@ -23,7 +22,6 @@ export function BuildingRenderer({
 		onBuildingClick?.(id);
 	};
 
-	// Memoize corridor materials
 	const corridorMaterial = useMemo(
 		() => new MeshStandardMaterial({ color: "#d4d4d8" }),
 		[],
@@ -54,7 +52,6 @@ export function BuildingRenderer({
 			))}
 
 			{corridors.map((corridor) => {
-				// Always render corridors flat on the x/z plane
 				const startXZ = new Vector3(corridor.start[0], 0, corridor.start[2]);
 				const endXZ = new Vector3(corridor.end[0], 0, corridor.end[2]);
 				const length = startXZ.distanceTo(endXZ);
@@ -64,15 +61,7 @@ export function BuildingRenderer({
 				const direction = new Vector3().subVectors(endXZ, startXZ).normalize();
 				const angle = Math.atan2(direction.z, direction.x);
 
-				console.log("Rendering corridor:", {
-					start: corridor.start,
-					end: corridor.end,
-					startXZ,
-					endXZ,
-					length,
-				});
-
-				if (length === 0) return null; // Skip degenerate/vertical corridors
+				if (length === 0) return null;
 
 				return (
 					<mesh

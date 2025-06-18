@@ -17,6 +17,7 @@ import {
 	KeyboardControls,
 	Line,
 	OrbitControls,
+	OrthographicCamera,
 	PerspectiveCamera,
 	Text,
 	useKeyboardControls,
@@ -209,107 +210,6 @@ function Room({
 	);
 }
 
-// Corridors
-function Corridors() {
-	return (
-		<group>
-			{/* Main horizontal corridors */}
-			<mesh
-				position={[0, 0.01, 0]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				receiveShadow
-			>
-				<planeGeometry args={[12, 1.2]} />
-				<meshStandardMaterial color="#d4d4d8" />
-			</mesh>
-
-			<mesh
-				position={[0, 0.01, 3]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				receiveShadow
-			>
-				<planeGeometry args={[12, 1.2]} />
-				<meshStandardMaterial color="#d4d4d8" />
-			</mesh>
-
-			<mesh
-				position={[0, 0.01, 6]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				receiveShadow
-			>
-				<planeGeometry args={[12, 1.2]} />
-				<meshStandardMaterial color="#d4d4d8" />
-			</mesh>
-
-			<mesh
-				position={[0, 0.01, 9]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				receiveShadow
-			>
-				<planeGeometry args={[12, 1.2]} />
-				<meshStandardMaterial color="#d4d4d8" />
-			</mesh>
-
-			<mesh
-				position={[0, 0.01, 12]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				receiveShadow
-			>
-				<planeGeometry args={[8, 1.2]} />
-				<meshStandardMaterial color="#d4d4d8" />
-			</mesh>
-
-			{/* Main vertical corridors */}
-			<mesh
-				position={[-4.5, 0.01, 4.5]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				receiveShadow
-			>
-				<planeGeometry args={[1.2, 9]} />
-				<meshStandardMaterial color="#d4d4d8" />
-			</mesh>
-
-			<mesh
-				position={[-1.5, 0.01, 4.5]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				receiveShadow
-			>
-				<planeGeometry args={[1.2, 9]} />
-				<meshStandardMaterial color="#d4d4d8" />
-			</mesh>
-
-			<mesh
-				position={[1.5, 0.01, 4.5]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				receiveShadow
-			>
-				<planeGeometry args={[1.2, 9]} />
-				<meshStandardMaterial color="#d4d4d8" />
-			</mesh>
-
-			<mesh
-				position={[0, 0.01, 10.5]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				receiveShadow
-			>
-				<planeGeometry args={[1.2, 6]} />
-				<meshStandardMaterial color="#d4d4d8" />
-			</mesh>
-
-			{/* Entrance pathway */}
-			<mesh
-				position={[0, 0.01, 14]}
-				rotation={[-Math.PI / 2, 0, 0]}
-				receiveShadow
-			>
-				<planeGeometry args={[3, 2]} />
-				<meshStandardMaterial color="#d4d4d8" />
-			</mesh>
-		</group>
-	);
-}
-
-// Info panel component
 function InfoPanel({
 	hoveredRoom,
 	walkMode,
@@ -721,13 +621,15 @@ export default function HospitalMap() {
 		setCorridors((prev) => [...prev, corridor]);
 	};
 
+	const handleCorridorRemove = (id: string) => {
+		setCorridors((prev) => prev.filter((c) => c.id !== id));
+	};
+
 	const handleGridClick = (x: number, y: number) => {
 		if (toolMode === "place") {
-			// Calculate the center position based on building size
 			const centerX = x - 24.5;
 			const centerZ = y - 24.5;
 
-			// Adjust position to center the building on the grid
 			const adjustedX = centerX - (buildingSize[0] - 1) / 2;
 			const adjustedZ = centerZ - (buildingSize[2] - 1) / 2;
 
@@ -739,7 +641,6 @@ export default function HospitalMap() {
 				color: buildingColor,
 			});
 		} else if (toolMode === "corridor") {
-			console.log("Drawing corridor", isDrawingCorridor, { x, y });
 			if (!isDrawingCorridor) {
 				setCorridorStart([x - 24.5, 0, y - 24.5]); // y is always 0
 				setIsDrawingCorridor(true);
@@ -817,7 +718,7 @@ export default function HospitalMap() {
 			<KeyboardControls map={keyboardMap}>
 				<Canvas
 					shadows
-					dpr={[1, 2]} // Limit pixel ratio for better performance
+					dpr={[1, 2]}
 					gl={{
 						antialias: true,
 						powerPreference: "high-performance",
@@ -877,9 +778,6 @@ export default function HospitalMap() {
 						<planeGeometry args={[20, 25]} />
 						<meshStandardMaterial color="#f5f5f5" />
 					</mesh> */}
-
-					{/* Corridors */}
-					{/* <Corridors /> */}
 
 					{/* Player */}
 					<Player
@@ -948,6 +846,9 @@ export default function HospitalMap() {
 				onBuildingSizeChange={setBuildingSize}
 				buildingColor={buildingColor}
 				onBuildingColorChange={setBuildingColor}
+				buildings={buildings}
+				corridors={corridors}
+				onCorridorRemove={handleCorridorRemove}
 			/>
 		</div>
 	);

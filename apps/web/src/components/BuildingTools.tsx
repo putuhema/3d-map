@@ -21,6 +21,7 @@ interface BuildingToolsProps {
 	onBuildingPlace: (building: Building) => void;
 	onBuildingRemove: (id: string) => void;
 	onCorridorDraw: (corridor: Corridor) => void;
+	onCorridorRemove: (id: string) => void;
 	selectedMode: ToolMode;
 	onModeChange: (mode: ToolMode) => void;
 	buildingName: string;
@@ -29,12 +30,134 @@ interface BuildingToolsProps {
 	onBuildingSizeChange: (size: [number, number, number]) => void;
 	buildingColor: string;
 	onBuildingColorChange: (color: string) => void;
+	buildings: Building[];
+	corridors: Corridor[];
+}
+
+function Minimap({
+	buildings,
+	corridors,
+	selectedMode,
+	onCorridorRemove,
+	gridSize,
+	cellSize,
+}: {
+	buildings: Building[];
+	corridors: Corridor[];
+	selectedMode: ToolMode;
+	onCorridorRemove: (id: string) => void;
+	gridSize: number;
+	cellSize: number;
+}) {
+	// Calculate minimap size to cover the grid
+	const minimapSize = 120; // px (container size)
+	const gridWorldSize = gridSize * cellSize;
+	const scale = minimapSize / gridWorldSize;
+	const offset = minimapSize / 2;
+
+	return (
+		<svg
+			width={minimapSize}
+			height={minimapSize}
+			className="mb-4 rounded border bg-gray-50"
+			style={{ display: "block" }}
+		>
+			<title>Minimap of buildings and corridors</title>
+			{/* Draw grid border */}
+			<rect
+				x={0}
+				y={0}
+				width={minimapSize}
+				height={minimapSize}
+				fill="none"
+				stroke="#e5e7eb"
+				strokeWidth={1}
+			/>
+			{Array.from({ length: gridSize + 1 }).map((_, i) => (
+				<g
+					key={`minimap-g-${
+						// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+						i
+					}`}
+				>
+					{/* Vertical lines */}
+					<line
+						key={`minimap-v-${
+							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+							i
+						}`}
+						x1={i * (minimapSize / gridSize)}
+						y1={0}
+						x2={i * (minimapSize / gridSize)}
+						y2={minimapSize}
+						stroke="#e5e7eb"
+						strokeWidth={0.5}
+					/>
+					{/* Horizontal lines */}
+					<line
+						key={`minimap-h-${
+							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+							i
+						}`}
+						x1={0}
+						y1={i * (minimapSize / gridSize)}
+						x2={minimapSize}
+						y2={i * (minimapSize / gridSize)}
+						stroke="#e5e7eb"
+						strokeWidth={0.5}
+					/>
+				</g>
+			))}
+			{corridors.map((c) => (
+				<line
+					key={c.id}
+					x1={offset + c.start[0] * scale}
+					y1={offset - c.start[2] * scale}
+					x2={offset + c.end[0] * scale}
+					y2={offset - c.end[2] * scale}
+					stroke="#a3a3a3"
+					strokeWidth={c.width * scale * 0.5}
+					strokeLinecap="round"
+					opacity={0.7}
+					style={{ cursor: selectedMode === "remove" ? "pointer" : undefined }}
+					onClick={
+						selectedMode === "remove" ? () => onCorridorRemove(c.id) : undefined
+					}
+					tabIndex={selectedMode === "remove" ? 0 : undefined}
+					onKeyDown={
+						selectedMode === "remove"
+							? (e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										e.preventDefault();
+										onCorridorRemove(c.id);
+									}
+								}
+							: undefined
+					}
+				/>
+			))}
+			{buildings.map((b) => (
+				<rect
+					key={b.id}
+					x={offset + (b.position[0] - b.size[0] / 2) * scale}
+					y={offset - (b.position[2] + b.size[2] / 2) * scale}
+					width={b.size[0] * scale}
+					height={b.size[2] * scale}
+					fill={b.color}
+					stroke="#333"
+					strokeWidth={0.5}
+					opacity={0.85}
+				/>
+			))}
+		</svg>
+	);
 }
 
 export function BuildingTools({
 	onBuildingPlace,
 	onBuildingRemove,
 	onCorridorDraw,
+	onCorridorRemove,
 	selectedMode,
 	onModeChange,
 	buildingName,
@@ -43,6 +166,8 @@ export function BuildingTools({
 	onBuildingSizeChange,
 	buildingColor,
 	onBuildingColorChange,
+	buildings,
+	corridors,
 }: BuildingToolsProps) {
 	const [corridorWidth, setCorridorWidth] = useState(1.2);
 
@@ -62,6 +187,10 @@ export function BuildingTools({
 
 	const handleRemoveBuilding = (id: string) => {
 		onBuildingRemove(id);
+	};
+
+	const handleRemoveCorridor = (id: string) => {
+		onCorridorRemove(id);
 	};
 
 	const handleDrawCorridor = (
@@ -84,6 +213,14 @@ export function BuildingTools({
 				<h3 className="mb-4 font-semibold text-emerald-700 text-lg">
 					Building Tools
 				</h3>
+				<Minimap
+					buildings={buildings}
+					corridors={corridors}
+					selectedMode={selectedMode}
+					onCorridorRemove={handleRemoveCorridor}
+					gridSize={50}
+					cellSize={1}
+				/>
 
 				<div className="mb-4 flex gap-2">
 					<button
@@ -212,7 +349,6 @@ export function BuildingTools({
 					</div>
 				)}
 
-				{/* Corridor Settings */}
 				{selectedMode === "corridor" && (
 					<div>
 						<label
@@ -238,7 +374,9 @@ export function BuildingTools({
 					{selectedMode === "place" && (
 						<p>Click on the grid to place a building</p>
 					)}
-					{selectedMode === "remove" && <p>Click on a building to remove it</p>}
+					{selectedMode === "remove" && (
+						<p>Click on a building or corridor to remove it</p>
+					)}
 					{selectedMode === "corridor" && (
 						<p>Click and drag to draw a corridor</p>
 					)}
