@@ -675,14 +675,14 @@ export default function HospitalMap() {
 			});
 		} else if (toolMode === "corridor") {
 			if (!isDrawingCorridor) {
-				setCorridorStart([x - 24.5, 0, y - 24.5]); // y is always 0
+				setCorridorStart([x - 24.5, 0, y - 24.5]);
 				setIsDrawingCorridor(true);
 			} else if (corridorStart) {
 				handleCorridorDraw({
 					id: crypto.randomUUID(),
-					start: [corridorStart[0], 0, corridorStart[2]], // force y=0
-					end: [x - 24.5, 0, y - 24.5], // force y=0
-					width: 0.9,
+					start: [corridorStart[0], 0, corridorStart[2]],
+					end: [x - 24.5, 0, y - 24.5],
+					width: 0.5,
 				});
 				setIsDrawingCorridor(false);
 				setCorridorStart(null);
@@ -819,17 +819,6 @@ export default function HospitalMap() {
 						walkMode={viewMode === "walk"}
 					/>
 
-					{/* Rooms */}
-					{/* {rooms.map((room) => (
-						<Room
-							key={room.name}
-							{...room}
-							isHovered={hoveredRoom === room.name}
-							onHover={(name: string) => setHoveredRoom(name)}
-							onLeave={() => setHoveredRoom(null)}
-						/>
-					))} */}
-
 					{/* Navigation */}
 					{/* <NavigationPath path={navigationPath} />
 					{viewMode === "walk" && (
@@ -846,7 +835,6 @@ export default function HospitalMap() {
 					{/* Info panel */}
 					{/* <InfoPanel hoveredRoom={hoveredRoom} walkMode={viewMode === "walk"} /> */}
 
-					{/* Add BuildingRenderer */}
 					<BuildingRenderer
 						buildings={buildings}
 						corridors={corridors}

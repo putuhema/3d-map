@@ -52,104 +52,170 @@ function Minimap({
 	// Calculate minimap size to cover the grid
 	const minimapSize = 120; // px (container size)
 	const gridWorldSize = gridSize * cellSize;
-	const scale = minimapSize / gridWorldSize;
+	const baseScale = minimapSize / gridWorldSize;
 	const offset = minimapSize / 2;
 
+	// --- Zoom and Pan State ---
+	const [zoom, setZoom] = useState(1);
+	const [pan, setPan] = useState({ x: 0, y: 0 });
+	const [dragging, setDragging] = useState(false);
+	const [lastPos, setLastPos] = useState<{ x: number; y: number } | null>(null);
+
+	const handleZoomIn = () => setZoom((z) => Math.min(z * 1.25, 10));
+	const handleZoomOut = () => setZoom((z) => Math.max(z / 1.25, 0.2));
+	const handleReset = () => {
+		setZoom(1);
+		setPan({ x: 0, y: 0 });
+	};
+
+	const handleMouseDown = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+		setDragging(true);
+		setLastPos({ x: e.clientX, y: e.clientY });
+	};
+	const handleMouseMove = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+		if (!dragging || !lastPos) return;
+		const dx = e.clientX - lastPos.x;
+		const dy = e.clientY - lastPos.y;
+		setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+		setLastPos({ x: e.clientX, y: e.clientY });
+	};
+	const handleMouseUp = () => {
+		setDragging(false);
+		setLastPos(null);
+	};
+	const handleMouseLeave = () => {
+		setDragging(false);
+		setLastPos(null);
+	};
+
+	// --- Transform for zoom and pan ---
+	const transform = `translate(${pan.x},${pan.y}) scale(${zoom})`;
+
 	return (
-		<svg
-			width={minimapSize}
-			height={minimapSize}
-			className="mb-4 rounded border bg-gray-50"
-			style={{ display: "block" }}
-		>
-			<title>Minimap of buildings and corridors</title>
-			{/* Draw grid border */}
-			<rect
-				x={0}
-				y={0}
+		<div className="mb-4">
+			<div className="mb-1 flex justify-end gap-1">
+				<button
+					type="button"
+					className="rounded border bg-white px-2 py-0.5 text-xs hover:bg-gray-100"
+					onClick={handleZoomIn}
+					title="Zoom in"
+				>
+					+
+				</button>
+				<button
+					type="button"
+					className="rounded border bg-white px-2 py-0.5 text-xs hover:bg-gray-100"
+					onClick={handleZoomOut}
+					title="Zoom out"
+				>
+					-
+				</button>
+				<button
+					type="button"
+					className="rounded border bg-white px-2 py-0.5 text-xs hover:bg-gray-100"
+					onClick={handleReset}
+					title="Reset view"
+				>
+					⟳
+				</button>
+			</div>
+			<svg
 				width={minimapSize}
 				height={minimapSize}
-				fill="none"
-				stroke="#e5e7eb"
-				strokeWidth={1}
-			/>
-			{Array.from({ length: gridSize + 1 }).map((_, i) => (
-				<g
-					key={`minimap-g-${
-						// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-						i
-					}`}
-				>
-					{/* Vertical lines */}
-					<line
-						key={`minimap-v-${
-							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-							i
-						}`}
-						x1={i * (minimapSize / gridSize)}
-						y1={0}
-						x2={i * (minimapSize / gridSize)}
-						y2={minimapSize}
-						stroke="#e5e7eb"
-						strokeWidth={0.5}
-					/>
-					{/* Horizontal lines */}
-					<line
-						key={`minimap-h-${
-							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-							i
-						}`}
-						x1={0}
-						y1={i * (minimapSize / gridSize)}
-						x2={minimapSize}
-						y2={i * (minimapSize / gridSize)}
-						stroke="#e5e7eb"
-						strokeWidth={0.5}
-					/>
-				</g>
-			))}
-			{corridors.map((c) => (
-				<line
-					key={c.id}
-					x1={offset + c.start[0] * scale}
-					y1={offset - c.start[2] * scale}
-					x2={offset + c.end[0] * scale}
-					y2={offset - c.end[2] * scale}
-					stroke="#a3a3a3"
-					strokeWidth={c.width * scale * 0.5}
-					strokeLinecap="round"
-					opacity={0.7}
-					style={{ cursor: selectedMode === "remove" ? "pointer" : undefined }}
-					onClick={
-						selectedMode === "remove" ? () => onCorridorRemove(c.id) : undefined
-					}
-					tabIndex={selectedMode === "remove" ? 0 : undefined}
-					onKeyDown={
-						selectedMode === "remove"
-							? (e) => {
-									if (e.key === "Enter" || e.key === " ") {
-										e.preventDefault();
-										onCorridorRemove(c.id);
-									}
-								}
-							: undefined
-					}
-				/>
-			))}
-			{buildings.map((b) => (
+				className="cursor-grab rounded border bg-gray-50"
+				style={{ display: "block" }}
+				onMouseDown={handleMouseDown}
+				onMouseMove={handleMouseMove}
+				onMouseUp={handleMouseUp}
+				onMouseLeave={handleMouseLeave}
+			>
+				<title>Minimap of buildings and corridors</title>
+				{/* Draw grid border */}
 				<rect
-					key={b.id}
-					x={offset + (b.position[0] - b.size[0] / 2) * scale}
-					y={offset - (b.position[2] + b.size[2] / 2) * scale}
-					width={b.size[0] * scale}
-					height={b.size[2] * scale}
-					fill={b.color}
-					stroke="#333"
-					strokeWidth={0.5}
-					opacity={0.85}
+					x={0}
+					y={0}
+					width={minimapSize}
+					height={minimapSize}
+					fill="none"
+					stroke="#e5e7eb"
+					strokeWidth={1}
 				/>
-			))}
-		</svg>
+				<g transform={transform}>
+					{/* Grid lines */}
+					{/* biome-ignore lint/suspicious/noArrayIndexKey: grid lines are static and index is safe as key */}
+					{Array.from({ length: gridSize + 1 }).map((_, i) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: grid lines are static and index is safe as key
+						<g key={`minimap-g-${gridSize}-${i}`}>
+							{/* Vertical lines */}
+							<line
+								x1={i * (minimapSize / gridSize)}
+								y1={0}
+								x2={i * (minimapSize / gridSize)}
+								y2={minimapSize}
+								stroke="#e5e7eb"
+								strokeWidth={0.5}
+							/>
+							{/* Horizontal lines */}
+							<line
+								x1={0}
+								y1={i * (minimapSize / gridSize)}
+								x2={minimapSize}
+								y2={i * (minimapSize / gridSize)}
+								stroke="#e5e7eb"
+								strokeWidth={0.5}
+							/>
+						</g>
+					))}
+					{/* Corridors */}
+					{corridors.map((c) => (
+						<line
+							key={c.id}
+							x1={offset + c.start[0] * baseScale}
+							y1={offset - c.start[2] * baseScale}
+							x2={offset + c.end[0] * baseScale}
+							y2={offset - c.end[2] * baseScale}
+							stroke="#a3a3a3"
+							strokeWidth={c.width * baseScale * 0.5}
+							strokeLinecap="round"
+							opacity={0.7}
+							style={{
+								cursor: selectedMode === "remove" ? "pointer" : undefined,
+							}}
+							onClick={
+								selectedMode === "remove"
+									? () => onCorridorRemove(c.id)
+									: undefined
+							}
+							tabIndex={selectedMode === "remove" ? 0 : undefined}
+							onKeyDown={
+								selectedMode === "remove"
+									? (e) => {
+											if (e.key === "Enter" || e.key === " ") {
+												e.preventDefault();
+												onCorridorRemove(c.id);
+											}
+										}
+									: undefined
+							}
+						/>
+					))}
+					{/* Buildings */}
+					{buildings.map((b) => (
+						<rect
+							key={b.id}
+							x={offset + (b.position[0] - b.size[0] / 2) * baseScale}
+							y={offset - (b.position[2] + b.size[2] / 2) * baseScale}
+							width={b.size[0] * baseScale}
+							height={b.size[2] * baseScale}
+							fill={b.color}
+							stroke="#333"
+							strokeWidth={0.5}
+							opacity={0.85}
+						/>
+					))}
+				</g>
+			</svg>
+		</div>
 	);
 }
 
