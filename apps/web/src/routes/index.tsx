@@ -658,10 +658,10 @@ export default function HospitalMap() {
 		setCorridors((prev) => prev.filter((c) => c.id !== id));
 	};
 
-	const handleGridClick = (x: number, y: number) => {
+	const handleGridClick = (x: number, y: number, gridSize = 100) => {
 		if (toolMode === "place") {
-			const centerX = x - 24.5;
-			const centerZ = y - 24.5;
+			const centerX = x - (gridSize / 2 - 0.5);
+			const centerZ = y - (gridSize / 2 - 0.5);
 
 			const adjustedX = centerX - (buildingSize[0] - 1) / 2;
 			const adjustedZ = centerZ - (buildingSize[2] - 1) / 2;
@@ -675,13 +675,17 @@ export default function HospitalMap() {
 			});
 		} else if (toolMode === "corridor") {
 			if (!isDrawingCorridor) {
-				setCorridorStart([x - 24.5, 0, y - 24.5]);
+				setCorridorStart([
+					x - (gridSize / 2 - 0.5),
+					0,
+					y - (gridSize / 2 - 0.5),
+				]);
 				setIsDrawingCorridor(true);
 			} else if (corridorStart) {
 				handleCorridorDraw({
 					id: crypto.randomUUID(),
 					start: [corridorStart[0], 0, corridorStart[2]],
-					end: [x - 24.5, 0, y - 24.5],
+					end: [x - (gridSize / 2 - 0.5), 0, y - (gridSize / 2 - 0.5)],
 					width: 0.5,
 				});
 				setIsDrawingCorridor(false);
@@ -846,10 +850,10 @@ export default function HospitalMap() {
 					/>
 
 					<GridSystem
-						gridSize={50}
+						gridSize={100}
 						cellSize={1}
 						onCellClick={(x: number, y: number) => {
-							handleGridClick(x, y);
+							handleGridClick(x, y, 100);
 						}}
 					/>
 				</Canvas>

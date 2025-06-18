@@ -284,7 +284,7 @@ export function BuildingTools({
 					corridors={corridors}
 					selectedMode={selectedMode}
 					onCorridorRemove={handleRemoveCorridor}
-					gridSize={50}
+					gridSize={100}
 					cellSize={1}
 				/>
 
