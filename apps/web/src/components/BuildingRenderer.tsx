@@ -47,8 +47,6 @@ export function BuildingRenderer({
 						color={building.color}
 						metalness={0.1}
 						roughness={0.5}
-						transparent={true}
-						opacity={0.5}
 					/>
 				</mesh>
 			))}

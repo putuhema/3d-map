@@ -836,7 +836,6 @@ export default function HospitalMap() {
 						selectedRoom={selectedDestination}
 					/> */}
 
-					{/* Info panel */}
 					{/* <InfoPanel hoveredRoom={hoveredRoom} walkMode={viewMode === "walk"} /> */}
 
 					<BuildingRenderer
@@ -853,13 +852,13 @@ export default function HospitalMap() {
 						gridSize={100}
 						cellSize={1}
 						onCellClick={(x: number, y: number) => {
-							handleGridClick(x, y, 100);
+							// handleGridClick(x, y, 100);
 						}}
 					/>
 				</Canvas>
 			</KeyboardControls>
 
-			<BuildingTools
+			{/* <BuildingTools
 				onBuildingPlace={handleBuildingPlace}
 				onBuildingRemove={handleBuildingRemove}
 				onCorridorDraw={handleCorridorDraw}
@@ -874,13 +873,11 @@ export default function HospitalMap() {
 				buildings={buildings}
 				corridors={corridors}
 				onCorridorRemove={handleCorridorRemove}
-			/>
+			/> */}
 
-			{/* Compass overlay */}
 			<div className="absolute top-6 right-6 z-20">
 				<Compass direction={0} />
 			</div>
-			{/* Coordinate display overlay */}
 			<div className="absolute right-6 bottom-6 z-20">
 				<CoordinateDisplay
 					x={playerPosition.x}
