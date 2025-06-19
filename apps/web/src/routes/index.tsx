@@ -125,12 +125,6 @@ export default function HospitalMap() {
 						showBuildings={showBuildings}
 						showRooms={showRooms}
 					/>
-					<GridSystem
-						gridSize={100}
-						cellSize={1}
-						onCellClick={() => {}}
-						onCellHover={() => {}}
-					/>
 				</Canvas>
 			</div>
 			<MapControl />

@@ -235,9 +235,9 @@ export function AutoZoomCamera({
 				onChange={handleCameraChange}
 				// Configure touch sensitivity for better mobile experience
 				panSpeed={isMobileDevice ? 1.5 : 1.0}
-				// Enable one-finger panning on mobile (similar to right-click on desktop)
+				// Use ROTATE for both mobile and desktop to allow both rotation and panning
 				touches={{
-					ONE: isMobileDevice ? TOUCH.PAN : TOUCH.ROTATE,
+					ONE: TOUCH.ROTATE,
 					TWO: TOUCH.DOLLY_PAN,
 				}}
 			/>
