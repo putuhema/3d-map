@@ -4,7 +4,7 @@ import type { Room } from "@/data/room";
 import { Html, Line } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MeshStandardMaterial, Vector3 } from "three";
 import type { Mesh } from "three";
 
@@ -35,6 +35,11 @@ export function BuildingRenderer({
 	const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
 	const pathIndicatorRef = useRef<Mesh>(null);
 	const animationTime = useRef(0);
+
+	// Reset animation time when path changes
+	useEffect(() => {
+		animationTime.current = 0;
+	}, [highlightedCorridorIds]);
 
 	const roomsByBuilding = useMemo(() => {
 		const grouped = new Map<string, Room[]>();
@@ -83,70 +88,89 @@ export function BuildingRenderer({
 				}
 			}
 
-			// Debug logging (remove after fixing)
-			if (Math.floor(animationTime.current * 10) % 120 === 0) {
-				console.log("Path Debug:", {
-					highlightedCorridorIds,
-					corridorCount: highlightedCorridors.length,
-					corridors: highlightedCorridors.map((c) => ({
-						id: c.id,
-						start: c.start,
-						end: c.end,
-					})),
-				});
-			}
-
 			if (highlightedCorridors.length > 0) {
 				// Create a continuous path by following each corridor's geometry
 				const pathPoints: Vector3[] = [];
 
-				// Add start of first corridor
-				pathPoints.push(
-					new Vector3(
-						highlightedCorridors[0].start[0],
-						0,
-						highlightedCorridors[0].start[2],
-					),
-				);
+				// First, let's create a map of points to their connected corridors
+				const pointConnections = new Map<
+					string,
+					{ pos: Vector3; corridors: Corridor[] }
+				>();
 
-				// Add end of first corridor
-				pathPoints.push(
-					new Vector3(
-						highlightedCorridors[0].end[0],
-						0,
-						highlightedCorridors[0].end[2],
-					),
-				);
+				// Helper to get point key
+				const getPointKey = (x: number, z: number) => `${x},${z}`;
 
-				// For subsequent corridors, check if they connect to the previous one
-				for (let i = 1; i < highlightedCorridors.length; i++) {
-					const prevCorridor = highlightedCorridors[i - 1];
-					const currentCorridor = highlightedCorridors[i];
+				// Build connections map
+				for (const corridor of highlightedCorridors) {
+					const startKey = getPointKey(corridor.start[0], corridor.start[2]);
+					const endKey = getPointKey(corridor.end[0], corridor.end[2]);
 
-					// Check if current corridor starts where previous one ends
-					const prevEnd = new Vector3(
-						prevCorridor.end[0],
-						0,
-						prevCorridor.end[2],
-					);
-					const currentStart = new Vector3(
-						currentCorridor.start[0],
-						0,
-						currentCorridor.start[2],
-					);
-					const currentEnd = new Vector3(
-						currentCorridor.end[0],
-						0,
-						currentCorridor.end[2],
-					);
-
-					// If they don't connect, add a connecting line
-					if (prevEnd.distanceTo(currentStart) > 0.1) {
-						pathPoints.push(currentStart);
+					if (!pointConnections.has(startKey)) {
+						pointConnections.set(startKey, {
+							pos: new Vector3(corridor.start[0], 0, corridor.start[2]),
+							corridors: [],
+						});
+					}
+					if (!pointConnections.has(endKey)) {
+						pointConnections.set(endKey, {
+							pos: new Vector3(corridor.end[0], 0, corridor.end[2]),
+							corridors: [],
+						});
 					}
 
-					// Add the end of current corridor
-					pathPoints.push(currentEnd);
+					const startPoint = pointConnections.get(startKey);
+					const endPoint = pointConnections.get(endKey);
+					if (startPoint && endPoint) {
+						startPoint.corridors.push(corridor);
+						endPoint.corridors.push(corridor);
+					}
+				}
+
+				// Find entry point (point with only one connection)
+				let entryPoint: Vector3 | undefined;
+				let currentKey: string | undefined;
+
+				for (const [key, data] of pointConnections.entries()) {
+					if (data.corridors.length === 1) {
+						entryPoint = data.pos;
+						currentKey = key;
+						break;
+					}
+				}
+
+				if (entryPoint) {
+					// Build ordered path
+					pathPoints.push(entryPoint);
+					const visitedCorridors = new Set<string>();
+
+					while (currentKey) {
+						const currentPoint = pointConnections.get(currentKey);
+						if (!currentPoint) break;
+
+						// Find next unvisited corridor
+						const nextCorridor = currentPoint.corridors.find(
+							(c) => !visitedCorridors.has(c.id),
+						);
+						if (!nextCorridor) break;
+
+						visitedCorridors.add(nextCorridor.id);
+
+						// Determine which end is the next point
+						const nextKey =
+							getPointKey(nextCorridor.start[0], nextCorridor.start[2]) ===
+							currentKey
+								? getPointKey(nextCorridor.end[0], nextCorridor.end[2])
+								: getPointKey(nextCorridor.start[0], nextCorridor.start[2]);
+
+						const nextPoint = pointConnections.get(nextKey);
+						if (nextPoint) {
+							pathPoints.push(nextPoint.pos);
+							currentKey = nextKey;
+						} else {
+							break;
+						}
+					}
 				}
 
 				// Calculate total path length
@@ -155,21 +179,23 @@ export function BuildingRenderer({
 					totalLength += pathPoints[i - 1].distanceTo(pathPoints[i]);
 				}
 
-				// Simple back-and-forth animation using sine wave
-				const t = (Math.sin(animationTime.current) + 1) / 2; // Normalize to 0-1
-				const pathProgress = t;
+				// Linear motion that resets at the end
+				const duration = 2; // seconds for one complete path traversal
+				const t = (animationTime.current % duration) / duration;
+				const targetDistance = t * totalLength;
 
-				// Find current segment and local progress
+				// Find current segment by accumulating distances
 				let currentSegment = 0;
 				let localProgress = 0;
 				let accumulatedLength = 0;
 
+				// Walk through segments until we find the current one
 				for (let i = 1; i < pathPoints.length; i++) {
 					const segmentLength = pathPoints[i - 1].distanceTo(pathPoints[i]);
-					if (pathProgress * totalLength <= accumulatedLength + segmentLength) {
+					if (targetDistance <= accumulatedLength + segmentLength) {
 						currentSegment = i - 1;
 						localProgress =
-							(pathProgress * totalLength - accumulatedLength) / segmentLength;
+							(targetDistance - accumulatedLength) / segmentLength;
 						break;
 					}
 					accumulatedLength += segmentLength;

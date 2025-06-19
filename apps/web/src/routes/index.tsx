@@ -206,7 +206,7 @@ export default function HospitalMap() {
 				/>
 			</div>
 
-			<DirectionsDisplay
+			{/* <DirectionsDisplay
 				directions={directions}
 				onClear={() => {
 					setSelectedBuildings([]);
@@ -215,7 +215,7 @@ export default function HospitalMap() {
 					setFromId(null);
 					setToId(null);
 				}}
-			/>
+			/> */}
 
 			{hoveredCellCoords && mousePos && (
 				<div
