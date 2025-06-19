@@ -16,6 +16,15 @@ interface AutoZoomCameraProps {
 	}>;
 }
 
+// Mobile detection utility
+const isMobile = () => {
+	return (
+		/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+			navigator.userAgent,
+		) || window.innerWidth <= 768
+	);
+};
+
 export function AutoZoomCamera({
 	cameraTarget,
 	fromId,
@@ -27,6 +36,12 @@ export function AutoZoomCamera({
 	const animationRef = useRef<number | null>(null);
 	const [userHasMovedCamera, setUserHasMovedCamera] = useState(false);
 	const [previousViewMode, setPreviousViewMode] = useState(viewMode);
+	const [isMobileDevice, setIsMobileDevice] = useState(false);
+
+	// Detect mobile device on mount
+	useEffect(() => {
+		setIsMobileDevice(isMobile());
+	}, []);
 
 	// Function to calculate optimal distance for two rooms
 	const calculateOptimalDistance = useCallback(() => {
@@ -47,10 +62,15 @@ export function AutoZoomCamera({
 		const toSize = Math.max(toRoom.size[0], toRoom.size[2]);
 		const totalSize = fromSize + toSize;
 
-		// Calculate optimal distance with padding (1.5x the distance plus room sizes)
-		const optimalDistance = Math.max(maxDistance * 1.5 + totalSize, 5); // Minimum 5 units
+		// Calculate optimal distance with padding
+		// Use larger padding for mobile devices for better visibility
+		const paddingMultiplier = isMobileDevice ? 2.0 : 1.5;
+		const optimalDistance = Math.max(
+			maxDistance * paddingMultiplier + totalSize,
+			isMobileDevice ? 8 : 5, // Higher minimum distance for mobile
+		);
 		return optimalDistance;
-	}, [fromId, toId, rooms]);
+	}, [fromId, toId, rooms, isMobileDevice]);
 
 	// Function to smoothly animate camera
 	const animateCamera = useCallback(
@@ -136,7 +156,9 @@ export function AutoZoomCamera({
 			}
 
 			// Reset to default target if no rooms are selected
-			animateCamera([0, 0, 6], null);
+			// Use higher default distance for mobile
+			const defaultDistance = isMobileDevice ? 12 : 6;
+			animateCamera([0, 0, defaultDistance], null);
 		}
 	}, [
 		cameraTarget,
@@ -148,6 +170,7 @@ export function AutoZoomCamera({
 		setViewMode,
 		setCameraMode,
 		previousViewMode,
+		isMobileDevice,
 	]);
 
 	// Cleanup animation on unmount
@@ -171,6 +194,22 @@ export function AutoZoomCamera({
 		setUserHasMovedCamera(true);
 	}, []);
 
+	// Mobile-specific zoom configuration
+	const mobileZoomConfig = {
+		minDistance: 2, // Allow closer zoom on mobile
+		maxDistance: 100, // Much higher max distance for better overview
+		zoomSpeed: 1.2, // Slightly faster zoom for mobile
+	};
+
+	// Desktop zoom configuration
+	const desktopZoomConfig = {
+		minDistance: 3,
+		maxDistance: 50,
+		zoomSpeed: 1.0,
+	};
+
+	const zoomConfig = isMobileDevice ? mobileZoomConfig : desktopZoomConfig;
+
 	return (
 		<>
 			<PerspectiveCamera
@@ -186,8 +225,9 @@ export function AutoZoomCamera({
 				enableRotate={cameraMode === "free"}
 				enablePan={true}
 				enableZoom={true}
-				minDistance={3}
-				maxDistance={50}
+				minDistance={zoomConfig.minDistance}
+				maxDistance={zoomConfig.maxDistance}
+				zoomSpeed={zoomConfig.zoomSpeed}
 				maxPolarAngle={cameraMode === "topDown" ? 0 : Math.PI / 2 - 0.1}
 				enableDamping={true}
 				dampingFactor={0.05}
