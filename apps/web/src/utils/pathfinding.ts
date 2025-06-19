@@ -65,7 +65,7 @@ export function findCorridorPath(
 				Math.hypot(
 					roomPos[0] - corridor.start[0],
 					roomPos[2] - corridor.start[2],
-				) < 1.5
+				) < 1
 			) {
 				posToPaths.get(roomKey)?.push({
 					id: corridor.id,
@@ -82,7 +82,7 @@ export function findCorridorPath(
 			// Check if room is near corridor end
 			if (
 				Math.hypot(roomPos[0] - corridor.end[0], roomPos[2] - corridor.end[2]) <
-				1.5
+				1
 			) {
 				posToPaths.get(roomKey)?.push({
 					id: corridor.id,

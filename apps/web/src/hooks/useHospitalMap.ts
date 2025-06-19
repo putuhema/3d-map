@@ -48,47 +48,50 @@ export function useHospitalMap() {
 	);
 	const [showBuildings, setShowBuildings] = useState(true);
 	const [editMode, setEditMode] = useState(false);
-
+	const [showRooms, setShowRooms] = useState(true);
+	const [selectedBuildingForRoom, setSelectedBuildingForRoom] = useState<
+		string | null
+	>(null);
 	// Load saved state from localStorage
-	useEffect(() => {
-		const storedBuildings = localStorage.getItem("buildings");
-		const storedCorridors = localStorage.getItem("corridors");
-		const storedRooms = localStorage.getItem("rooms");
-		if (storedBuildings) {
-			try {
-				setBuildings(JSON.parse(storedBuildings));
-			} catch (e) {
-				console.warn("Failed to parse stored buildings", e);
-			}
-		}
-		if (storedCorridors) {
-			try {
-				setCorridors(JSON.parse(storedCorridors));
-			} catch (e) {
-				console.warn("Failed to parse stored corridors", e);
-			}
-		}
-		if (storedRooms) {
-			try {
-				setRooms(JSON.parse(storedRooms));
-			} catch (e) {
-				console.warn("Failed to parse stored rooms", e);
-			}
-		}
-	}, []);
+	// useEffect(() => {
+	// 	const storedBuildings = localStorage.getItem("buildings");
+	// 	const storedCorridors = localStorage.getItem("corridors");
+	// 	const storedRooms = localStorage.getItem("rooms");
+	// 	if (storedBuildings) {
+	// 		try {
+	// 			setBuildings(JSON.parse(storedBuildings));
+	// 		} catch (e) {
+	// 			console.warn("Failed to parse stored buildings", e);
+	// 		}
+	// 	}
+	// 	if (storedCorridors) {
+	// 		try {
+	// 			setCorridors(JSON.parse(storedCorridors));
+	// 		} catch (e) {
+	// 			console.warn("Failed to parse stored corridors", e);
+	// 		}
+	// 	}
+	// 	if (storedRooms) {
+	// 		try {
+	// 			setRooms(JSON.parse(storedRooms));
+	// 		} catch (e) {
+	// 			console.warn("Failed to parse stored rooms", e);
+	// 		}
+	// 	}
+	// }, []);
 
 	// Save state to localStorage
-	useEffect(() => {
-		localStorage.setItem("buildings", JSON.stringify(buildings));
-	}, [buildings]);
+	// useEffect(() => {
+	// 	localStorage.setItem("buildings", JSON.stringify(buildings));
+	// }, [buildings]);
 
-	useEffect(() => {
-		localStorage.setItem("corridors", JSON.stringify(corridors));
-	}, [corridors]);
+	// useEffect(() => {
+	// 	localStorage.setItem("corridors", JSON.stringify(corridors));
+	// }, [corridors]);
 
-	useEffect(() => {
-		localStorage.setItem("rooms", JSON.stringify(rooms));
-	}, [rooms]);
+	// useEffect(() => {
+	// 	localStorage.setItem("rooms", JSON.stringify(rooms));
+	// }, [rooms]);
 
 	// Helper: Find building by id
 	const getBuildingById = useCallback(
@@ -96,8 +99,35 @@ export function useHospitalMap() {
 		[buildings],
 	);
 
+	// Helper: Find room by id
+	const getRoomById = useCallback(
+		(id: string) => rooms.find((r) => r.id === id),
+		[rooms],
+	);
+
+	// Helper: Get position from building or room id
+	const getPositionById = useCallback(
+		(id: string): [number, number, number] | null => {
+			const building = getBuildingById(id);
+			if (building) {
+				return building.position;
+			}
+			const room = getRoomById(id);
+			if (room) {
+				return room.position;
+			}
+			return null;
+		},
+		[getBuildingById, getRoomById],
+	);
+
 	const handleBuildingPlace = (building: Building) => {
-		setBuildings((prev) => [...prev, building]);
+		// Set hasRooms to false by default for new buildings
+		const newBuilding = {
+			...building,
+			hasRooms: false,
+		};
+		setBuildings((prev) => [...prev, newBuilding]);
 	};
 
 	const handleBuildingRemove = (id: string) => {
@@ -113,10 +143,26 @@ export function useHospitalMap() {
 	};
 
 	const handleCorridorRemove = (id: string) => {
+		if (toolMode !== "remove" || !editMode) return;
+		console.log("handleCorridorRemove", id);
 		setCorridors((prev) => prev.filter((c) => c.id !== id));
+		if (pathCorridorIds.includes(id)) {
+			setPathCorridorIds([]);
+			setDirections([]);
+		}
 	};
 
 	const handleRoomPlace = (room: Room) => {
+		// If no building is selected for room placement, use the first building with hasRooms=true
+		if (!room.buildingId) {
+			const buildingWithRooms = buildings.find((b) => b.hasRooms);
+			if (buildingWithRooms) {
+				room.buildingId = buildingWithRooms.id;
+			} else {
+				console.warn("No building available for room placement");
+				return;
+			}
+		}
 		setRooms((prev) => [...prev, room]);
 	};
 
@@ -142,12 +188,23 @@ export function useHospitalMap() {
 			const adjustedX = centerX - (buildingSize[0] - 1) / 2;
 			const adjustedZ = centerZ - (buildingSize[2] - 1) / 2;
 
+			// Find a building to place the room in
+			const targetBuilding = selectedBuildingForRoom
+				? buildings.find((b) => b.id === selectedBuildingForRoom)
+				: buildings.find((b) => b.hasRooms);
+
+			if (!targetBuilding) {
+				console.warn("No building available for room placement");
+				return;
+			}
+
 			handleRoomPlace({
 				id: crypto.randomUUID(),
 				name: buildingName || "New Room",
 				position: [adjustedX, 0.5, adjustedZ],
 				size: buildingSize,
 				color: buildingColor,
+				buildingId: targetBuilding.id,
 			});
 		} else if (toolMode === "corridor") {
 			if (!isDrawingCorridor) {
@@ -162,7 +219,7 @@ export function useHospitalMap() {
 					id: crypto.randomUUID(),
 					start: [corridorStart[0], 0, corridorStart[2]],
 					end: [x - (gridSize / 2 - 0.5), 0, y - (gridSize / 2 - 0.5)],
-					width: 0.5,
+					width: 0.3,
 				});
 				setIsDrawingCorridor(false);
 				setCorridorStart(null);
@@ -171,6 +228,7 @@ export function useHospitalMap() {
 	};
 
 	const handleBuildingClick = (id: string, roomId?: string) => {
+		console.log("handleBuildingClick", id, roomId);
 		if (editMode && toolMode === "remove") {
 			if (roomId) {
 				handleRoomRemove(roomId);
@@ -189,14 +247,14 @@ export function useHospitalMap() {
 
 		if (selectedBuildings.length === 1) {
 			if (selectedBuildings[0] === id) return;
-			const first = getBuildingById(selectedBuildings[0]);
-			const second = getBuildingById(id);
-			if (first && second) {
+			const firstPos = getPositionById(selectedBuildings[0]);
+			const secondPos = getPositionById(id);
+			if (firstPos && secondPos) {
 				const path = findCorridorPath(
 					corridors,
 					rooms,
-					[first.position[0], 0, first.position[2]],
-					[second.position[0], 0, second.position[2]],
+					[firstPos[0], 0, firstPos[2]],
+					[secondPos[0], 0, secondPos[2]],
 				);
 				setPathCorridorIds(path);
 				if (path.length === 0) {
@@ -209,7 +267,7 @@ export function useHospitalMap() {
 						if (corridor) {
 							const from =
 								idx === 0
-									? [first.position[0], 0, first.position[2]]
+									? [firstPos[0], 0, firstPos[2]]
 									: [
 											corridors.find((c) => c.id === path[idx - 1])?.end[0] ??
 												0,
@@ -270,6 +328,8 @@ export function useHospitalMap() {
 		setMousePos,
 		showBuildings,
 		setShowBuildings,
+		showRooms,
+		setShowRooms,
 		editMode,
 		setEditMode,
 		handleGridClick,
@@ -278,5 +338,7 @@ export function useHospitalMap() {
 		setSelectedBuildings,
 		setPathCorridorIds,
 		setDirections,
+		selectedBuildingForRoom,
+		setSelectedBuildingForRoom,
 	};
 }

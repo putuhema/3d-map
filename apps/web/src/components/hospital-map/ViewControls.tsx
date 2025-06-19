@@ -2,6 +2,8 @@ interface ViewControlsProps {
 	viewMode: "topDown" | "perspective" | "walk";
 	setViewMode: (mode: "topDown" | "perspective" | "walk") => void;
 	showBuildings: boolean;
+	showRooms: boolean;
+	setShowRooms: (show: boolean) => void;
 	setShowBuildings: (show: boolean) => void;
 	editMode: boolean;
 	setEditMode: (edit: boolean) => void;
@@ -13,6 +15,8 @@ export function ViewControls({
 	viewMode,
 	setViewMode,
 	showBuildings,
+	showRooms,
+	setShowRooms,
 	setShowBuildings,
 	editMode,
 	setEditMode,
@@ -54,42 +58,37 @@ export function ViewControls({
 					>
 						3D View
 					</button>
-					<button
-						type="button"
-						className={`rounded-md px-3 py-1.5 font-medium text-sm ${
-							viewMode === "walk"
-								? "bg-emerald-600 text-white"
-								: "bg-gray-200 text-gray-700"
-						}`}
-						onClick={() => setViewMode("walk")}
-					>
-						Walk Mode
-					</button>
-					<label className="ml-2 flex items-center gap-1 text-sm">
-						<input
-							type="checkbox"
-							checked={showBuildings}
-							onChange={(e) => setShowBuildings(e.target.checked)}
-							className="accent-emerald-600"
-						/>
-						Show Buildings
-					</label>
-					<label className="ml-2 flex items-center gap-1 text-sm">
-						<input
-							type="checkbox"
-							checked={editMode}
-							onChange={(e) => setEditMode(e.target.checked)}
-							className="accent-emerald-600"
-						/>
-						Edit Mode
-					</label>
-				</div>
-				{viewMode === "walk" && (
-					<div className="mt-2 text-gray-600 text-xs">
-						Use <span className="rounded bg-gray-100 px-1 font-mono">WASD</span>{" "}
-						keys to walk around
+					<div className="flex flex-col gap-2">
+						<label className="ml-2 flex items-center gap-1 text-sm">
+							<input
+								type="checkbox"
+								checked={showBuildings}
+								onChange={(e) => setShowBuildings(e.target.checked)}
+								className="accent-emerald-600"
+							/>
+							Show Buildings
+						</label>
+
+						<label className="ml-2 flex items-center gap-1 text-sm">
+							<input
+								type="checkbox"
+								checked={showRooms}
+								onChange={(e) => setShowRooms(e.target.checked)}
+								className="accent-emerald-600"
+							/>
+							Show Rooms
+						</label>
+						<label className="ml-2 flex items-center gap-1 text-sm">
+							<input
+								type="checkbox"
+								checked={editMode}
+								onChange={(e) => setEditMode(e.target.checked)}
+								className="accent-emerald-600"
+							/>
+							Edit Mode
+						</label>
 					</div>
-				)}
+				</div>
 			</div>
 		</div>
 	);

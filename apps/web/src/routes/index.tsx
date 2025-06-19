@@ -47,6 +47,8 @@ export default function HospitalMap() {
 		setMousePos,
 		showBuildings,
 		setShowBuildings,
+		showRooms,
+		setShowRooms,
 		editMode,
 		setEditMode,
 		handleGridClick,
@@ -70,6 +72,8 @@ export default function HospitalMap() {
 				viewMode={viewMode}
 				setViewMode={setViewMode}
 				showBuildings={showBuildings}
+				showRooms={showRooms}
+				setShowRooms={setShowRooms}
 				setShowBuildings={setShowBuildings}
 				editMode={editMode}
 				setEditMode={setEditMode}
@@ -136,9 +140,11 @@ export default function HospitalMap() {
 						corridors={corridors}
 						rooms={rooms}
 						onBuildingClick={handleBuildingClick}
+						onCorridorClick={handleCorridorRemove}
 						highlightedCorridorIds={pathCorridorIds}
 						highlightedBuildingIds={selectedBuildings}
 						showBuildings={showBuildings}
+						showRooms={showRooms}
 					/>
 
 					<GridSystem

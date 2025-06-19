@@ -101,7 +101,7 @@ export function GridSystem({
 				<meshBasicMaterial transparent opacity={0} />
 			</mesh>
 
-			{/* {hoveredCell && (
+			{hoveredCell && (
 				<mesh
 					rotation={[-Math.PI / 2, 0, 0]}
 					position={[
@@ -113,7 +113,7 @@ export function GridSystem({
 					<planeGeometry args={[cellSize * 0.95, cellSize * 0.95]} />
 					<meshBasicMaterial color="#4f46e5" transparent opacity={0.3} />
 				</mesh>
-			)} */}
+			)}
 
 			{gridLines.map((line, i) => {
 				const isHorizontal = i <= gridSize;

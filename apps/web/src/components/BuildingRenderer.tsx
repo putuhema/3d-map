@@ -12,9 +12,11 @@ interface BuildingRendererProps {
 	corridors: Corridor[];
 	rooms: Room[];
 	onBuildingClick?: (id: string, roomId?: string) => void;
+	onCorridorClick?: (id: string) => void;
 	highlightedCorridorIds?: string[];
 	highlightedBuildingIds?: string[];
 	showBuildings?: boolean;
+	showRooms?: boolean;
 }
 
 export function BuildingRenderer({
@@ -22,12 +24,28 @@ export function BuildingRenderer({
 	corridors,
 	rooms,
 	onBuildingClick,
+	onCorridorClick,
 	highlightedCorridorIds = [],
 	highlightedBuildingIds = [],
 	showBuildings = true,
+	showRooms = true,
 }: BuildingRendererProps) {
 	const buildingRefs = useRef<Map<string, Mesh>>(new Map());
 	const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
+
+	const roomsByBuilding = useMemo(() => {
+		const grouped = new Map<string, Room[]>();
+		for (const room of rooms) {
+			if (!grouped.has(room.buildingId)) {
+				grouped.set(room.buildingId, []);
+			}
+			const buildingRooms = grouped.get(room.buildingId);
+			if (buildingRooms) {
+				buildingRooms.push(room);
+			}
+		}
+		return grouped;
+	}, [rooms]);
 
 	const handleBuildingClick = (
 		id: string,
@@ -38,6 +56,11 @@ export function BuildingRenderer({
 		onBuildingClick?.(id, roomId);
 	};
 
+	const handleCorridorClick = (id: string, event: ThreeEvent<MouseEvent>) => {
+		event.stopPropagation();
+		onCorridorClick?.(id);
+	};
+
 	const corridorMaterial = useMemo(
 		() => new MeshStandardMaterial({ color: "#d4d4d8" }),
 		[],
@@ -46,79 +69,100 @@ export function BuildingRenderer({
 	return (
 		<group>
 			{showBuildings &&
-				buildings.map((building) => (
+				buildings.map((building) => {
+					const buildingRooms = roomsByBuilding.get(building.id) || [];
+					const hasRooms = building.hasRooms && buildingRooms.length > 0;
+
+					return (
+						// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+						<mesh
+							key={building.id}
+							ref={(ref) => {
+								if (ref) buildingRefs.current.set(building.id, ref);
+							}}
+							position={
+								new Vector3(
+									building.position[0],
+									building.position[1] + (building.size[1] - 1) / 2,
+									building.position[2],
+								)
+							}
+							scale={new Vector3(...building.size)}
+							onClick={(e) => handleBuildingClick(building.id, undefined, e)}
+							// castShadow
+							// receiveShadow
+						>
+							<boxGeometry args={[1, 1, 1]} />
+							<meshStandardMaterial
+								color={building.color}
+								metalness={0.1}
+								roughness={0.5}
+								attach="material"
+								transparent={true}
+								opacity={hasRooms ? 0.1 : 1}
+							/>
+							{highlightedBuildingIds.includes(building.id) && (
+								<meshStandardMaterial
+									color="#f59e42"
+									metalness={0.3}
+									roughness={0.3}
+									transparent={true}
+									opacity={0.3}
+									attach="material"
+								/>
+							)}
+
+							<Html
+								center
+								position={[0, building.size[1] / 2 + 0.5, 0]}
+								style={{
+									background: "rgba(0, 0, 0, 0.8)",
+									color: "white",
+									padding: "4px 8px",
+									borderRadius: "4px",
+									fontSize: "12px",
+									whiteSpace: "nowrap",
+									pointerEvents: "none",
+								}}
+							>
+								{building.name} ({buildingRooms.length} rooms)
+							</Html>
+						</mesh>
+					);
+				})}
+
+			{showRooms &&
+				rooms.map((room) => (
 					// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 					<mesh
-						key={building.id}
-						ref={(ref) => {
-							if (ref) buildingRefs.current.set(building.id, ref);
-						}}
+						key={room.id}
 						position={
 							new Vector3(
-								building.position[0],
-								building.position[1] + (building.size[1] - 1) / 2,
-								building.position[2],
+								room.position[0],
+								room.position[1] + (room.size[1] - 1) / 2,
+								room.position[2],
 							)
 						}
-						scale={new Vector3(...building.size)}
-						onClick={(e) => handleBuildingClick(building.id, undefined, e)}
-						// castShadow
-						// receiveShadow
+						scale={new Vector3(...room.size)}
+						onClick={(e) => handleBuildingClick(room.buildingId, room.id, e)}
+						onPointerOver={(e) => {
+							e.stopPropagation();
+							setHoveredRoomId(room.id);
+						}}
+						onPointerOut={(e) => {
+							e.stopPropagation();
+							setHoveredRoomId(null);
+						}}
 					>
 						<boxGeometry args={[1, 1, 1]} />
 						<meshStandardMaterial
-							color={building.color}
-							metalness={0.1}
-							roughness={0.5}
-							attach="material"
+							color={room.color}
 							transparent={true}
-							opacity={0.2}
+							opacity={1}
+							metalness={hoveredRoomId === room.id ? 0.3 : 0.1}
+							roughness={hoveredRoomId === room.id ? 0.3 : 0.5}
 						/>
-						{highlightedBuildingIds.includes(building.id) && (
-							<meshStandardMaterial
-								color="#f59e42"
-								metalness={0.3}
-								roughness={0.3}
-								transparent={true}
-								opacity={0.3}
-								attach="material"
-							/>
-						)}
-					</mesh>
-				))}
-
-			{rooms.map((room) => (
-				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-				<mesh
-					key={room.id}
-					position={
-						new Vector3(
-							room.position[0],
-							room.position[1] + (room.size[1] - 1) / 2,
-							room.position[2],
-						)
-					}
-					scale={new Vector3(...room.size)}
-					onClick={(e) => handleBuildingClick(room.id, room.id, e)}
-					onPointerOver={(e) => {
-						e.stopPropagation();
-						setHoveredRoomId(room.id);
-					}}
-					onPointerOut={(e) => {
-						e.stopPropagation();
-						setHoveredRoomId(null);
-					}}
-				>
-					<boxGeometry args={[1, 1, 1]} />
-					<meshStandardMaterial
-						color={room.color}
-						transparent={true}
-						opacity={hoveredRoomId === room.id ? 0.8 : 0.6}
-						metalness={hoveredRoomId === room.id ? 0.3 : 0.1}
-						roughness={hoveredRoomId === room.id ? 0.3 : 0.5}
-					/>
-					{hoveredRoomId === room.id && (
-						<Html
+						{/* <Html
 							center
 							position={[0, room.size[1] / 2 + 0.5, 0]}
 							style={{
@@ -132,10 +176,9 @@ export function BuildingRenderer({
 							}}
 						>
 							{room.name}
-						</Html>
-					)}
-				</mesh>
-			))}
+						</Html> */}
+					</mesh>
+				))}
 
 			{corridors.map((corridor) => {
 				const startXZ = new Vector3(corridor.start[0], 0, corridor.start[2]);
@@ -181,9 +224,11 @@ export function BuildingRenderer({
 				return [0, 1].map((i) => {
 					const point = i === 0 ? corridor.start : corridor.end;
 					return (
+						// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 						<mesh
 							key={`${corridor.id}-joint-${i}`}
 							position={[point[0], -0.001, point[2]]}
+							onClick={(e) => handleCorridorClick(corridor.id, e)}
 							receiveShadow
 						>
 							<cylinderGeometry

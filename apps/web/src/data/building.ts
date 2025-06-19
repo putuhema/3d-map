@@ -4,6 +4,7 @@ export type Building = {
 	position: [number, number, number];
 	size: [number, number, number];
 	color: string;
+	hasRooms?: boolean;
 };
 
 export const buildings = [
@@ -13,6 +14,7 @@ export const buildings = [
 		position: [8.5, 0.5, 17.5],
 		size: [2, 2, 2],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "94385c5f-2fb0-4e15-a1f5-c550bbc98c7c",
@@ -20,6 +22,7 @@ export const buildings = [
 		position: [-6.5, 0.5, 12.5],
 		size: [7, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "bc7767d7-e545-4cc8-979c-0319a6a6ad7e",
@@ -27,6 +30,7 @@ export const buildings = [
 		position: [-12.5, 0.5, 8.5],
 		size: [4, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "0340e2ef-ea9e-49b1-8cad-c504b54f7dad",
@@ -34,6 +38,7 @@ export const buildings = [
 		position: [-12.5, 0.5, 12.5],
 		size: [3, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "0bf2254a-f353-44e4-ae9c-8356debb71bf",
@@ -41,6 +46,7 @@ export const buildings = [
 		position: [-10.5, 0.5, -1.5],
 		size: [11, 2, 11],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "9cc01bf9-7c9e-499e-9ea6-1051bcdab2dd",
@@ -48,6 +54,7 @@ export const buildings = [
 		position: [-0.5, 0.5, 12.5],
 		size: [3, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "c872fd99-b722-4ddb-839b-807c062514bb",
@@ -55,6 +62,7 @@ export const buildings = [
 		position: [-1, 0.5, -7.5],
 		size: [4, 2, 5],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "5ec470e4-3c83-4bab-9fb9-e2a477ab10c8",
@@ -62,6 +70,7 @@ export const buildings = [
 		position: [-12.5, 0.5, -11.5],
 		size: [3, 2, 2],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "64bbd5a9-aed5-4c6b-977a-72c00a4f2a62",
@@ -69,6 +78,7 @@ export const buildings = [
 		position: [-1.5, 0.5, -14.5],
 		size: [4, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "ac1098be-2374-4511-93ba-0e81c504b24c",
@@ -76,6 +86,7 @@ export const buildings = [
 		position: [7.5, 0.5, -14.5],
 		size: [7, 2, 4],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "733d217b-ab1a-4e3d-95e0-1fbaea066512",
@@ -83,6 +94,7 @@ export const buildings = [
 		position: [15.5, 0.5, -16.5],
 		size: [4, 2, 7],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "303cc16c-b206-48b8-afb8-a25d35cb2c15",
@@ -90,6 +102,7 @@ export const buildings = [
 		position: [6.5, 0.5, -19.5],
 		size: [9, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "da93acd7-6d51-42b3-a219-649ad33af505",
@@ -97,6 +110,7 @@ export const buildings = [
 		position: [6.5, 0.5, -23.5],
 		size: [9, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "bbdefe35-78b8-4a39-991d-f1d4cdc465e0",
@@ -104,6 +118,7 @@ export const buildings = [
 		position: [6.5, 0.5, -27.5],
 		size: [9, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "c152dc9b-7547-4483-a1ca-63b973659dc8",
@@ -111,6 +126,7 @@ export const buildings = [
 		position: [-3.5, 0.5, -23.5],
 		size: [9, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "327e3bdf-2cae-4b2c-a436-69054efc64ff",
@@ -118,6 +134,7 @@ export const buildings = [
 		position: [-4.5, 0.5, -19.5],
 		size: [11, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "6f66e375-8704-4681-bcbb-d4247fbe6d86",
@@ -125,13 +142,15 @@ export const buildings = [
 		position: [-0.5, 0.5, 26.5],
 		size: [3, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "8e99cb47-93dd-40ee-aa8e-583e71b35382",
-		name: "New Building",
+		name: "Rekam Medis",
 		position: [4.5, 0.5, 9.5],
 		size: [5, 2, 5],
 		color: "#009966",
+		hasRooms: true,
 	},
 	{
 		id: "a854092b-260a-46e2-9186-de7f34f8d979",
@@ -139,6 +158,7 @@ export const buildings = [
 		position: [4.5, 0.5, 1.5],
 		size: [5, 2, 9],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "66c23297-638e-48db-88b6-991de7cd17b9",
@@ -146,6 +166,7 @@ export const buildings = [
 		position: [4.5, 0.5, -6.5],
 		size: [5, 2, 5],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "c87a9cd0-ed20-4a3e-9330-135f82e58780",
@@ -153,6 +174,7 @@ export const buildings = [
 		position: [11.5, 0.5, 13.5],
 		size: [7, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "d558586d-2762-4061-8997-5d00a4b436c8",
@@ -160,13 +182,15 @@ export const buildings = [
 		position: [13.5, 0.5, 16.5],
 		size: [3, 2, 3],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "08f0ba14-2ec2-4bd1-9e87-0d9bfb5c015f",
-		name: "New Building",
+		name: "ICU",
 		position: [3.5, 0.5, 15.5],
 		size: [3, 2, 5],
 		color: "#009966",
+		hasRooms: false,
 	},
 	{
 		id: "26e5b0c7-6b4e-48fe-8802-d7819f2d2dca",
@@ -174,5 +198,6 @@ export const buildings = [
 		position: [-1.5, 0.5, 0.5],
 		size: [5, 2, 9],
 		color: "#009966",
+		hasRooms: false,
 	},
 ];
