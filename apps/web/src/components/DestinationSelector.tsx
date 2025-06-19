@@ -1,15 +1,8 @@
 import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import type { Building } from "@/data/building";
 import type { Room } from "@/data/room";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, MapPin, Search, X } from "lucide-react";
+import { ChevronDown, MapPin, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -132,6 +125,12 @@ export function DestinationSelector({
 		setToSearch("");
 	};
 
+	// Helper function to get location type by id
+	const getLocationType = (id: string): "building" | "room" => {
+		const location = allLocations.find((loc) => loc.id === id);
+		return location?.type || "building";
+	};
+
 	const handleUseCurrentLocation = () => {
 		onUseCurrentLocation();
 		setFromOpen(false);
@@ -221,7 +220,7 @@ export function DestinationSelector({
 									<Select
 										value={fromId || ""}
 										onValueChange={(value) =>
-											handleFromSelect(value, "building")
+											handleFromSelect(value, getLocationType(value))
 										}
 									>
 										<SelectTrigger className="w-full bg-background">
@@ -252,7 +251,9 @@ export function DestinationSelector({
 									</label>
 									<Select
 										value={toId || ""}
-										onValueChange={(value) => handleToSelect(value, "building")}
+										onValueChange={(value) =>
+											handleToSelect(value, getLocationType(value))
+										}
 									>
 										<SelectTrigger className="w-full bg-background">
 											<SelectValue placeholder="Pilih Lokasi" />

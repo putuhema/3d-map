@@ -57,6 +57,12 @@ export function useHospitalMap() {
 	const [roomDialogOpen, setRoomDialogOpen] = useState(false);
 	const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
+	// Location dialog state (for both rooms and buildings)
+	const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+	const [selectedLocation, setSelectedLocation] = useState<
+		Room | Building | null
+	>(null);
+
 	// Destination selector state
 	const [destinationSelectorExpanded, setDestinationSelectorExpanded] =
 		useState(false);
@@ -198,16 +204,22 @@ export function useHospitalMap() {
 			setPathCorridorIds([]);
 			setDirections([]);
 
-			// Show room dialog if a room is selected
+			// Show location dialog for both rooms and buildings
 			if (type === "room") {
 				const room = getRoomById(id);
 				if (room) {
-					setSelectedRoom(room);
-					setRoomDialogOpen(true);
+					setSelectedLocation(room);
+					setLocationDialogOpen(true);
+				}
+			} else if (type === "building") {
+				const building = getBuildingById(id);
+				if (building) {
+					setSelectedLocation(building);
+					setLocationDialogOpen(true);
 				}
 			}
 		},
-		[getRoomById],
+		[getRoomById, getBuildingById],
 	);
 
 	const handleUseCurrentLocation = useCallback(() => {
@@ -271,7 +283,7 @@ export function useHospitalMap() {
 	const handleRoomDialogClose = useCallback(() => {
 		// Close the destination selector
 		setDestinationSelectorExpanded(false);
-		// Trigger pathfinding when room dialog closes
+		// Trigger pathfinding when location dialog closes
 		if (fromId && toId && fromId !== toId) {
 			handleFindPath();
 		}
@@ -506,6 +518,10 @@ export function useHospitalMap() {
 		selectedRoom,
 		setSelectedRoom,
 		handleRoomDialogClose,
+		locationDialogOpen,
+		setLocationDialogOpen,
+		selectedLocation,
+		setSelectedLocation,
 		destinationSelectorExpanded,
 		setDestinationSelectorExpanded,
 		cameraTarget,

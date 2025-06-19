@@ -5,8 +5,6 @@ import { Compass } from "@/components/Compass";
 import { CoordinateDisplay } from "@/components/CoordinateDisplay";
 import { DestinationSelector } from "@/components/DestinationSelector";
 import { GridSystem } from "@/components/GridSystem";
-import { RoomDialog } from "@/components/RoomDialog";
-import { DirectionsDisplay } from "@/components/hospital-map/DirectionsDisplay";
 import { ViewControls } from "@/components/hospital-map/ViewControls";
 import { useHospitalMap } from "@/hooks/useHospitalMap";
 import { useViewStore } from "@/lib/store";
@@ -90,13 +88,6 @@ export default function DevMode() {
 				playerPosition={playerPosition}
 				isExpanded={destinationSelectorExpanded}
 				onExpandedChange={setDestinationSelectorExpanded}
-			/>
-
-			<RoomDialog
-				room={selectedRoom}
-				open={roomDialogOpen}
-				onOpenChange={setRoomDialogOpen}
-				onClose={handleRoomDialogClose}
 			/>
 
 			<ViewControls

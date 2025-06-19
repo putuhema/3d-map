@@ -1,8 +1,7 @@
 import { AutoZoomCamera } from "@/components/AutoZoomCamera";
 import { BuildingRenderer } from "@/components/BuildingRenderer";
 import { DestinationSelector } from "@/components/DestinationSelector";
-import { GridSystem } from "@/components/GridSystem";
-import { RoomDialog } from "@/components/RoomDialog";
+import { LocationDialog } from "@/components/RoomDialog";
 import MapControl from "@/components/map-control";
 import { useHospitalMap } from "@/hooks/useHospitalMap";
 import { Canvas } from "@react-three/fiber";
@@ -43,6 +42,9 @@ export default function HospitalMap() {
 		setRoomDialogOpen,
 		selectedRoom,
 		handleRoomDialogClose,
+		locationDialogOpen,
+		setLocationDialogOpen,
+		selectedLocation,
 		destinationSelectorExpanded,
 		setDestinationSelectorExpanded,
 		cameraTarget,
@@ -88,10 +90,10 @@ export default function HospitalMap() {
 				onExpandedChange={setDestinationSelectorExpanded}
 			/>
 
-			<RoomDialog
-				room={selectedRoom}
-				open={roomDialogOpen}
-				onOpenChange={setRoomDialogOpen}
+			<LocationDialog
+				location={selectedLocation}
+				open={locationDialogOpen}
+				onOpenChange={setLocationDialogOpen}
 				onClose={handleRoomDialogClose}
 			/>
 

@@ -5,12 +5,13 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import type { Building } from "@/data/building";
 import type { Room } from "@/data/room";
 import { RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-interface RoomDialogProps {
-	room: Room | null;
+interface LocationDialogProps {
+	location: Room | Building | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onClose?: () => void;
@@ -231,13 +232,13 @@ function ZoomableImage({ src, alt }: ZoomableImageProps) {
 	);
 }
 
-export function RoomDialog({
-	room,
+export function LocationDialog({
+	location,
 	open,
 	onOpenChange,
 	onClose,
-}: RoomDialogProps) {
-	if (!room) return null;
+}: LocationDialogProps) {
+	if (!location) return null;
 
 	const handleOpenChange = (newOpen: boolean) => {
 		onOpenChange(newOpen);
@@ -247,17 +248,24 @@ export function RoomDialog({
 		}
 	};
 
+	// Check if location is a room (has buildingId property)
+	const isRoom = "buildingId" in location;
+	const locationType = isRoom ? "Room" : "Building";
+
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="font-semibold text-xl">
-						{room.name || "Unnamed Room"}
+						{location.name || `Unnamed ${locationType}`}
 					</DialogTitle>
 				</DialogHeader>
 				<div className="space-y-4">
-					{room.image && (
-						<ZoomableImage src={room.image} alt={room.name || "Room"} />
+					{isRoom && (location as Room).image && (
+						<ZoomableImage
+							src={(location as Room).image}
+							alt={location.name || locationType}
+						/>
 					)}
 					<div className="space-y-2">
 						<div className="flex justify-between">
@@ -265,13 +273,14 @@ export function RoomDialog({
 								Position:
 							</span>
 							<span className="text-sm">
-								({room.position[0]}, {room.position[1]}, {room.position[2]})
+								({location.position[0]}, {location.position[1]},{" "}
+								{location.position[2]})
 							</span>
 						</div>
 						<div className="flex justify-between">
 							<span className="font-medium text-muted-foreground">Size:</span>
 							<span className="text-sm">
-								{room.size[0]} × {room.size[1]} × {room.size[2]}
+								{location.size[0]} × {location.size[1]} × {location.size[2]}
 							</span>
 						</div>
 						<div className="flex justify-between">
@@ -279,11 +288,27 @@ export function RoomDialog({
 							<div className="flex items-center gap-2">
 								<div
 									className="h-4 w-4 rounded border"
-									style={{ backgroundColor: room.color }}
+									style={{ backgroundColor: location.color }}
 								/>
-								<span className="text-sm">{room.color}</span>
+								<span className="text-sm">{location.color}</span>
 							</div>
 						</div>
+						{isRoom && (location as Building).hasRooms !== undefined && (
+							<div className="flex justify-between">
+								<span className="font-medium text-muted-foreground">Type:</span>
+								<span className="text-sm">{locationType}</span>
+							</div>
+						)}
+						{!isRoom && (location as Building).hasRooms !== undefined && (
+							<div className="flex justify-between">
+								<span className="font-medium text-muted-foreground">
+									Has Rooms:
+								</span>
+								<span className="text-sm">
+									{(location as Building).hasRooms ? "Yes" : "No"}
+								</span>
+							</div>
+						)}
 					</div>
 				</div>
 			</DialogContent>
