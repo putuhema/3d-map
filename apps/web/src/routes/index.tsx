@@ -2,6 +2,7 @@ import { BuildingRenderer } from "@/components/BuildingRenderer";
 import { BuildingTools } from "@/components/BuildingTools";
 import { Compass } from "@/components/Compass";
 import { CoordinateDisplay } from "@/components/CoordinateDisplay";
+import { DestinationSelector } from "@/components/DestinationSelector";
 import { GridSystem } from "@/components/GridSystem";
 import { DirectionsDisplay } from "@/components/hospital-map/DirectionsDisplay";
 import { ViewControls } from "@/components/hospital-map/ViewControls";
@@ -57,6 +58,14 @@ export default function HospitalMap() {
 		setSelectedBuildings,
 		setPathCorridorIds,
 		setDirections,
+		fromId,
+		toId,
+		handleFromSelect,
+		handleToSelect,
+		handleFindPath,
+		setFromId,
+		setToId,
+		handleUseCurrentLocation,
 	} = useHospitalMap();
 
 	return (
@@ -68,6 +77,18 @@ export default function HospitalMap() {
 				}
 			}}
 		>
+			<DestinationSelector
+				buildings={buildings}
+				rooms={rooms}
+				onFromSelect={handleFromSelect}
+				onToSelect={handleToSelect}
+				onFindPath={handleFindPath}
+				onUseCurrentLocation={handleUseCurrentLocation}
+				fromId={fromId}
+				toId={toId}
+				playerPosition={playerPosition}
+			/>
+
 			<ViewControls
 				viewMode={viewMode}
 				setViewMode={setViewMode}
@@ -191,6 +212,8 @@ export default function HospitalMap() {
 					setSelectedBuildings([]);
 					setPathCorridorIds([]);
 					setDirections([]);
+					setFromId(null);
+					setToId(null);
 				}}
 			/>
 

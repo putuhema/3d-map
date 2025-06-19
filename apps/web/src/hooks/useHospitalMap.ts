@@ -17,12 +17,12 @@ export function useHospitalMap() {
 	} | null>(null);
 	const [locationError, setLocationError] = useState<string | null>(null);
 	const [buildings, setBuildings] = useState<Building[]>(
-		() => initialBuildings as Building[],
+		initialBuildings as Building[],
 	);
 	const [corridors, setCorridors] = useState<Corridor[]>(
-		() => initialCorridors as Corridor[],
+		initialCorridors as Corridor[],
 	);
-	const [rooms, setRooms] = useState<Room[]>(() => initialRooms as Room[]);
+	const [rooms, setRooms] = useState<Room[]>(initialRooms as Room[]);
 	const [toolMode, setToolMode] = useState<
 		"place" | "remove" | "corridor" | "room"
 	>("room");
@@ -52,46 +52,51 @@ export function useHospitalMap() {
 	const [selectedBuildingForRoom, setSelectedBuildingForRoom] = useState<
 		string | null
 	>(null);
+
+	// Destination selector state
+	const [fromId, setFromId] = useState<string | null>(null);
+	const [toId, setToId] = useState<string | null>(null);
+
 	// Load saved state from localStorage
-	// useEffect(() => {
-	// 	const storedBuildings = localStorage.getItem("buildings");
-	// 	const storedCorridors = localStorage.getItem("corridors");
-	// 	const storedRooms = localStorage.getItem("rooms");
-	// 	if (storedBuildings) {
-	// 		try {
-	// 			setBuildings(JSON.parse(storedBuildings));
-	// 		} catch (e) {
-	// 			console.warn("Failed to parse stored buildings", e);
-	// 		}
-	// 	}
-	// 	if (storedCorridors) {
-	// 		try {
-	// 			setCorridors(JSON.parse(storedCorridors));
-	// 		} catch (e) {
-	// 			console.warn("Failed to parse stored corridors", e);
-	// 		}
-	// 	}
-	// 	if (storedRooms) {
-	// 		try {
-	// 			setRooms(JSON.parse(storedRooms));
-	// 		} catch (e) {
-	// 			console.warn("Failed to parse stored rooms", e);
-	// 		}
-	// 	}
-	// }, []);
+	useEffect(() => {
+		const storedBuildings = localStorage.getItem("buildings");
+		const storedCorridors = localStorage.getItem("corridors");
+		const storedRooms = localStorage.getItem("rooms");
+		if (storedBuildings) {
+			try {
+				setBuildings(JSON.parse(storedBuildings));
+			} catch (e) {
+				console.warn("Failed to parse stored buildings", e);
+			}
+		}
+		if (storedCorridors) {
+			try {
+				setCorridors(JSON.parse(storedCorridors));
+			} catch (e) {
+				console.warn("Failed to parse stored corridors", e);
+			}
+		}
+		if (storedRooms) {
+			try {
+				setRooms(JSON.parse(storedRooms));
+			} catch (e) {
+				console.warn("Failed to parse stored rooms", e);
+			}
+		}
+	}, []);
 
 	// Save state to localStorage
-	// useEffect(() => {
-	// 	localStorage.setItem("buildings", JSON.stringify(buildings));
-	// }, [buildings]);
+	useEffect(() => {
+		localStorage.setItem("buildings", JSON.stringify(buildings));
+	}, [buildings]);
 
-	// useEffect(() => {
-	// 	localStorage.setItem("corridors", JSON.stringify(corridors));
-	// }, [corridors]);
+	useEffect(() => {
+		localStorage.setItem("corridors", JSON.stringify(corridors));
+	}, [corridors]);
 
-	// useEffect(() => {
-	// 	localStorage.setItem("rooms", JSON.stringify(rooms));
-	// }, [rooms]);
+	useEffect(() => {
+		localStorage.setItem("rooms", JSON.stringify(rooms));
+	}, [rooms]);
 
 	// Helper: Find building by id
 	const getBuildingById = useCallback(
@@ -120,6 +125,85 @@ export function useHospitalMap() {
 		},
 		[getBuildingById, getRoomById],
 	);
+
+	// Destination selector functions
+	const handleFromSelect = useCallback(
+		(id: string, type: "building" | "room") => {
+			setFromId(id);
+			setSelectedBuildings([]);
+			setPathCorridorIds([]);
+			setDirections([]);
+		},
+		[],
+	);
+
+	const handleToSelect = useCallback(
+		(id: string, type: "building" | "room") => {
+			setToId(id);
+			setSelectedBuildings([]);
+			setPathCorridorIds([]);
+			setDirections([]);
+		},
+		[],
+	);
+
+	const handleUseCurrentLocation = useCallback(() => {
+		setFromId("current");
+		setSelectedBuildings([]);
+		setPathCorridorIds([]);
+		setDirections([]);
+	}, []);
+
+	const handleFindPath = useCallback(() => {
+		if (!fromId || !toId || fromId === toId) return;
+
+		let fromPos: [number, number, number] | null = null;
+
+		if (fromId === "current") {
+			// Use current player position
+			fromPos = [playerPosition.x, 0, playerPosition.z];
+		} else {
+			fromPos = getPositionById(fromId);
+		}
+
+		const toPos = getPositionById(toId);
+
+		if (fromPos && toPos) {
+			const path = findCorridorPath(
+				corridors,
+				rooms,
+				[fromPos[0], 0, fromPos[2]],
+				[toPos[0], 0, toPos[2]],
+			);
+			setPathCorridorIds(path);
+			if (path.length === 0) {
+				setDirections(["No path found between the selected locations."]);
+			} else {
+				const steps = path.map((pathId, idx) => {
+					const corridor = corridors.find((c) => c.id === pathId);
+					const room = rooms.find((r) => r.id === pathId);
+
+					if (corridor) {
+						const from =
+							idx === 0
+								? [fromPos[0], 0, fromPos[2]]
+								: [
+										corridors.find((c) => c.id === path[idx - 1])?.end[0] ?? 0,
+										0,
+										corridors.find((c) => c.id === path[idx - 1])?.end[2] ?? 0,
+									];
+						const to = [corridor.end[0], 0, corridor.end[2]];
+						return `Take corridor ${corridor.id} from (${from}) to (${to})`;
+					}
+					if (room) {
+						return `Enter room ${room.name} at position (${room.position})`;
+					}
+					return "";
+				});
+				setDirections(steps);
+			}
+		}
+	}, [fromId, toId, getPositionById, corridors, rooms, playerPosition]);
 
 	const handleBuildingPlace = (building: Building) => {
 		// Set hasRooms to false by default for new buildings
@@ -228,7 +312,7 @@ export function useHospitalMap() {
 	};
 
 	const handleBuildingClick = (id: string, roomId?: string) => {
-		console.log("handleBuildingClick", id, roomId);
+		console.log("handleBuildingClick", { id, roomId });
 		if (editMode && toolMode === "remove") {
 			if (roomId) {
 				handleRoomRemove(roomId);
@@ -340,5 +424,13 @@ export function useHospitalMap() {
 		setDirections,
 		selectedBuildingForRoom,
 		setSelectedBuildingForRoom,
+		fromId,
+		setFromId,
+		toId,
+		setToId,
+		handleFromSelect,
+		handleToSelect,
+		handleUseCurrentLocation,
+		handleFindPath,
 	};
 }

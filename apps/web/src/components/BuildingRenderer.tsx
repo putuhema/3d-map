@@ -116,7 +116,7 @@ export function BuildingRenderer({
 									center
 									position={[0, building.size[1] / 9 + 0.5, 0]}
 									style={{
-										background: "rgba(0, 0, 0, 0.8)",
+										background: "rgba(152, 205, 0, 0.8)",
 										color: "white",
 										padding: "4px 8px",
 										borderRadius: "4px",
@@ -125,8 +125,7 @@ export function BuildingRenderer({
 										pointerEvents: "none",
 									}}
 								>
-									{building.name}{" "}
-									{hasRooms && `(${buildingRooms.length} rooms)`}
+									{building.name}
 								</Html>
 							)}
 						</mesh>
@@ -164,21 +163,23 @@ export function BuildingRenderer({
 							metalness={hoveredRoomId === room.id ? 0.3 : 0.1}
 							roughness={hoveredRoomId === room.id ? 0.3 : 0.5}
 						/>
-						<Html
-							center
-							position={[0, room.size[1] / 2 + 0.5, 0]}
-							style={{
-								background: "rgba(0, 0, 0, 0.8)",
-								color: "white",
-								padding: "4px 8px",
-								borderRadius: "4px",
-								fontSize: "14px",
-								whiteSpace: "nowrap",
-								pointerEvents: "none",
-							}}
-						>
-							{room.name}
-						</Html>
+						{room.name && (
+							<Html
+								center
+								position={[0, room.size[1] / 2 + 0.5, 0]}
+								style={{
+									background: "rgba(0, 0, 0, 0.8)",
+									color: "white",
+									padding: "4px 8px",
+									borderRadius: "4px",
+									fontSize: "14px",
+									whiteSpace: "nowrap",
+									pointerEvents: "none",
+								}}
+							>
+								{room.name}
+							</Html>
+						)}
 					</mesh>
 				))}
 

@@ -42,7 +42,7 @@ export const buildings = [
 	},
 	{
 		id: "0bf2254a-f353-44e4-ae9c-8356debb71bf",
-		name: "OK",
+		name: "Kamar Operasi",
 		position: [-10.5, 0.5, -1.5],
 		size: [11, 2, 11],
 		color: "#009966",
@@ -50,7 +50,7 @@ export const buildings = [
 	},
 	{
 		id: "9cc01bf9-7c9e-499e-9ea6-1051bcdab2dd",
-		name: "New Building",
+		name: "Tranfusi Darah",
 		position: [-0.5, 0.5, 12.5],
 		size: [3, 2, 3],
 		color: "#009966",
@@ -66,7 +66,7 @@ export const buildings = [
 	},
 	{
 		id: "5ec470e4-3c83-4bab-9fb9-e2a477ab10c8",
-		name: "New Building",
+		name: "Kamar Mayat",
 		position: [-12.5, 0.5, -11.5],
 		size: [3, 2, 2],
 		color: "#009966",
@@ -82,7 +82,7 @@ export const buildings = [
 	},
 	{
 		id: "ac1098be-2374-4511-93ba-0e81c504b24c",
-		name: "New Building",
+		name: "ICU",
 		position: [7.5, 0.5, -14.5],
 		size: [7, 2, 4],
 		color: "#009966",
@@ -90,7 +90,7 @@ export const buildings = [
 	},
 	{
 		id: "733d217b-ab1a-4e3d-95e0-1fbaea066512",
-		name: "New Building",
+		name: "Kamar/Gedung Bersalin",
 		position: [15.5, 0.5, -16.5],
 		size: [4, 2, 7],
 		color: "#009966",
@@ -98,7 +98,7 @@ export const buildings = [
 	},
 	{
 		id: "303cc16c-b206-48b8-afb8-a25d35cb2c15",
-		name: "New Building",
+		name: "Perawatan Kebidanan",
 		position: [6.5, 0.5, -19.5],
 		size: [9, 2, 3],
 		color: "#009966",
@@ -106,7 +106,7 @@ export const buildings = [
 	},
 	{
 		id: "da93acd7-6d51-42b3-a219-649ad33af505",
-		name: "New Building",
+		name: "Perawatan Bedah & Anak",
 		position: [6.5, 0.5, -23.5],
 		size: [9, 2, 3],
 		color: "#009966",
@@ -114,7 +114,7 @@ export const buildings = [
 	},
 	{
 		id: "bbdefe35-78b8-4a39-991d-f1d4cdc465e0",
-		name: "New Building",
+		name: "Kelas 1",
 		position: [6.5, 0.5, -27.5],
 		size: [9, 2, 3],
 		color: "#009966",
@@ -122,7 +122,7 @@ export const buildings = [
 	},
 	{
 		id: "c152dc9b-7547-4483-a1ca-63b973659dc8",
-		name: "New Building",
+		name: "Kelas 2",
 		position: [-3.5, 0.5, -23.5],
 		size: [9, 2, 3],
 		color: "#009966",
@@ -130,7 +130,7 @@ export const buildings = [
 	},
 	{
 		id: "327e3bdf-2cae-4b2c-a436-69054efc64ff",
-		name: "New Building",
+		name: "Interna",
 		position: [-4.5, 0.5, -19.5],
 		size: [11, 2, 3],
 		color: "#009966",
@@ -154,11 +154,11 @@ export const buildings = [
 	},
 	{
 		id: "a854092b-260a-46e2-9186-de7f34f8d979",
-		name: "New Building",
+		name: "Poliklinik Kanan",
 		position: [4.5, 0.5, 1.5],
 		size: [5, 2, 9],
 		color: "#009966",
-		hasRooms: false,
+		hasRooms: true,
 	},
 	{
 		id: "66c23297-638e-48db-88b6-991de7cd17b9",
@@ -186,7 +186,7 @@ export const buildings = [
 	},
 	{
 		id: "08f0ba14-2ec2-4bd1-9e87-0d9bfb5c015f",
-		name: "ICU",
+		name: "IGD",
 		position: [3.5, 0.5, 15.5],
 		size: [3, 2, 5],
 		color: "#C1DBB3",
@@ -194,10 +194,10 @@ export const buildings = [
 	},
 	{
 		id: "26e5b0c7-6b4e-48fe-8802-d7819f2d2dca",
-		name: "New Building",
+		name: "Poliklinik Kiri",
 		position: [-1.5, 0.5, 0.5],
 		size: [5, 2, 9],
 		color: "#009966",
-		hasRooms: false,
+		hasRooms: true,
 	},
 ];
