@@ -5,8 +5,8 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useLabelStore, useViewStore } from "@/lib/store";
-import { Check, Menu } from "lucide-react";
+import { useLabelStore, useTutorialStore, useViewStore } from "@/lib/store";
+import { Check, HelpCircle, Menu } from "lucide-react";
 import { Button } from "./ui/button";
 
 export default function MapControl() {
@@ -18,9 +18,19 @@ export default function MapControl() {
 	} = useLabelStore();
 
 	const { viewMode, cameraMode, setViewMode, setCameraMode } = useViewStore();
+	const { setShowTutorial } = useTutorialStore();
 
 	return (
-		<div className="absolute bottom-0 left-0 z-20 p-6">
+		<div className="absolute bottom-0 left-0 z-20 flex gap-2 p-6">
+			<Button
+				variant="outline"
+				size="icon"
+				onClick={() => setShowTutorial(true)}
+				title="Show tutorial"
+			>
+				<HelpCircle className="h-4 w-4" />
+			</Button>
+
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
 					<Button variant="outline" size="icon">

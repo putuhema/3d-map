@@ -2,6 +2,7 @@ import { AutoZoomCamera } from "@/components/AutoZoomCamera";
 import { BuildingRenderer } from "@/components/BuildingRenderer";
 import { DestinationSelector } from "@/components/DestinationSelector";
 import { LocationDialog } from "@/components/RoomDialog";
+import { TutorialOverlay } from "@/components/TutorialOverlay";
 import MapControl from "@/components/map-control";
 import { useHospitalMap } from "@/hooks/useHospitalMap";
 import { Canvas } from "@react-three/fiber";
@@ -76,6 +77,8 @@ export default function HospitalMap() {
 
 	return (
 		<div className="relative h-screen w-full">
+			<TutorialOverlay />
+
 			<DestinationSelector
 				buildings={buildings}
 				rooms={rooms}
