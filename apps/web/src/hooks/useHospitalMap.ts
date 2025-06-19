@@ -228,7 +228,6 @@ export function useHospitalMap() {
 
 	const handleCorridorRemove = (id: string) => {
 		if (toolMode !== "remove" || !editMode) return;
-		console.log("handleCorridorRemove", id);
 		setCorridors((prev) => prev.filter((c) => c.id !== id));
 		if (pathCorridorIds.includes(id)) {
 			setPathCorridorIds([]);
@@ -312,7 +311,6 @@ export function useHospitalMap() {
 	};
 
 	const handleBuildingClick = (id: string, roomId?: string) => {
-		console.log("handleBuildingClick", { id, roomId });
 		if (editMode && toolMode === "remove") {
 			if (roomId) {
 				handleRoomRemove(roomId);
