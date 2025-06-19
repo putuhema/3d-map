@@ -1,3 +1,4 @@
+import { AutoZoomCamera } from "@/components/AutoZoomCamera";
 import { BuildingRenderer } from "@/components/BuildingRenderer";
 import { BuildingTools } from "@/components/BuildingTools";
 import { Compass } from "@/components/Compass";
@@ -9,8 +10,6 @@ import { DirectionsDisplay } from "@/components/hospital-map/DirectionsDisplay";
 import { ViewControls } from "@/components/hospital-map/ViewControls";
 import { useHospitalMap } from "@/hooks/useHospitalMap";
 import { useViewStore } from "@/lib/store";
-import { cameraPositions } from "@/utils/constants";
-import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -65,9 +64,10 @@ export default function DevMode() {
 		handleRoomDialogClose,
 		destinationSelectorExpanded,
 		setDestinationSelectorExpanded,
+		cameraTarget,
 	} = useHospitalMap();
 
-	const { viewMode, setViewMode, cameraMode } = useViewStore();
+	const { viewMode, setViewMode } = useViewStore();
 
 	return (
 		<div
@@ -125,26 +125,13 @@ export default function DevMode() {
 					fov: 45,
 					near: 0.1,
 					far: 1000,
-					position:
-						cameraPositions[viewMode === "topDown" ? "topDown" : "perspective"]
-							.position,
 				}}
 			>
-				<PerspectiveCamera
-					makeDefault
-					position={
-						cameraPositions[viewMode === "topDown" ? "topDown" : "perspective"]
-							.position
-					}
-				/>
-				<OrbitControls
-					target={[0, 0, 6]}
-					enableRotate={cameraMode === "free"}
-					enablePan={true}
-					enableZoom={true}
-					minDistance={5}
-					maxDistance={25}
-					maxPolarAngle={cameraMode === "topDown" ? 0 : Math.PI / 2 - 0.1}
+				<AutoZoomCamera
+					cameraTarget={cameraTarget}
+					fromId={fromId}
+					toId={toId}
+					rooms={rooms}
 				/>
 
 				<ambientLight intensity={0.5} />

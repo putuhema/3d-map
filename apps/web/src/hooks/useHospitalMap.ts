@@ -61,6 +61,11 @@ export function useHospitalMap() {
 	const [destinationSelectorExpanded, setDestinationSelectorExpanded] =
 		useState(false);
 
+	// Camera target state for auto-zoom
+	const [cameraTarget, setCameraTarget] = useState<[number, number, number]>([
+		0, 0, 6,
+	]);
+
 	// // Load saved state from localStorage
 	// useEffect(() => {
 	// 	const storedBuildings = localStorage.getItem("buildings");
@@ -129,6 +134,51 @@ export function useHospitalMap() {
 		},
 		[getBuildingById, getRoomById],
 	);
+
+	// Function to calculate camera target for two selected rooms
+	const calculateCameraTargetForRooms = useCallback(() => {
+		// Only auto-zoom if both fromId and toId are rooms (not buildings or current location)
+		if (!fromId || !toId || fromId === "current") return;
+
+		const fromRoom = getRoomById(fromId);
+		const toRoom = getRoomById(toId);
+
+		// Only proceed if both are rooms
+		if (!fromRoom || !toRoom) return;
+
+		// Calculate bounding box of the two rooms
+		const fromPos = fromRoom.position;
+		const toPos = toRoom.position;
+		const fromSize = fromRoom.size;
+		const toSize = toRoom.size;
+
+		// Calculate the center point between the two rooms
+		const centerX = (fromPos[0] + toPos[0]) / 2;
+		const centerY = (fromPos[1] + toPos[1]) / 2;
+		const centerZ = (fromPos[2] + toPos[2]) / 2;
+
+		// Calculate the distance between the rooms to determine appropriate zoom
+		const distanceX = Math.abs(toPos[0] - fromPos[0]);
+		const distanceZ = Math.abs(toPos[2] - fromPos[2]);
+		const maxDistance = Math.max(distanceX, distanceZ);
+
+		// Add some padding to the target (1.5x the distance)
+		const padding = Math.max(maxDistance * 1.5, 3); // Minimum padding of 3 units
+
+		// Set the camera target to the center of the two rooms
+		setCameraTarget([centerX, centerY, centerZ]);
+
+		// Return the calculated target and distance for zoom adjustment
+		return {
+			target: [centerX, centerY, centerZ] as [number, number, number],
+			distance: padding,
+		};
+	}, [fromId, toId, getRoomById]);
+
+	// Effect to recalculate camera target when room selection changes
+	useEffect(() => {
+		calculateCameraTargetForRooms();
+	}, [fromId, toId, calculateCameraTargetForRooms]);
 
 	// Destination selector functions
 	const handleFromSelect = useCallback(
@@ -458,5 +508,7 @@ export function useHospitalMap() {
 		handleRoomDialogClose,
 		destinationSelectorExpanded,
 		setDestinationSelectorExpanded,
+		cameraTarget,
+		setCameraTarget,
 	};
 }

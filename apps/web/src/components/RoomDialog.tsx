@@ -239,8 +239,6 @@ export function RoomDialog({
 }: RoomDialogProps) {
 	if (!room) return null;
 
-	console.log(room);
-
 	const handleOpenChange = (newOpen: boolean) => {
 		onOpenChange(newOpen);
 		// If the dialog is closing and we have an onClose callback, call it
