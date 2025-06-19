@@ -1,6 +1,7 @@
 import { AutoZoomCamera } from "@/components/AutoZoomCamera";
 import { BuildingRenderer } from "@/components/BuildingRenderer";
 import { DestinationSelector } from "@/components/DestinationSelector";
+import { GridSystem } from "@/components/GridSystem";
 import { RoomDialog } from "@/components/RoomDialog";
 import MapControl from "@/components/map-control";
 import { useHospitalMap } from "@/hooks/useHospitalMap";
@@ -123,6 +124,12 @@ export default function HospitalMap() {
 						highlightedBuildingIds={selectedBuildings}
 						showBuildings={showBuildings}
 						showRooms={showRooms}
+					/>
+					<GridSystem
+						gridSize={100}
+						cellSize={1}
+						onCellClick={() => {}}
+						onCellHover={() => {}}
 					/>
 				</Canvas>
 			</div>
