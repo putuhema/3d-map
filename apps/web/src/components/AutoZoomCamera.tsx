@@ -3,6 +3,7 @@ import { cameraPositions } from "@/utils/constants";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { TOUCH } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 interface AutoZoomCameraProps {
@@ -232,6 +233,13 @@ export function AutoZoomCamera({
 				enableDamping={true}
 				dampingFactor={0.05}
 				onChange={handleCameraChange}
+				// Configure touch sensitivity for better mobile experience
+				panSpeed={isMobileDevice ? 1.5 : 1.0}
+				// Enable one-finger panning on mobile (similar to right-click on desktop)
+				touches={{
+					ONE: isMobileDevice ? TOUCH.PAN : TOUCH.ROTATE,
+					TWO: TOUCH.DOLLY_PAN,
+				}}
 			/>
 		</>
 	);
