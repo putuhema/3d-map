@@ -12,6 +12,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, MapPin, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+
 interface DestinationSelectorProps {
 	buildings: Building[];
 	rooms: Room[];
@@ -62,21 +70,27 @@ export function DestinationSelector({
 
 	// Get all locations (buildings + rooms)
 	const allLocations = useMemo(() => {
-		const buildingLocations = buildings.map((building) => ({
-			id: building.id,
-			name: building.name,
-			type: "building" as const,
-			displayName: `${building.name} (Building)`,
-		}));
+		const buildingLocations = buildings
+			.filter((building) => building.name !== "")
+			.map((building) => ({
+				id: building.id,
+				name: building.name,
+				type: "building" as const,
+				displayName: `${building.name} (Building)`,
+			}));
 
-		const roomLocations = rooms.map((room) => ({
-			id: room.id,
-			name: room.name,
-			type: "room" as const,
-			displayName: `${room.name} (Room)`,
-		}));
+		const roomLocations = rooms
+			.filter((room) => room.name !== "")
+			.map((room) => ({
+				id: room.id,
+				name: room.name,
+				type: "room" as const,
+				displayName: `${room.name} (Room)`,
+			}));
 
-		return [...buildingLocations, ...roomLocations];
+		return [...buildingLocations, ...roomLocations].sort((a, b) =>
+			a.displayName.localeCompare(b.displayName),
+		);
 	}, [buildings, rooms]);
 
 	// Filter locations based on search
@@ -175,11 +189,11 @@ export function DestinationSelector({
 							height: { duration: 0.3 },
 							opacity: { duration: 0.2 },
 						}}
-						className="space-y-4 overflow-hidden rounded-lg border bg-background/95 shadow-lg backdrop-blur-sm"
+						className="space-y-4 overflow-hidden rounded-lg border bg-background/70 shadow-lg backdrop-blur-sm"
 					>
 						<div className="p-4">
 							<div className="mb-4 flex items-center justify-between">
-								<h3 className="font-semibold text-foreground">Route Planner</h3>
+								<h3 className="font-semibold text-foreground">Pilih Tujuan</h3>
 								<Button
 									variant="ghost"
 									size="sm"
@@ -196,131 +210,61 @@ export function DestinationSelector({
 								transition={{ delay: 0.1, duration: 0.3 }}
 								className="space-y-4"
 							>
-								<div className="space-y-2">
+								<div className="flex gap-2">
 									<label
 										htmlFor="from-select"
-										className="flex items-center gap-2 font-medium text-foreground text-sm"
+										className="flex w-20 items-center gap-2 font-medium text-foreground text-sm"
 									>
 										<MapPin className="h-4 w-4" />
 										From
 									</label>
-									<DropdownMenu open={fromOpen} onOpenChange={setFromOpen}>
-										<DropdownMenuTrigger asChild>
-											<Button
-												id="from-select"
-												variant="outline"
-												className="w-full justify-between text-left font-normal"
-											>
-												<span className="truncate">
-													{getSelectedFromName()}
-												</span>
-												<ChevronDown className="h-4 w-4 opacity-50" />
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent
-											className="w-full min-w-[300px]"
-											align="start"
-										>
-											<div className="p-2">
-												<div className="relative">
-													<Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
-													<Input
-														placeholder="Search locations..."
-														value={fromSearch}
-														onChange={(e) => setFromSearch(e.target.value)}
-														className="pl-8"
-													/>
-												</div>
-											</div>
-											<div className="max-h-[200px] overflow-y-auto">
-												<DropdownMenuItem
-													onClick={handleUseCurrentLocation}
-													className="cursor-pointer font-medium text-primary"
-												>
-													📍 Use Current Location
-												</DropdownMenuItem>
-												{filteredFromLocations.length === 0 ? (
-													<div className="px-2 py-1.5 text-muted-foreground text-sm">
-														No locations found
-													</div>
-												) : (
-													filteredFromLocations.map((location) => (
-														<DropdownMenuItem
-															key={location.id}
-															onClick={() =>
-																handleFromSelect(location.id, location.type)
-															}
-															className="cursor-pointer"
-														>
-															{location.displayName}
-														</DropdownMenuItem>
-													))
-												)}
-											</div>
-										</DropdownMenuContent>
-									</DropdownMenu>
+									<Select
+										value={fromId || ""}
+										onValueChange={(value) =>
+											handleFromSelect(value, "building")
+										}
+									>
+										<SelectTrigger className="w-full bg-background">
+											<SelectValue placeholder="Pilih Lokasi" />
+										</SelectTrigger>
+										<SelectContent className="max-h-[200px] overflow-y-auto">
+											{filteredFromLocations.map((location) => (
+												<SelectItem key={location.id} value={location.id}>
+													{location.displayName}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 								</div>
 
 								<motion.div
 									initial={{ opacity: 0, y: 20 }}
 									animate={{ opacity: 1, y: 0 }}
 									transition={{ delay: 0.2, duration: 0.3 }}
-									className="space-y-2"
+									className="flex gap-2"
 								>
 									<label
 										htmlFor="to-select"
-										className="flex items-center gap-2 font-medium text-foreground text-sm"
+										className="flex w-20 items-center gap-2 font-medium text-foreground text-sm"
 									>
 										<MapPin className="h-4 w-4" />
 										To
 									</label>
-									<DropdownMenu open={toOpen} onOpenChange={setToOpen}>
-										<DropdownMenuTrigger asChild>
-											<Button
-												id="to-select"
-												variant="outline"
-												className="w-full justify-between text-left font-normal"
-											>
-												<span className="truncate">{getSelectedToName()}</span>
-												<ChevronDown className="h-4 w-4 opacity-50" />
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent
-											className="w-full min-w-[300px]"
-											align="start"
-										>
-											<div className="p-2">
-												<div className="relative">
-													<Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
-													<Input
-														placeholder="Search locations..."
-														value={toSearch}
-														onChange={(e) => setToSearch(e.target.value)}
-														className="pl-8"
-													/>
-												</div>
-											</div>
-											<div className="max-h-[200px] overflow-y-auto">
-												{filteredToLocations.length === 0 ? (
-													<div className="px-2 py-1.5 text-muted-foreground text-sm">
-														No locations found
-													</div>
-												) : (
-													filteredToLocations.map((location) => (
-														<DropdownMenuItem
-															key={location.id}
-															onClick={() =>
-																handleToSelect(location.id, location.type)
-															}
-															className="cursor-pointer"
-														>
-															{location.displayName}
-														</DropdownMenuItem>
-													))
-												)}
-											</div>
-										</DropdownMenuContent>
-									</DropdownMenu>
+									<Select
+										value={toId || ""}
+										onValueChange={(value) => handleToSelect(value, "building")}
+									>
+										<SelectTrigger className="w-full bg-background">
+											<SelectValue placeholder="Pilih Lokasi" />
+										</SelectTrigger>
+										<SelectContent className="max-h-[200px] overflow-y-auto">
+											{filteredToLocations.map((location) => (
+												<SelectItem key={location.id} value={location.id}>
+													{location.displayName}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 								</motion.div>
 
 								<motion.div
@@ -333,7 +277,7 @@ export function DestinationSelector({
 										disabled={!canFindPath}
 										className="w-full"
 									>
-										Find Path
+										Cari Rute
 									</Button>
 								</motion.div>
 							</motion.div>

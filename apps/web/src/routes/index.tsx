@@ -124,6 +124,8 @@ export default function HospitalMap() {
 						highlightedBuildingIds={selectedBuildings}
 						showBuildings={showBuildings}
 						showRooms={showRooms}
+						fromId={fromId}
+						toId={toId}
 					/>
 				</Canvas>
 			</div>

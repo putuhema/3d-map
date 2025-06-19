@@ -5,7 +5,7 @@ import { useLabelStore } from "@/lib/store";
 import { Html, Line } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MeshStandardMaterial, Vector3 } from "three";
 import type { Mesh } from "three";
 
@@ -19,6 +19,8 @@ interface BuildingRendererProps {
 	highlightedBuildingIds?: string[];
 	showBuildings?: boolean;
 	showRooms?: boolean;
+	fromId?: string | null;
+	toId?: string | null;
 }
 
 export function BuildingRenderer({
@@ -31,6 +33,8 @@ export function BuildingRenderer({
 	highlightedBuildingIds = [],
 	showBuildings = true,
 	showRooms = true,
+	fromId,
+	toId,
 }: BuildingRendererProps) {
 	const buildingRefs = useRef<Map<string, Mesh>>(new Map());
 	const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
@@ -39,6 +43,50 @@ export function BuildingRenderer({
 
 	// Get label visibility from Zustand store
 	const { showBuildingLabels, showRoomLabels } = useLabelStore();
+
+	// Helper functions to determine destination status
+	const isFromDestination = useCallback(
+		(id: string) => {
+			return fromId === id;
+		},
+		[fromId],
+	);
+
+	const isToDestination = useCallback(
+		(id: string) => {
+			return toId === id;
+		},
+		[toId],
+	);
+
+	const isDestination = useCallback(
+		(id: string) => {
+			return isFromDestination(id) || isToDestination(id);
+		},
+		[isFromDestination, isToDestination],
+	);
+
+	// Get destination color based on type
+	const getDestinationColor = useCallback(
+		(id: string) => {
+			if (isFromDestination(id)) {
+				return "#22c55e"; // Green for from destination
+			}
+			if (isToDestination(id)) {
+				return "#ef4444"; // Red for to destination
+			}
+			return null;
+		},
+		[isFromDestination, isToDestination],
+	);
+
+	// Should show label for destination (auto-show for destinations)
+	const shouldShowLabel = useCallback(
+		(id: string, defaultShow: boolean) => {
+			return defaultShow || isDestination(id);
+		},
+		[isDestination],
+	);
 
 	// Reset animation time when path changes
 	useEffect(() => {
@@ -267,7 +315,7 @@ export function BuildingRenderer({
 						>
 							<boxGeometry args={[1, 1, 1]} />
 							<meshStandardMaterial
-								color={building.color}
+								color={getDestinationColor(building.id) || building.color}
 								metalness={0.1}
 								roughness={0.5}
 								attach="material"
@@ -284,23 +332,33 @@ export function BuildingRenderer({
 									attach="material"
 								/>
 							)}
-							{building.name && showBuildingLabels && (
-								<Html
-									center
-									position={[0, building.size[1] / 9 + 0.5, 0]}
-									style={{
-										background: "rgba(152, 205, 0, 0.8)",
-										color: "white",
-										padding: "4px 8px",
-										borderRadius: "4px",
-										fontSize: "12px",
-										whiteSpace: "nowrap",
-										pointerEvents: "none",
-									}}
-								>
-									{building.name}
-								</Html>
-							)}
+							{building.name &&
+								shouldShowLabel(building.id, showBuildingLabels) && (
+									<Html
+										center
+										position={[0, building.size[1] / 9 + 0.5, 0]}
+										style={{
+											background: isDestination(building.id)
+												? isFromDestination(building.id)
+													? "rgba(34, 197, 94, 0.9)"
+													: "rgba(239, 68, 68, 0.9)"
+												: "rgba(152, 205, 0, 0.8)",
+											color: "white",
+											padding: "4px 8px",
+											borderRadius: "4px",
+											fontSize: "12px",
+											whiteSpace: "nowrap",
+											pointerEvents: "none",
+											fontWeight: isDestination(building.id)
+												? "bold"
+												: "normal",
+										}}
+									>
+										{isDestination(building.id)
+											? `${building.name} (${isFromDestination(building.id) ? "FROM" : "TO"})`
+											: building.name}
+									</Html>
+								)}
 						</mesh>
 					);
 				})}
@@ -330,27 +388,34 @@ export function BuildingRenderer({
 					>
 						<boxGeometry args={[1, 1, 1]} />
 						<meshStandardMaterial
-							color={room.color}
+							color={getDestinationColor(room.id) || room.color}
 							transparent={true}
 							opacity={1}
 							metalness={hoveredRoomId === room.id ? 0.3 : 0.1}
 							roughness={hoveredRoomId === room.id ? 0.3 : 0.5}
 						/>
-						{room.name && showRoomLabels && (
+						{room.name && shouldShowLabel(room.id, showRoomLabels) && (
 							<Html
 								center
 								position={[0, room.size[1] / 2 + 0.5, 0]}
 								style={{
-									background: "rgba(0, 0, 0, 0.8)",
+									background: isDestination(room.id)
+										? isFromDestination(room.id)
+											? "rgba(34, 197, 94, 0.9)"
+											: "rgba(239, 68, 68, 0.9)"
+										: "rgba(0, 0, 0, 0.8)",
 									color: "white",
 									padding: "4px 8px",
 									borderRadius: "4px",
 									fontSize: "14px",
 									whiteSpace: "nowrap",
 									pointerEvents: "none",
+									fontWeight: isDestination(room.id) ? "bold" : "normal",
 								}}
 							>
-								{room.name}
+								{isDestination(room.id)
+									? `${room.name} (${isFromDestination(room.id) ? "FROM" : "TO"})`
+									: room.name}
 							</Html>
 						)}
 					</mesh>

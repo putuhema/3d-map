@@ -13,7 +13,7 @@ export const buildings = [
 		name: "Casemix",
 		position: [8.5, 0.5, 17.5],
 		size: [2, 2, 2],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -21,7 +21,7 @@ export const buildings = [
 		name: "Radiologi",
 		position: [-6.5, 0.5, 12.5],
 		size: [7, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -29,7 +29,7 @@ export const buildings = [
 		name: "Laudry",
 		position: [-12.5, 0.5, 8.5],
 		size: [4, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -37,7 +37,7 @@ export const buildings = [
 		name: "New Building",
 		position: [-12.5, 0.5, 12.5],
 		size: [3, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -45,7 +45,7 @@ export const buildings = [
 		name: "Kamar Operasi",
 		position: [-10.5, 0.5, -1.5],
 		size: [11, 2, 11],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -53,7 +53,7 @@ export const buildings = [
 		name: "Tranfusi Darah",
 		position: [-0.5, 0.5, 12.5],
 		size: [3, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -61,7 +61,7 @@ export const buildings = [
 		name: "Laboratorium",
 		position: [-1, 0.5, -7.5],
 		size: [4, 2, 5],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -69,7 +69,7 @@ export const buildings = [
 		name: "Kamar Mayat",
 		position: [-12.5, 0.5, -11.5],
 		size: [3, 2, 2],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -77,7 +77,7 @@ export const buildings = [
 		name: "ISO-TB",
 		position: [-1.5, 0.5, -14.5],
 		size: [4, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -85,7 +85,7 @@ export const buildings = [
 		name: "ICU",
 		position: [7.5, 0.5, -14.5],
 		size: [7, 2, 4],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -93,7 +93,7 @@ export const buildings = [
 		name: "Kamar/Gedung Bersalin",
 		position: [15.5, 0.5, -16.5],
 		size: [4, 2, 7],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -101,7 +101,7 @@ export const buildings = [
 		name: "Perawatan Kebidanan",
 		position: [6.5, 0.5, -19.5],
 		size: [9, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -109,7 +109,7 @@ export const buildings = [
 		name: "Perawatan Bedah & Anak",
 		position: [6.5, 0.5, -23.5],
 		size: [9, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -117,7 +117,7 @@ export const buildings = [
 		name: "Kelas 1",
 		position: [6.5, 0.5, -27.5],
 		size: [9, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -125,7 +125,7 @@ export const buildings = [
 		name: "Kelas 2",
 		position: [-3.5, 0.5, -23.5],
 		size: [9, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -133,7 +133,7 @@ export const buildings = [
 		name: "Interna",
 		position: [-4.5, 0.5, -19.5],
 		size: [11, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -141,7 +141,7 @@ export const buildings = [
 		name: "Kantor",
 		position: [-0.5, 0.5, 26.5],
 		size: [3, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -157,7 +157,7 @@ export const buildings = [
 		name: "Poliklinik Kanan",
 		position: [4.5, 0.5, 1.5],
 		size: [5, 2, 9],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: true,
 	},
 	{
@@ -165,7 +165,7 @@ export const buildings = [
 		name: "Apotik Rawat Inap",
 		position: [4.5, 0.5, -6.5],
 		size: [5, 2, 5],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -173,7 +173,7 @@ export const buildings = [
 		name: "Farmasi ( Apotik Rawat Jalan )",
 		position: [11.5, 0.5, 13.5],
 		size: [7, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -181,7 +181,7 @@ export const buildings = [
 		name: "",
 		position: [13.5, 0.5, 16.5],
 		size: [3, 2, 3],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
@@ -197,7 +197,7 @@ export const buildings = [
 		name: "Poliklinik Kiri",
 		position: [-1.5, 0.5, 0.5],
 		size: [5, 2, 9],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: true,
 	},
 ];
