@@ -1,5 +1,6 @@
 import { BuildingRenderer } from "@/components/BuildingRenderer";
 import { DestinationSelector } from "@/components/DestinationSelector";
+import { RoomDialog } from "@/components/RoomDialog";
 import MapControl from "@/components/map-control";
 import { useHospitalMap } from "@/hooks/useHospitalMap";
 import { useViewStore } from "@/lib/store";
@@ -28,6 +29,12 @@ export default function HospitalMap() {
 		handleUseCurrentLocation,
 		selectedBuildings,
 		pathCorridorIds,
+		roomDialogOpen,
+		setRoomDialogOpen,
+		selectedRoom,
+		handleRoomDialogClose,
+		destinationSelectorExpanded,
+		setDestinationSelectorExpanded,
 	} = useHospitalMap();
 
 	const { viewMode, cameraMode } = useViewStore();
@@ -44,7 +51,17 @@ export default function HospitalMap() {
 				fromId={fromId}
 				toId={toId}
 				playerPosition={playerPosition}
+				isExpanded={destinationSelectorExpanded}
+				onExpandedChange={setDestinationSelectorExpanded}
 			/>
+
+			<RoomDialog
+				room={selectedRoom}
+				open={roomDialogOpen}
+				onOpenChange={setRoomDialogOpen}
+				onClose={handleRoomDialogClose}
+			/>
+
 			<div className="h-full w-full">
 				<Canvas
 					shadows

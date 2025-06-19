@@ -10,7 +10,7 @@ import type { Building } from "@/data/building";
 import type { Room } from "@/data/room";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, MapPin, Search, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface DestinationSelectorProps {
 	buildings: Building[];
@@ -22,6 +22,8 @@ interface DestinationSelectorProps {
 	fromId: string | null;
 	toId: string | null;
 	playerPosition: { x: number; y: number; z: number };
+	isExpanded?: boolean;
+	onExpandedChange?: (expanded: boolean) => void;
 }
 
 export function DestinationSelector({
@@ -34,12 +36,29 @@ export function DestinationSelector({
 	fromId,
 	toId,
 	playerPosition,
+	isExpanded,
+	onExpandedChange,
 }: DestinationSelectorProps) {
 	const [fromSearch, setFromSearch] = useState("");
 	const [toSearch, setToSearch] = useState("");
 	const [fromOpen, setFromOpen] = useState(false);
 	const [toOpen, setToOpen] = useState(false);
-	const [isExpanded, setIsExpanded] = useState(false);
+	const [isExpandedState, setIsExpandedState] = useState(isExpanded || false);
+
+	// Sync internal state with prop
+	useEffect(() => {
+		if (isExpanded !== undefined) {
+			setIsExpandedState(isExpanded);
+		}
+	}, [isExpanded]);
+
+	// Handle internal state changes and call callback
+	const handleExpandedChange = (expanded: boolean) => {
+		setIsExpandedState(expanded);
+		if (onExpandedChange) {
+			onExpandedChange(expanded);
+		}
+	};
 
 	// Get all locations (buildings + rooms)
 	const allLocations = useMemo(() => {
@@ -124,7 +143,7 @@ export function DestinationSelector({
 	return (
 		<div className="absolute top-0 right-0 left-0 z-20 p-4">
 			<AnimatePresence mode="wait">
-				{!isExpanded ? (
+				{!isExpandedState ? (
 					<motion.div
 						key="collapsed"
 						initial={{ opacity: 0, scale: 0.8 }}
@@ -133,7 +152,7 @@ export function DestinationSelector({
 						transition={{ duration: 0.2 }}
 					>
 						<Button
-							onClick={() => setIsExpanded(true)}
+							onClick={() => handleExpandedChange(true)}
 							className="justify-between border bg-background/95 shadow-lg backdrop-blur-sm"
 							variant="outline"
 						>
@@ -164,7 +183,7 @@ export function DestinationSelector({
 								<Button
 									variant="ghost"
 									size="sm"
-									onClick={() => setIsExpanded(false)}
+									onClick={() => handleExpandedChange(false)}
 									className="h-8 w-8 p-0"
 								>
 									<X className="h-4 w-4" />

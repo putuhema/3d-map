@@ -81,7 +81,7 @@ export function BuildingRenderer({
 	// Animated path indicator
 	useFrame((state) => {
 		if (pathIndicatorRef.current && highlightedCorridorIds.length > 0) {
-			animationTime.current += state.clock.getDelta() * 10;
+			animationTime.current += state.clock.getDelta() * 25;
 
 			// Get highlighted corridors in the correct order from pathfinding
 			const highlightedCorridors: Corridor[] = [];

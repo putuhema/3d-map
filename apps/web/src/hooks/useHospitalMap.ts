@@ -53,6 +53,14 @@ export function useHospitalMap() {
 	const [fromId, setFromId] = useState<string | null>(null);
 	const [toId, setToId] = useState<string | null>(null);
 
+	// Room dialog state
+	const [roomDialogOpen, setRoomDialogOpen] = useState(false);
+	const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+
+	// Destination selector state
+	const [destinationSelectorExpanded, setDestinationSelectorExpanded] =
+		useState(false);
+
 	// // Load saved state from localStorage
 	// useEffect(() => {
 	// 	const storedBuildings = localStorage.getItem("buildings");
@@ -139,8 +147,17 @@ export function useHospitalMap() {
 			setSelectedBuildings([]);
 			setPathCorridorIds([]);
 			setDirections([]);
+
+			// Show room dialog if a room is selected
+			if (type === "room") {
+				const room = getRoomById(id);
+				if (room) {
+					setSelectedRoom(room);
+					setRoomDialogOpen(true);
+				}
+			}
 		},
-		[],
+		[getRoomById],
 	);
 
 	const handleUseCurrentLocation = useCallback(() => {
@@ -200,6 +217,15 @@ export function useHospitalMap() {
 			}
 		}
 	}, [fromId, toId, getPositionById, corridors, rooms, playerPosition]);
+
+	const handleRoomDialogClose = useCallback(() => {
+		// Close the destination selector
+		setDestinationSelectorExpanded(false);
+		// Trigger pathfinding when room dialog closes
+		if (fromId && toId && fromId !== toId) {
+			handleFindPath();
+		}
+	}, [fromId, toId, handleFindPath]);
 
 	const handleBuildingPlace = (building: Building) => {
 		// Set hasRooms to false by default for new buildings
@@ -284,6 +310,7 @@ export function useHospitalMap() {
 				size: buildingSize,
 				color: buildingColor,
 				buildingId: targetBuilding.id,
+				image: "",
 			});
 		} else if (toolMode === "corridor") {
 			if (!isDrawingCorridor) {
@@ -379,7 +406,9 @@ export function useHospitalMap() {
 		corridors,
 		rooms,
 		showBuildings,
+		setShowBuildings,
 		showRooms,
+		setShowRooms,
 		fromId,
 		toId,
 		handleFromSelect,
@@ -421,5 +450,13 @@ export function useHospitalMap() {
 		buildingColor,
 		locationError,
 		setLocationError,
+		userLocation,
+		roomDialogOpen,
+		setRoomDialogOpen,
+		selectedRoom,
+		setSelectedRoom,
+		handleRoomDialogClose,
+		destinationSelectorExpanded,
+		setDestinationSelectorExpanded,
 	};
 }

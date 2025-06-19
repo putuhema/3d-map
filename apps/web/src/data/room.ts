@@ -5,6 +5,7 @@ export type Room = {
 	size: [number, number, number];
 	color: string;
 	buildingId: string;
+	image: string;
 };
 
 export const rooms = [
@@ -15,6 +16,7 @@ export const rooms = [
 		size: [1, 1, 1],
 		color: "#d8d2f9",
 		buildingId: "8e99cb47-93dd-40ee-aa8e-583e71b35382",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "5e2e2a81-e0a9-4622-9fc5-28f3418fa569",
@@ -23,6 +25,7 @@ export const rooms = [
 		size: [1, 1, 1],
 		color: "#d8d2f9",
 		buildingId: "8e99cb47-93dd-40ee-aa8e-583e71b35382",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "dd40b7d6-c9e9-43f1-bb16-2b28addc3b3b",
@@ -31,6 +34,7 @@ export const rooms = [
 		size: [2, 1, 1],
 		color: "#d8d2f9",
 		buildingId: "8e99cb47-93dd-40ee-aa8e-583e71b35382",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "a512e385-5e30-476d-95a5-cc49490ba3b4",
@@ -39,6 +43,7 @@ export const rooms = [
 		size: [2, 1, 1],
 		color: "#d8d2f9",
 		buildingId: "8e99cb47-93dd-40ee-aa8e-583e71b35382",
+		image: "/rooms/server.jpeg",
 	},
 	{
 		id: "ea3cf5f0-ae04-420f-b3b0-fbb540bf7d86",
@@ -47,6 +52,7 @@ export const rooms = [
 		size: [2, 1, 2],
 		color: "#d8d2f9",
 		buildingId: "8e99cb47-93dd-40ee-aa8e-583e71b35382",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "de9d6cf8-eae5-4252-a377-be56dfbc06db",
@@ -63,6 +69,7 @@ export const rooms = [
 		size: [1, 1, 2],
 		color: "#4f46e5",
 		buildingId: "a854092b-260a-46e2-9186-de7f34f8d979",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "f4d6f4f1-d868-473e-bb31-e136e1375800",
@@ -79,6 +86,7 @@ export const rooms = [
 		size: [1, 1, 2],
 		color: "#4f46e5",
 		buildingId: "a854092b-260a-46e2-9186-de7f34f8d979",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "378ec343-048c-4470-ac8d-73f728e70f7d",
@@ -87,6 +95,7 @@ export const rooms = [
 		size: [1, 1, 2],
 		color: "#4f46e5",
 		buildingId: "a854092b-260a-46e2-9186-de7f34f8d979",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "629b8267-a09f-432b-8df2-89fa3b04ba77",
@@ -95,6 +104,7 @@ export const rooms = [
 		size: [2, 1, 1],
 		color: "#4f46e5",
 		buildingId: "a854092b-260a-46e2-9186-de7f34f8d979",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "3fa8c2db-58d1-48e2-8bd5-691749e7c25b",
@@ -103,6 +113,7 @@ export const rooms = [
 		size: [2, 1, 1],
 		color: "#4f46e5",
 		buildingId: "a854092b-260a-46e2-9186-de7f34f8d979",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "ecf35594-32c9-418e-b058-0a371c3a2a44",
@@ -111,6 +122,7 @@ export const rooms = [
 		size: [2, 1, 1],
 		color: "#4f46e5",
 		buildingId: "a854092b-260a-46e2-9186-de7f34f8d979",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "a48fc005-c72c-47ae-a3f8-49e7f06ad952",
@@ -119,6 +131,7 @@ export const rooms = [
 		size: [2, 1, 1],
 		color: "#4f46e5",
 		buildingId: "a854092b-260a-46e2-9186-de7f34f8d979",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "9b022b7d-442e-4a37-9c51-040e77bf1590",
@@ -127,6 +140,7 @@ export const rooms = [
 		size: [2, 1, 1],
 		color: "#4f46e5",
 		buildingId: "a854092b-260a-46e2-9186-de7f34f8d979",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "6c84c359-7263-4035-b68e-66cada23c0d0",
@@ -135,6 +149,7 @@ export const rooms = [
 		size: [2, 1, 1],
 		color: "#4f46e5",
 		buildingId: "8e99cb47-93dd-40ee-aa8e-583e71b35382",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "bb1040d5-2ab4-4c5d-8708-f3fda851b938",
@@ -143,6 +158,7 @@ export const rooms = [
 		size: [2, 1, 1],
 		color: "#4f46e5",
 		buildingId: "a854092b-260a-46e2-9186-de7f34f8d979",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "6a210677-680f-4c18-bbce-404168371967",
@@ -151,6 +167,7 @@ export const rooms = [
 		size: [2, 1, 2],
 		color: "#4f46e5",
 		buildingId: "a854092b-260a-46e2-9186-de7f34f8d979",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "070e864f-ca29-41f1-9167-55cec1f53107",
@@ -159,6 +176,7 @@ export const rooms = [
 		size: [2, 1, 1],
 		color: "#4f46e5",
 		buildingId: "26e5b0c7-6b4e-48fe-8802-d7819f2d2dca",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "869a2f5c-e106-426a-a2e5-1ee30944def1",
@@ -167,6 +185,7 @@ export const rooms = [
 		size: [2, 1, 2],
 		color: "#4f46e5",
 		buildingId: "26e5b0c7-6b4e-48fe-8802-d7819f2d2dca",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "2d3b9fad-e1f6-4353-ab74-367b73a467cd",
@@ -175,6 +194,7 @@ export const rooms = [
 		size: [2, 1, 2],
 		color: "#4f46e5",
 		buildingId: "26e5b0c7-6b4e-48fe-8802-d7819f2d2dca",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "9d735e12-1dd3-475e-80cb-57e7c8ecc4e2",
@@ -183,6 +203,7 @@ export const rooms = [
 		size: [2, 1, 2],
 		color: "#4f46e5",
 		buildingId: "26e5b0c7-6b4e-48fe-8802-d7819f2d2dca",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "29c8dfe5-8acd-42a0-beeb-eeb933deef1b",
@@ -191,5 +212,6 @@ export const rooms = [
 		size: [2, 1, 2],
 		color: "#4f46e5",
 		buildingId: "26e5b0c7-6b4e-48fe-8802-d7819f2d2dca",
+		image: "/rooms/casemix.jpeg",
 	},
 ];

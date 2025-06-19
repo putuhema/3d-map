@@ -4,9 +4,11 @@ import { Compass } from "@/components/Compass";
 import { CoordinateDisplay } from "@/components/CoordinateDisplay";
 import { DestinationSelector } from "@/components/DestinationSelector";
 import { GridSystem } from "@/components/GridSystem";
+import { RoomDialog } from "@/components/RoomDialog";
 import { DirectionsDisplay } from "@/components/hospital-map/DirectionsDisplay";
 import { ViewControls } from "@/components/hospital-map/ViewControls";
 import { useHospitalMap } from "@/hooks/useHospitalMap";
+import { useViewStore } from "@/lib/store";
 import { cameraPositions } from "@/utils/constants";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
@@ -18,9 +20,6 @@ export const Route = createFileRoute("/dev")({
 
 export default function DevMode() {
 	const {
-		viewMode,
-		setViewMode,
-		cameraMode,
 		playerPosition,
 		userLocation,
 		locationError,
@@ -59,10 +58,16 @@ export default function DevMode() {
 		handleFromSelect,
 		handleToSelect,
 		handleFindPath,
-		setFromId,
-		setToId,
 		handleUseCurrentLocation,
+		roomDialogOpen,
+		setRoomDialogOpen,
+		selectedRoom,
+		handleRoomDialogClose,
+		destinationSelectorExpanded,
+		setDestinationSelectorExpanded,
 	} = useHospitalMap();
+
+	const { viewMode, setViewMode, cameraMode } = useViewStore();
 
 	return (
 		<div
@@ -83,6 +88,15 @@ export default function DevMode() {
 				fromId={fromId}
 				toId={toId}
 				playerPosition={playerPosition}
+				isExpanded={destinationSelectorExpanded}
+				onExpandedChange={setDestinationSelectorExpanded}
+			/>
+
+			<RoomDialog
+				room={selectedRoom}
+				open={roomDialogOpen}
+				onOpenChange={setRoomDialogOpen}
+				onClose={handleRoomDialogClose}
 			/>
 
 			<ViewControls

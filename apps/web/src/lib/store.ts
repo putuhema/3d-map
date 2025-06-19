@@ -10,9 +10,9 @@ interface LabelState {
 }
 
 interface ViewState {
-	viewMode: "topDown" | "perspective";
+	viewMode: "topDown" | "perspective" | "walk";
 	cameraMode: "free" | "topDown";
-	setViewMode: (mode: "topDown" | "perspective") => void;
+	setViewMode: (mode: "topDown" | "perspective" | "walk") => void;
 	setCameraMode: (mode: "free" | "topDown") => void;
 }
 
