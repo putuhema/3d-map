@@ -15,6 +15,7 @@ interface AutoZoomCameraProps {
 		position: [number, number, number];
 		size: [number, number, number];
 	}>;
+	playerPosition?: { x: number; y: number; z: number };
 }
 
 // Mobile detection utility
@@ -31,6 +32,7 @@ export function AutoZoomCamera({
 	fromId,
 	toId,
 	rooms,
+	playerPosition,
 }: AutoZoomCameraProps) {
 	const controlsRef = useRef<OrbitControlsImpl>(null);
 	const { viewMode, cameraMode, setViewMode, setCameraMode } = useViewStore();
@@ -46,21 +48,42 @@ export function AutoZoomCamera({
 
 	// Function to calculate optimal distance for two rooms
 	const calculateOptimalDistance = useCallback(() => {
-		if (!fromId || !toId || fromId === "current") return null;
+		if (!fromId || !toId) return null;
 
-		const fromRoom = rooms.find((r) => r.id === fromId);
+		let fromPos: [number, number, number] | null = null;
+		let toPos: [number, number, number] | null = null;
+
+		// Handle current location case
+		if (fromId === "current") {
+			if (playerPosition) {
+				fromPos = [playerPosition.x, 0, playerPosition.z];
+			} else {
+				return null; // Skip auto-zoom for current location if no player position
+			}
+		} else {
+			const fromRoom = rooms.find((r) => r.id === fromId);
+			if (fromRoom) {
+				fromPos = fromRoom.position;
+			}
+		}
+
+		// Handle destination (can be room or building)
 		const toRoom = rooms.find((r) => r.id === toId);
+		if (toRoom) {
+			toPos = toRoom.position;
+		}
 
-		if (!fromRoom || !toRoom) return null;
+		// Only proceed if we have both positions
+		if (!fromPos || !toPos) return null;
 
-		// Calculate distance between room centers
-		const distanceX = Math.abs(toRoom.position[0] - fromRoom.position[0]);
-		const distanceZ = Math.abs(toRoom.position[2] - fromRoom.position[2]);
+		// Calculate distance between positions
+		const distanceX = Math.abs(toPos[0] - fromPos[0]);
+		const distanceZ = Math.abs(toPos[2] - fromPos[2]);
 		const maxDistance = Math.max(distanceX, distanceZ);
 
 		// Add padding and room sizes
-		const fromSize = Math.max(fromRoom.size[0], fromRoom.size[2]);
-		const toSize = Math.max(toRoom.size[0], toRoom.size[2]);
+		const fromSize = Math.max(fromPos[0], fromPos[2]); // Use position as size approximation
+		const toSize = Math.max(toPos[0], toPos[2]); // Use position as size approximation
 		const totalSize = fromSize + toSize;
 
 		// Calculate optimal distance with padding
@@ -71,7 +94,7 @@ export function AutoZoomCamera({
 			isMobileDevice ? 8 : 5, // Higher minimum distance for mobile
 		);
 		return optimalDistance;
-	}, [fromId, toId, rooms, isMobileDevice]);
+	}, [fromId, toId, rooms, isMobileDevice, playerPosition]);
 
 	// Function to smoothly animate camera
 	const animateCamera = useCallback(

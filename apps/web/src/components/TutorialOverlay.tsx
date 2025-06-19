@@ -83,7 +83,6 @@ export function TutorialOverlay() {
 								</h3>
 
 								{isMobileDevice ? (
-									// Mobile instructions
 									<>
 										<div className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
 											<Smartphone className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
@@ -91,9 +90,8 @@ export function TutorialOverlay() {
 												<p className="font-medium">Geser (Pindah)</p>
 												<p className="text-muted-foreground">
 													<span className="rounded bg-background px-1 font-mono">
-														Sentuh + geser
+														Sentuh dengan dua jari + geser
 													</span>{" "}
-													dengan jari
 												</p>
 											</div>
 										</div>
@@ -117,14 +115,13 @@ export function TutorialOverlay() {
 												<p className="font-medium">Rotasi</p>
 												<p className="text-muted-foreground">
 													<span className="rounded bg-background px-1 font-mono">
-														Sentuh dengan dua jari + putar
+														Sentuh dengan satu jari + putar
 													</span>
 												</p>
 											</div>
 										</div>
 									</>
 								) : (
-									// Desktop instructions
 									<>
 										<div className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
 											<Monitor className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
@@ -132,7 +129,7 @@ export function TutorialOverlay() {
 												<p className="font-medium">Geser (Pindah)</p>
 												<p className="text-muted-foreground">
 													<span className="rounded bg-background px-1 font-mono">
-														Klik kiri + seret
+														Klik Kanan + seret
 													</span>{" "}
 													mouse
 												</p>
@@ -158,7 +155,7 @@ export function TutorialOverlay() {
 												<p className="font-medium">Rotasi</p>
 												<p className="text-muted-foreground">
 													<span className="rounded bg-background px-1 font-mono">
-														Klik kanan + seret
+														Klik Kiri + seret
 													</span>{" "}
 													mouse
 												</p>

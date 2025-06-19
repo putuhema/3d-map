@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Building } from "@/data/building";
 import type { Room } from "@/data/room";
+import { getBuildingForRoom, getRoomsForBuilding } from "@/lib/utils";
 import { RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -15,6 +16,8 @@ interface LocationDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onClose?: () => void;
+	buildings?: Building[];
+	rooms?: Room[];
 }
 
 interface ZoomableImageProps {
@@ -237,6 +240,8 @@ export function LocationDialog({
 	open,
 	onOpenChange,
 	onClose,
+	buildings = [],
+	rooms = [],
 }: LocationDialogProps) {
 	if (!location) return null;
 
@@ -251,6 +256,12 @@ export function LocationDialog({
 	// Check if location is a room (has buildingId property)
 	const isRoom = "buildingId" in location;
 	const locationType = isRoom ? "Room" : "Building";
+
+	// Get additional information
+	const buildingRooms = !isRoom ? getRoomsForBuilding(location.id, rooms) : [];
+	const parentBuilding = isRoom
+		? getBuildingForRoom(location.id, rooms, buildings)
+		: null;
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
@@ -293,7 +304,7 @@ export function LocationDialog({
 								<span className="text-sm">{location.color}</span>
 							</div>
 						</div>
-						{isRoom && (location as Building).hasRooms !== undefined && (
+						{isRoom && (
 							<div className="flex justify-between">
 								<span className="font-medium text-muted-foreground">Type:</span>
 								<span className="text-sm">{locationType}</span>
@@ -307,6 +318,22 @@ export function LocationDialog({
 								<span className="text-sm">
 									{(location as Building).hasRooms ? "Yes" : "No"}
 								</span>
+							</div>
+						)}
+						{!isRoom && buildingRooms.length > 0 && (
+							<div className="flex justify-between">
+								<span className="font-medium text-muted-foreground">
+									Room Count:
+								</span>
+								<span className="text-sm">{buildingRooms.length} rooms</span>
+							</div>
+						)}
+						{isRoom && parentBuilding && (
+							<div className="flex justify-between">
+								<span className="font-medium text-muted-foreground">
+									Parent Building:
+								</span>
+								<span className="text-sm">{parentBuilding.name}</span>
 							</div>
 						)}
 					</div>

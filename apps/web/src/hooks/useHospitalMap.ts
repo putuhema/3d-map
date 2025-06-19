@@ -143,27 +143,45 @@ export function useHospitalMap() {
 
 	// Function to calculate camera target for two selected rooms
 	const calculateCameraTargetForRooms = useCallback(() => {
-		// Only auto-zoom if both fromId and toId are rooms (not buildings or current location)
-		if (!fromId || !toId || fromId === "current") return;
+		// Only auto-zoom if both fromId and toId are set
+		if (!fromId || !toId) return;
 
-		const fromRoom = getRoomById(fromId);
+		let fromPos: [number, number, number] | null = null;
+		let toPos: [number, number, number] | null = null;
+
+		// Handle current location case
+		if (fromId === "current") {
+			fromPos = [playerPosition.x, 0, playerPosition.z];
+		} else {
+			const fromRoom = getRoomById(fromId);
+			if (fromRoom) {
+				fromPos = fromRoom.position;
+			}
+		}
+
+		// Handle destination (can be room or building)
 		const toRoom = getRoomById(toId);
+		const toBuilding = getBuildingById(toId);
 
-		// Only proceed if both are rooms
-		if (!fromRoom || !toRoom) return;
+		if (toRoom) {
+			toPos = toRoom.position;
+		} else if (toBuilding) {
+			toPos = toBuilding.position;
+		}
 
-		// Calculate bounding box of the two rooms
-		const fromPos = fromRoom.position;
-		const toPos = toRoom.position;
-		const fromSize = fromRoom.size;
-		const toSize = toRoom.size;
+		// Only proceed if we have both positions
+		if (!fromPos || !toPos) return;
 
-		// Calculate the center point between the two rooms
+		// Calculate the direction vector from "from" to "to" destination
+		const directionX = toPos[0] - fromPos[0];
+		const directionZ = toPos[2] - fromPos[2];
+
+		// Calculate the center point between the two positions
 		const centerX = (fromPos[0] + toPos[0]) / 2;
 		const centerY = (fromPos[1] + toPos[1]) / 2;
 		const centerZ = (fromPos[2] + toPos[2]) / 2;
 
-		// Calculate the distance between the rooms to determine appropriate zoom
+		// Calculate the distance between the positions to determine appropriate zoom
 		const distanceX = Math.abs(toPos[0] - fromPos[0]);
 		const distanceZ = Math.abs(toPos[2] - fromPos[2]);
 		const maxDistance = Math.max(distanceX, distanceZ);
@@ -171,15 +189,30 @@ export function useHospitalMap() {
 		// Add some padding to the target (1.5x the distance)
 		const padding = Math.max(maxDistance * 1.5, 3); // Minimum padding of 3 units
 
-		// Set the camera target to the center of the two rooms
-		setCameraTarget([centerX, centerY, centerZ]);
+		// Calculate the normalized direction vector
+		const directionLength = Math.sqrt(
+			directionX * directionX + directionZ * directionZ,
+		);
+		const normalizedDirectionX =
+			directionLength > 0 ? directionX / directionLength : 0;
+		const normalizedDirectionZ =
+			directionLength > 0 ? directionZ / directionLength : 0;
+
+		// Offset the camera target to position "from" at bottom and "to" at top
+		// Move the target slightly towards the "from" position so it appears at the bottom
+		const offsetDistance = maxDistance * 0.25; // 25% of the distance between destinations
+		const offsetX = centerX - normalizedDirectionX * offsetDistance;
+		const offsetZ = centerZ - normalizedDirectionZ * offsetDistance;
+
+		// Set the camera target to the offset center
+		setCameraTarget([offsetX, centerY, offsetZ]);
 
 		// Return the calculated target and distance for zoom adjustment
 		return {
-			target: [centerX, centerY, centerZ] as [number, number, number],
+			target: [offsetX, centerY, offsetZ] as [number, number, number],
 			distance: padding,
 		};
-	}, [fromId, toId, getRoomById]);
+	}, [fromId, toId, getRoomById, getBuildingById, playerPosition]);
 
 	// Effect to recalculate camera target when room selection changes
 	useEffect(() => {
@@ -288,6 +321,18 @@ export function useHospitalMap() {
 			handleFindPath();
 		}
 	}, [fromId, toId, handleFindPath]);
+
+	// Reset function to clear navigation and tracking
+	const handleReset = useCallback(() => {
+		setSelectedBuildings([]);
+		setPathCorridorIds([]);
+		setDirections([]);
+		setFromId(null);
+		setToId(null);
+		setDestinationSelectorExpanded(false);
+		setLocationDialogOpen(false);
+		setSelectedLocation(null);
+	}, []);
 
 	const handleBuildingPlace = (building: Building) => {
 		// Set hasRooms to false by default for new buildings
@@ -405,6 +450,24 @@ export function useHospitalMap() {
 			return;
 		}
 
+		// Show location dialog for the clicked building or room
+		if (roomId) {
+			// Clicked on a room
+			const room = getRoomById(roomId);
+			if (room) {
+				setSelectedLocation(room);
+				setLocationDialogOpen(true);
+			}
+		} else {
+			// Clicked on a building
+			const building = getBuildingById(id);
+			if (building) {
+				setSelectedLocation(building);
+				setLocationDialogOpen(true);
+			}
+		}
+
+		// Original pathfinding logic (keep for backward compatibility)
 		if (selectedBuildings.length === 0) {
 			setSelectedBuildings([id]);
 			setPathCorridorIds([]);
@@ -460,6 +523,25 @@ export function useHospitalMap() {
 		setSelectedBuildings([id]);
 		setPathCorridorIds([]);
 		setDirections([]);
+	};
+
+	// New function specifically for showing location information
+	const handleLocationClick = (id: string, roomId?: string) => {
+		if (roomId) {
+			// Clicked on a room
+			const room = getRoomById(roomId);
+			if (room) {
+				setSelectedLocation(room);
+				setLocationDialogOpen(true);
+			}
+		} else {
+			// Clicked on a building
+			const building = getBuildingById(id);
+			if (building) {
+				setSelectedLocation(building);
+				setLocationDialogOpen(true);
+			}
+		}
 	};
 
 	return {
@@ -526,5 +608,7 @@ export function useHospitalMap() {
 		setDestinationSelectorExpanded,
 		cameraTarget,
 		setCameraTarget,
+		handleReset,
+		handleLocationClick,
 	};
 }

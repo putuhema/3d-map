@@ -1,5 +1,6 @@
 import { AutoZoomCamera } from "@/components/AutoZoomCamera";
 import { BuildingRenderer } from "@/components/BuildingRenderer";
+import { CameraModeIndicator } from "@/components/CameraModeIndicator";
 import { DestinationSelector } from "@/components/DestinationSelector";
 import { LocationDialog } from "@/components/RoomDialog";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
@@ -39,9 +40,6 @@ export default function HospitalMap() {
 		handleUseCurrentLocation,
 		selectedBuildings,
 		pathCorridorIds,
-		roomDialogOpen,
-		setRoomDialogOpen,
-		selectedRoom,
 		handleRoomDialogClose,
 		locationDialogOpen,
 		setLocationDialogOpen,
@@ -49,6 +47,8 @@ export default function HospitalMap() {
 		destinationSelectorExpanded,
 		setDestinationSelectorExpanded,
 		cameraTarget,
+		handleReset,
+		handleLocationClick,
 	} = useHospitalMap();
 
 	// Detect mobile device on mount
@@ -78,6 +78,7 @@ export default function HospitalMap() {
 	return (
 		<div className="relative h-screen w-full">
 			<TutorialOverlay />
+			<CameraModeIndicator />
 
 			<DestinationSelector
 				buildings={buildings}
@@ -98,43 +99,48 @@ export default function HospitalMap() {
 				open={locationDialogOpen}
 				onOpenChange={setLocationDialogOpen}
 				onClose={handleRoomDialogClose}
+				buildings={buildings}
+				rooms={rooms}
 			/>
 
-			<div className="h-full w-full">
-				<Canvas {...canvasConfig}>
-					<AutoZoomCamera
-						cameraTarget={cameraTarget}
-						fromId={fromId}
-						toId={toId}
-						rooms={rooms}
-					/>
+			<Canvas {...canvasConfig}>
+				<AutoZoomCamera
+					cameraTarget={cameraTarget}
+					fromId={fromId}
+					toId={toId}
+					rooms={rooms}
+					playerPosition={playerPosition}
+				/>
 
-					<ambientLight intensity={0.5} />
-					<directionalLight
-						position={[10, 10, 5]}
-						intensity={1}
-						castShadow={!isMobileDevice}
-						shadow-mapSize-width={isMobileDevice ? 1024 : 2048}
-						shadow-mapSize-height={isMobileDevice ? 1024 : 2048}
-					/>
-					<directionalLight position={[-5, 8, -10]} intensity={0.3} />
+				<ambientLight intensity={0.5} />
+				<directionalLight
+					position={[10, 10, 5]}
+					intensity={1}
+					castShadow={!isMobileDevice}
+					shadow-mapSize-width={isMobileDevice ? 1024 : 2048}
+					shadow-mapSize-height={isMobileDevice ? 1024 : 2048}
+				/>
+				<directionalLight position={[-5, 8, -10]} intensity={0.3} />
 
-					<BuildingRenderer
-						buildings={buildings}
-						corridors={corridors}
-						rooms={rooms}
-						onBuildingClick={() => {}}
-						onCorridorClick={() => {}}
-						highlightedCorridorIds={pathCorridorIds}
-						highlightedBuildingIds={selectedBuildings}
-						showBuildings={showBuildings}
-						showRooms={showRooms}
-						fromId={fromId}
-						toId={toId}
-					/>
-				</Canvas>
-			</div>
-			<MapControl />
+				<BuildingRenderer
+					buildings={buildings}
+					corridors={corridors}
+					rooms={rooms}
+					onBuildingClick={handleLocationClick}
+					onCorridorClick={(id) => {
+						// For corridors, we could show corridor information or just ignore
+						console.log("Corridor clicked:", id);
+					}}
+					highlightedCorridorIds={pathCorridorIds}
+					highlightedBuildingIds={selectedBuildings}
+					showBuildings={showBuildings}
+					showRooms={showRooms}
+					fromId={fromId}
+					toId={toId}
+				/>
+			</Canvas>
+
+			<MapControl onReset={handleReset} />
 		</div>
 	);
 }

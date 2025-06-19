@@ -309,7 +309,11 @@ export function BuildingRenderer({
 								)
 							}
 							scale={new Vector3(...building.size)}
-							onClick={(e) => handleBuildingClick(building.id, undefined, e)}
+							onClick={
+								hasRooms
+									? undefined
+									: (e) => handleBuildingClick(building.id, undefined, e)
+							}
 							castShadow
 							receiveShadow
 						>
@@ -320,7 +324,7 @@ export function BuildingRenderer({
 								roughness={0.5}
 								attach="material"
 								transparent={true}
-								opacity={hasRooms ? 0.4 : 1}
+								opacity={hasRooms ? 0.1 : 0.8}
 							/>
 							{highlightedBuildingIds.includes(building.id) && (
 								<meshStandardMaterial

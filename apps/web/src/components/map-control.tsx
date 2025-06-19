@@ -6,10 +6,14 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLabelStore, useTutorialStore, useViewStore } from "@/lib/store";
-import { Check, HelpCircle, Menu } from "lucide-react";
+import { Check, HelpCircle, Menu, RotateCcw } from "lucide-react";
 import { Button } from "./ui/button";
 
-export default function MapControl() {
+interface MapControlProps {
+	onReset?: () => void;
+}
+
+export default function MapControl({ onReset }: MapControlProps) {
 	const {
 		showBuildingLabels,
 		showRoomLabels,
@@ -17,7 +21,7 @@ export default function MapControl() {
 		toggleRoomLabels,
 	} = useLabelStore();
 
-	const { viewMode, cameraMode, setViewMode, setCameraMode } = useViewStore();
+	const { cameraMode, setCameraMode } = useViewStore();
 	const { setShowTutorial } = useTutorialStore();
 
 	return (
@@ -53,21 +57,6 @@ export default function MapControl() {
 
 					<DropdownMenuSeparator />
 
-					<DropdownMenuItem onClick={() => setViewMode("topDown")}>
-						<div className="flex w-full items-center justify-between">
-							<span>Top Down View</span>
-							{viewMode === "topDown" && <Check className="h-4 w-4" />}
-						</div>
-					</DropdownMenuItem>
-					<DropdownMenuItem onClick={() => setViewMode("perspective")}>
-						<div className="flex w-full items-center justify-between">
-							<span>Perspective View</span>
-							{viewMode === "perspective" && <Check className="h-4 w-4" />}
-						</div>
-					</DropdownMenuItem>
-
-					<DropdownMenuSeparator />
-
 					<DropdownMenuItem onClick={() => setCameraMode("free")}>
 						<div className="flex w-full items-center justify-between">
 							<span>Free Camera</span>
@@ -82,6 +71,16 @@ export default function MapControl() {
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
+			{onReset && (
+				<Button
+					variant="outline"
+					size="icon"
+					onClick={onReset}
+					title="Stop tracking / Reset navigation"
+				>
+					<RotateCcw className="h-4 w-4" />
+				</Button>
+			)}
 		</div>
 	);
 }
