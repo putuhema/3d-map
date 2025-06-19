@@ -2,11 +2,11 @@ import type { Building } from "@/data/building";
 import type { Corridor } from "@/data/corridor";
 import type { Room } from "@/data/room";
 import { useLabelStore } from "@/lib/store";
-import { Html, Line } from "@react-three/drei";
+import { Html, Line, Sky } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MeshStandardMaterial, Vector3 } from "three";
+import { Color, MeshStandardMaterial, Vector3 } from "three";
 import type { Mesh } from "three";
 
 interface BuildingRendererProps {
@@ -122,8 +122,35 @@ export function BuildingRenderer({
 	};
 
 	const corridorMaterial = useMemo(
-		() => new MeshStandardMaterial({ color: "#d4d4d8" }),
+		() => new MeshStandardMaterial({ color: "#E4E0E1" }),
 		[],
+	);
+
+	// Create custom material for buildings with rooms
+	const createBuildingMaterial = useCallback(
+		(building: Building, hasRooms: boolean) => {
+			if (!hasRooms) {
+				return new MeshStandardMaterial({
+					color: getDestinationColor(building.id) || building.color,
+					metalness: 0.1,
+					roughness: 0.5,
+					transparent: true,
+					opacity: 1,
+					depthWrite: true,
+				});
+			}
+
+			// For buildings with rooms, create a material that shows color only on bottom face
+			return new MeshStandardMaterial({
+				color: getDestinationColor(building.id) || building.color,
+				metalness: 0.1,
+				roughness: 0.5,
+				transparent: true,
+				opacity: 0.4,
+				depthWrite: false,
+			});
+		},
+		[getDestinationColor],
 	);
 
 	// Animated path indicator
@@ -275,7 +302,28 @@ export function BuildingRenderer({
 
 	return (
 		<group>
-			{/* Animated path indicator */}
+			{/* Sky background */}
+			<Sky
+				distance={450000}
+				sunPosition={[0, 1, 0]}
+				inclination={0.5}
+				azimuth={0.25}
+				rayleigh={0.5}
+				mieCoefficient={0.005}
+				mieDirectionalG={0.8}
+			/>
+
+			{showRooms && (
+				<mesh
+					position={[0, -0.1, 0]}
+					rotation={[-Math.PI / 2, 0, 0]}
+					receiveShadow
+				>
+					<planeGeometry args={[1000, 1000]} />
+					<meshStandardMaterial color="#D6C0B3" />
+				</mesh>
+			)}
+
 			{highlightedCorridorIds.length > 0 && (
 				<mesh ref={pathIndicatorRef} position={[0, 0.1, 0]}>
 					<sphereGeometry args={[0.2, 16, 16]} />
@@ -295,75 +343,87 @@ export function BuildingRenderer({
 					const hasRooms = building.hasRooms && buildingRooms.length > 0;
 
 					return (
-						// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-						<mesh
-							key={building.id}
-							ref={(ref) => {
-								if (ref) buildingRefs.current.set(building.id, ref);
-							}}
-							position={
-								new Vector3(
-									building.position[0],
-									building.position[1] + (building.size[1] - 1) / 2,
-									building.position[2],
-								)
-							}
-							scale={new Vector3(...building.size)}
-							onClick={
-								hasRooms
-									? undefined
-									: (e) => handleBuildingClick(building.id, undefined, e)
-							}
-							castShadow
-							receiveShadow
-						>
-							<boxGeometry args={[1, 1, 1]} />
-							<meshStandardMaterial
-								color={getDestinationColor(building.id) || building.color}
-								metalness={0.1}
-								roughness={0.5}
-								attach="material"
-								transparent={true}
-								opacity={hasRooms ? 0.1 : 0.8}
-							/>
-							{highlightedBuildingIds.includes(building.id) && (
-								<meshStandardMaterial
-									color="#f59e42"
-									metalness={0.3}
-									roughness={0.3}
-									transparent={true}
-									opacity={0.8}
-									attach="material"
-								/>
-							)}
-							{building.name &&
-								shouldShowLabel(building.id, showBuildingLabels) && (
-									<Html
-										center
-										position={[0, building.size[1] / 9 + 0.5, 0]}
-										style={{
-											background: isDestination(building.id)
-												? isFromDestination(building.id)
-													? "rgba(34, 197, 94, 0.9)"
-													: "rgba(239, 68, 68, 0.9)"
-												: "rgba(152, 205, 0, 0.8)",
-											color: "white",
-											padding: "4px 8px",
-											borderRadius: "4px",
-											fontSize: "12px",
-											whiteSpace: "nowrap",
-											pointerEvents: "none",
-											fontWeight: isDestination(building.id)
-												? "bold"
-												: "normal",
-										}}
-									>
-										{isDestination(building.id)
-											? `${building.name} (${isFromDestination(building.id) ? "FROM" : "TO"})`
-											: building.name}
-									</Html>
+						<group key={building.id}>
+							{/* Building mesh */}
+							{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+							<mesh
+								ref={(ref) => {
+									if (ref) buildingRefs.current.set(building.id, ref);
+								}}
+								position={
+									new Vector3(
+										building.position[0],
+										building.position[1] + (building.size[1] - 1) / 2,
+										building.position[2],
+									)
+								}
+								scale={new Vector3(...building.size)}
+								onClick={
+									hasRooms
+										? undefined
+										: (e) => handleBuildingClick(building.id, undefined, e)
+								}
+							>
+								<boxGeometry args={[1, 1, 1]} />
+								{hasRooms ? (
+									<meshStandardMaterial
+										color={getDestinationColor(building.id) || building.color}
+										metalness={0.1}
+										roughness={0.5}
+										transparent={true}
+										opacity={0.4}
+										depthWrite={false}
+										side={2} // DoubleSide to ensure bottom face is visible
+									/>
+								) : (
+									<meshStandardMaterial
+										color={getDestinationColor(building.id) || building.color}
+										metalness={0.1}
+										roughness={0.5}
+										transparent={true}
+										opacity={1}
+										depthWrite={true}
+									/>
 								)}
-						</mesh>
+								{highlightedBuildingIds.includes(building.id) && (
+									<meshStandardMaterial
+										color="#f59e42"
+										metalness={0.3}
+										roughness={0.3}
+										transparent={true}
+										opacity={0.8}
+										attach="material"
+									/>
+								)}
+								{building.name &&
+									shouldShowLabel(building.id, showBuildingLabels) && (
+										<Html
+											center
+											position={[0, building.size[1] / 9 + 0.5, 0]}
+											style={{
+												background: isDestination(building.id)
+													? isFromDestination(building.id)
+														? "rgba(34, 197, 94, 0.9)"
+														: "rgba(239, 68, 68, 0.9)"
+													: "#57776d",
+												color: "white",
+												padding: "4px 8px",
+												borderRadius: "4px",
+												fontSize: "12px",
+												whiteSpace: "nowrap",
+												pointerEvents: "none",
+												fontWeight: isDestination(building.id)
+													? "bold"
+													: "normal",
+											}}
+										>
+											{isDestination(building.id)
+												? `${building.name} (${isFromDestination(building.id) ? "FROM" : "TO"})`
+												: building.name}
+										</Html>
+									)}
+							</mesh>
+						</group>
 					);
 				})}
 
@@ -389,6 +449,7 @@ export function BuildingRenderer({
 							e.stopPropagation();
 							setHoveredRoomId(null);
 						}}
+						renderOrder={2}
 					>
 						<boxGeometry args={[1, 1, 1]} />
 						<meshStandardMaterial
@@ -397,6 +458,7 @@ export function BuildingRenderer({
 							opacity={1}
 							metalness={hoveredRoomId === room.id ? 0.3 : 0.1}
 							roughness={hoveredRoomId === room.id ? 0.3 : 0.5}
+							depthWrite={true}
 						/>
 						{room.name && shouldShowLabel(room.id, showRoomLabels) && (
 							<Html
@@ -407,7 +469,7 @@ export function BuildingRenderer({
 										? isFromDestination(room.id)
 											? "rgba(34, 197, 94, 0.9)"
 											: "rgba(239, 68, 68, 0.9)"
-										: "rgba(0, 0, 0, 0.8)",
+										: "#23302b",
 									color: "white",
 									padding: "4px 8px",
 									borderRadius: "4px",
@@ -479,7 +541,7 @@ export function BuildingRenderer({
 							<cylinderGeometry
 								args={[corridor.width / 2, corridor.width / 2, 0.05, 16]}
 							/>
-							<meshStandardMaterial color="#d4d4d8" />
+							<meshStandardMaterial color="#E4E0E1" />
 						</mesh>
 					);
 				});
