@@ -117,34 +117,34 @@ export default function HospitalMap() {
 		localStorage.setItem("rooms", JSON.stringify(rooms));
 	}, [rooms]);
 
-	useEffect(() => {
-		if ("geolocation" in navigator) {
-			navigator.geolocation.getCurrentPosition(
-				(position) => {
-					const { latitude, longitude } = position.coords;
-					setUserLocation({ lat: latitude, lng: longitude });
+	// useEffect(() => {
+	// 	if ("geolocation" in navigator) {
+	// 		navigator.geolocation.getCurrentPosition(
+	// 			(position) => {
+	// 				const { latitude, longitude } = position.coords;
+	// 				setUserLocation({ lat: latitude, lng: longitude });
 
-					const mapX = (longitude - 106.8451) * 1000; // Adjust based on your map's center longitude
-					const mapZ = (latitude - -6.2088) * 1000; // Adjust based on your map's center latitude
+	// 				const mapX = (longitude - 106.8451) * 1000; // Adjust based on your map's center longitude
+	// 				const mapZ = (latitude - -6.2088) * 1000; // Adjust based on your map's center latitude
 
-					setPlayerPosition(new Vector3(mapX, 0.6, mapZ));
-				},
-				(error) => {
-					setLocationError(
-						`Unable to retrieve your location: ${error.message}`,
-					);
-					console.error("Geolocation error:", error);
-				},
-				{
-					enableHighAccuracy: true,
-					timeout: 5000,
-					maximumAge: 0,
-				},
-			);
-		} else {
-			setLocationError("Geolocation is not supported by your browser");
-		}
-	}, []);
+	// 				setPlayerPosition(new Vector3(mapX, 0.6, mapZ));
+	// 			},
+	// 			(error) => {
+	// 				setLocationError(
+	// 					`Unable to retrieve your location: ${error.message}`,
+	// 				);
+	// 				console.error("Geolocation error:", error);
+	// 			},
+	// 			{
+	// 				enableHighAccuracy: true,
+	// 				timeout: 5000,
+	// 				maximumAge: 0,
+	// 			},
+	// 		);
+	// 	} else {
+	// 		setLocationError("Geolocation is not supported by your browser");
+	// 	}
+	// }, []);
 
 	useEffect(() => {
 		if (corridors.length === 0 || buildings.length === 0) return;
@@ -220,6 +220,7 @@ export default function HospitalMap() {
 
 			const adjustedX = centerX - (buildingSize[0] - 1) / 2;
 			const adjustedZ = centerZ - (buildingSize[2] - 1) / 2;
+			console.log(buildingSize);
 			handleRoomPlace({
 				id: crypto.randomUUID(),
 				name: buildingName || "New Room",
@@ -457,11 +458,11 @@ export default function HospitalMap() {
 						corridors={corridors}
 						rooms={rooms}
 						onBuildingClick={(id, roomId) => {
-							if (toolMode === "remove") {
+							if (editMode && toolMode === "remove") {
 								if (roomId) {
 									handleRoomRemove(roomId);
 								} else {
-									// handleBuildingRemove(id);
+									handleBuildingRemove(id);
 								}
 								return;
 							}

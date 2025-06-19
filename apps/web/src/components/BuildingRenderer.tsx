@@ -1,9 +1,9 @@
 import type { Building } from "@/data/building";
 import type { Corridor } from "@/data/corridor";
 import type { Room } from "@/data/room";
-import { Line } from "@react-three/drei";
+import { Html, Line } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { MeshStandardMaterial, Vector3 } from "three";
 import type { Mesh } from "three";
 
@@ -27,6 +27,7 @@ export function BuildingRenderer({
 	showBuildings = true,
 }: BuildingRendererProps) {
 	const buildingRefs = useRef<Map<string, Mesh>>(new Map());
+	const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
 
 	const handleBuildingClick = (
 		id: string,
@@ -52,11 +53,17 @@ export function BuildingRenderer({
 						ref={(ref) => {
 							if (ref) buildingRefs.current.set(building.id, ref);
 						}}
-						position={new Vector3(...building.position)}
+						position={
+							new Vector3(
+								building.position[0],
+								building.position[1] + (building.size[1] - 1) / 2,
+								building.position[2],
+							)
+						}
 						scale={new Vector3(...building.size)}
 						onClick={(e) => handleBuildingClick(building.id, undefined, e)}
-						castShadow
-						receiveShadow
+						// castShadow
+						// receiveShadow
 					>
 						<boxGeometry args={[1, 1, 1]} />
 						<meshStandardMaterial
@@ -65,7 +72,7 @@ export function BuildingRenderer({
 							roughness={0.5}
 							attach="material"
 							transparent={true}
-							opacity={0.4}
+							opacity={0.2}
 						/>
 						{highlightedBuildingIds.includes(building.id) && (
 							<meshStandardMaterial
@@ -84,11 +91,49 @@ export function BuildingRenderer({
 				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 				<mesh
 					key={room.id}
-					position={new Vector3(...room.position)}
+					position={
+						new Vector3(
+							room.position[0],
+							room.position[1] + (room.size[1] - 1) / 2,
+							room.position[2],
+						)
+					}
+					scale={new Vector3(...room.size)}
 					onClick={(e) => handleBuildingClick(room.id, room.id, e)}
+					onPointerOver={(e) => {
+						e.stopPropagation();
+						setHoveredRoomId(room.id);
+					}}
+					onPointerOut={(e) => {
+						e.stopPropagation();
+						setHoveredRoomId(null);
+					}}
 				>
 					<boxGeometry args={[1, 1, 1]} />
-					<meshStandardMaterial color={room.color} />
+					<meshStandardMaterial
+						color={room.color}
+						transparent={true}
+						opacity={hoveredRoomId === room.id ? 0.8 : 0.6}
+						metalness={hoveredRoomId === room.id ? 0.3 : 0.1}
+						roughness={hoveredRoomId === room.id ? 0.3 : 0.5}
+					/>
+					{hoveredRoomId === room.id && (
+						<Html
+							center
+							position={[0, room.size[1] / 2 + 0.5, 0]}
+							style={{
+								background: "rgba(0, 0, 0, 0.8)",
+								color: "white",
+								padding: "4px 8px",
+								borderRadius: "4px",
+								fontSize: "14px",
+								whiteSpace: "nowrap",
+								pointerEvents: "none",
+							}}
+						>
+							{room.name}
+						</Html>
+					)}
 				</mesh>
 			))}
 
