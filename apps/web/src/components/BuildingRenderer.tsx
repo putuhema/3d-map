@@ -89,8 +89,8 @@ export function BuildingRenderer({
 							}
 							scale={new Vector3(...building.size)}
 							onClick={(e) => handleBuildingClick(building.id, undefined, e)}
-							// castShadow
-							// receiveShadow
+							castShadow
+							receiveShadow
 						>
 							<boxGeometry args={[1, 1, 1]} />
 							<meshStandardMaterial
@@ -99,7 +99,7 @@ export function BuildingRenderer({
 								roughness={0.5}
 								attach="material"
 								transparent={true}
-								opacity={hasRooms ? 0.1 : 1}
+								opacity={hasRooms ? 0.4 : 1}
 							/>
 							{highlightedBuildingIds.includes(building.id) && (
 								<meshStandardMaterial
@@ -107,26 +107,28 @@ export function BuildingRenderer({
 									metalness={0.3}
 									roughness={0.3}
 									transparent={true}
-									opacity={0.3}
+									opacity={0.8}
 									attach="material"
 								/>
 							)}
-
-							<Html
-								center
-								position={[0, building.size[1] / 2 + 0.5, 0]}
-								style={{
-									background: "rgba(0, 0, 0, 0.8)",
-									color: "white",
-									padding: "4px 8px",
-									borderRadius: "4px",
-									fontSize: "12px",
-									whiteSpace: "nowrap",
-									pointerEvents: "none",
-								}}
-							>
-								{building.name} ({buildingRooms.length} rooms)
-							</Html>
+							{building.name && (
+								<Html
+									center
+									position={[0, building.size[1] / 9 + 0.5, 0]}
+									style={{
+										background: "rgba(0, 0, 0, 0.8)",
+										color: "white",
+										padding: "4px 8px",
+										borderRadius: "4px",
+										fontSize: "12px",
+										whiteSpace: "nowrap",
+										pointerEvents: "none",
+									}}
+								>
+									{building.name}{" "}
+									{hasRooms && `(${buildingRooms.length} rooms)`}
+								</Html>
+							)}
 						</mesh>
 					);
 				})}
@@ -162,7 +164,7 @@ export function BuildingRenderer({
 							metalness={hoveredRoomId === room.id ? 0.3 : 0.1}
 							roughness={hoveredRoomId === room.id ? 0.3 : 0.5}
 						/>
-						{/* <Html
+						<Html
 							center
 							position={[0, room.size[1] / 2 + 0.5, 0]}
 							style={{
@@ -176,7 +178,7 @@ export function BuildingRenderer({
 							}}
 						>
 							{room.name}
-						</Html> */}
+						</Html>
 					</mesh>
 				))}
 

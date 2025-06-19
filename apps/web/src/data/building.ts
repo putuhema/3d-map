@@ -10,7 +10,7 @@ export type Building = {
 export const buildings = [
 	{
 		id: "ca580db2-2ba9-403e-8829-0c6d5485f409",
-		name: "New Building",
+		name: "Casemix",
 		position: [8.5, 0.5, 17.5],
 		size: [2, 2, 2],
 		color: "#009966",
@@ -18,7 +18,7 @@ export const buildings = [
 	},
 	{
 		id: "94385c5f-2fb0-4e15-a1f5-c550bbc98c7c",
-		name: "New Building",
+		name: "Radiologi",
 		position: [-6.5, 0.5, 12.5],
 		size: [7, 2, 3],
 		color: "#009966",
@@ -26,7 +26,7 @@ export const buildings = [
 	},
 	{
 		id: "bc7767d7-e545-4cc8-979c-0319a6a6ad7e",
-		name: "New Building",
+		name: "Laudry",
 		position: [-12.5, 0.5, 8.5],
 		size: [4, 2, 3],
 		color: "#009966",
@@ -42,7 +42,7 @@ export const buildings = [
 	},
 	{
 		id: "0bf2254a-f353-44e4-ae9c-8356debb71bf",
-		name: "New Building",
+		name: "OK",
 		position: [-10.5, 0.5, -1.5],
 		size: [11, 2, 11],
 		color: "#009966",
@@ -58,7 +58,7 @@ export const buildings = [
 	},
 	{
 		id: "c872fd99-b722-4ddb-839b-807c062514bb",
-		name: "New Building",
+		name: "Laboratorium",
 		position: [-1, 0.5, -7.5],
 		size: [4, 2, 5],
 		color: "#009966",
@@ -74,7 +74,7 @@ export const buildings = [
 	},
 	{
 		id: "64bbd5a9-aed5-4c6b-977a-72c00a4f2a62",
-		name: "New Building",
+		name: "ISO-TB",
 		position: [-1.5, 0.5, -14.5],
 		size: [4, 2, 3],
 		color: "#009966",
@@ -138,7 +138,7 @@ export const buildings = [
 	},
 	{
 		id: "6f66e375-8704-4681-bcbb-d4247fbe6d86",
-		name: "New Building",
+		name: "Kantor",
 		position: [-0.5, 0.5, 26.5],
 		size: [3, 2, 3],
 		color: "#009966",
@@ -149,7 +149,7 @@ export const buildings = [
 		name: "Rekam Medis",
 		position: [4.5, 0.5, 9.5],
 		size: [5, 2, 5],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: true,
 	},
 	{
@@ -162,7 +162,7 @@ export const buildings = [
 	},
 	{
 		id: "66c23297-638e-48db-88b6-991de7cd17b9",
-		name: "New Building",
+		name: "Apotik Rawat Inap",
 		position: [4.5, 0.5, -6.5],
 		size: [5, 2, 5],
 		color: "#009966",
@@ -170,7 +170,7 @@ export const buildings = [
 	},
 	{
 		id: "c87a9cd0-ed20-4a3e-9330-135f82e58780",
-		name: "New Building",
+		name: "Farmasi ( Apotik Rawat Jalan )",
 		position: [11.5, 0.5, 13.5],
 		size: [7, 2, 3],
 		color: "#009966",
@@ -178,7 +178,7 @@ export const buildings = [
 	},
 	{
 		id: "d558586d-2762-4061-8997-5d00a4b436c8",
-		name: "New Building",
+		name: "",
 		position: [13.5, 0.5, 16.5],
 		size: [3, 2, 3],
 		color: "#009966",
@@ -189,7 +189,7 @@ export const buildings = [
 		name: "ICU",
 		position: [3.5, 0.5, 15.5],
 		size: [3, 2, 5],
-		color: "#009966",
+		color: "#C1DBB3",
 		hasRooms: false,
 	},
 	{
