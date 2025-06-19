@@ -3,6 +3,7 @@ import type { Corridor } from "@/data/corridor";
 import type { Room } from "@/data/room";
 import { Html, Line } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, useState } from "react";
 import { MeshStandardMaterial, Vector3 } from "three";
 import type { Mesh } from "three";
@@ -32,6 +33,8 @@ export function BuildingRenderer({
 }: BuildingRendererProps) {
 	const buildingRefs = useRef<Map<string, Mesh>>(new Map());
 	const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
+	const pathIndicatorRef = useRef<Mesh>(null);
+	const animationTime = useRef(0);
 
 	const roomsByBuilding = useMemo(() => {
 		const grouped = new Map<string, Room[]>();
@@ -66,8 +69,148 @@ export function BuildingRenderer({
 		[],
 	);
 
+	// Animated path indicator
+	useFrame((state) => {
+		if (pathIndicatorRef.current && highlightedCorridorIds.length > 0) {
+			animationTime.current += state.clock.getDelta() * 10;
+
+			// Get highlighted corridors in the correct order from pathfinding
+			const highlightedCorridors: Corridor[] = [];
+			for (const corridorId of highlightedCorridorIds) {
+				const corridor = corridors.find((c) => c.id === corridorId);
+				if (corridor) {
+					highlightedCorridors.push(corridor);
+				}
+			}
+
+			// Debug logging (remove after fixing)
+			if (Math.floor(animationTime.current * 10) % 120 === 0) {
+				console.log("Path Debug:", {
+					highlightedCorridorIds,
+					corridorCount: highlightedCorridors.length,
+					corridors: highlightedCorridors.map((c) => ({
+						id: c.id,
+						start: c.start,
+						end: c.end,
+					})),
+				});
+			}
+
+			if (highlightedCorridors.length > 0) {
+				// Create a continuous path by following each corridor's geometry
+				const pathPoints: Vector3[] = [];
+
+				// Add start of first corridor
+				pathPoints.push(
+					new Vector3(
+						highlightedCorridors[0].start[0],
+						0,
+						highlightedCorridors[0].start[2],
+					),
+				);
+
+				// Add end of first corridor
+				pathPoints.push(
+					new Vector3(
+						highlightedCorridors[0].end[0],
+						0,
+						highlightedCorridors[0].end[2],
+					),
+				);
+
+				// For subsequent corridors, check if they connect to the previous one
+				for (let i = 1; i < highlightedCorridors.length; i++) {
+					const prevCorridor = highlightedCorridors[i - 1];
+					const currentCorridor = highlightedCorridors[i];
+
+					// Check if current corridor starts where previous one ends
+					const prevEnd = new Vector3(
+						prevCorridor.end[0],
+						0,
+						prevCorridor.end[2],
+					);
+					const currentStart = new Vector3(
+						currentCorridor.start[0],
+						0,
+						currentCorridor.start[2],
+					);
+					const currentEnd = new Vector3(
+						currentCorridor.end[0],
+						0,
+						currentCorridor.end[2],
+					);
+
+					// If they don't connect, add a connecting line
+					if (prevEnd.distanceTo(currentStart) > 0.1) {
+						pathPoints.push(currentStart);
+					}
+
+					// Add the end of current corridor
+					pathPoints.push(currentEnd);
+				}
+
+				// Calculate total path length
+				let totalLength = 0;
+				for (let i = 1; i < pathPoints.length; i++) {
+					totalLength += pathPoints[i - 1].distanceTo(pathPoints[i]);
+				}
+
+				// Simple back-and-forth animation using sine wave
+				const t = (Math.sin(animationTime.current) + 1) / 2; // Normalize to 0-1
+				const pathProgress = t;
+
+				// Find current segment and local progress
+				let currentSegment = 0;
+				let localProgress = 0;
+				let accumulatedLength = 0;
+
+				for (let i = 1; i < pathPoints.length; i++) {
+					const segmentLength = pathPoints[i - 1].distanceTo(pathPoints[i]);
+					if (pathProgress * totalLength <= accumulatedLength + segmentLength) {
+						currentSegment = i - 1;
+						localProgress =
+							(pathProgress * totalLength - accumulatedLength) / segmentLength;
+						break;
+					}
+					accumulatedLength += segmentLength;
+				}
+
+				// Ensure we don't go out of bounds
+				if (currentSegment >= pathPoints.length - 1) {
+					currentSegment = pathPoints.length - 2;
+					localProgress = 1;
+				}
+
+				// Interpolate position within current segment
+				const startPoint = pathPoints[currentSegment];
+				const endPoint = pathPoints[currentSegment + 1];
+				const position = new Vector3().lerpVectors(
+					startPoint,
+					endPoint,
+					localProgress,
+				);
+
+				pathIndicatorRef.current.position.set(position.x, 0.1, position.z);
+			}
+		}
+	});
+
 	return (
 		<group>
+			{/* Animated path indicator */}
+			{highlightedCorridorIds.length > 0 && (
+				<mesh ref={pathIndicatorRef} position={[0, 0.1, 0]}>
+					<sphereGeometry args={[0.2, 16, 16]} />
+					<meshStandardMaterial
+						color="#ff0000"
+						emissive="#ff0000"
+						emissiveIntensity={0.5}
+						transparent={true}
+						opacity={1}
+					/>
+				</mesh>
+			)}
+
 			{showBuildings &&
 				buildings.map((building) => {
 					const buildingRooms = roomsByBuilding.get(building.id) || [];
