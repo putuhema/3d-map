@@ -6,10 +6,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Vector3 } from "three";
 
 export function useHospitalMap() {
-	const [viewMode, setViewMode] = useState<"topDown" | "perspective" | "walk">(
-		"perspective",
-	);
-	const [cameraMode, setCameraMode] = useState<"free" | "topDown">("free");
 	const [playerPosition, setPlayerPosition] = useState(new Vector3(0, 0.6, 15));
 	const [userLocation, setUserLocation] = useState<{
 		lat: number;
@@ -378,29 +374,18 @@ export function useHospitalMap() {
 	};
 
 	return {
-		viewMode,
-		setViewMode,
-		cameraMode,
-		setCameraMode,
 		playerPosition,
-		setPlayerPosition,
-		userLocation,
-		setUserLocation,
-		locationError,
-		setLocationError,
 		buildings,
 		corridors,
 		rooms,
-		toolMode,
-		setToolMode,
-		isDrawingCorridor,
-		corridorStart,
-		buildingName,
-		setBuildingName,
-		buildingSize,
-		setBuildingSize,
-		buildingColor,
-		setBuildingColor,
+		showBuildings,
+		showRooms,
+		fromId,
+		toId,
+		handleFromSelect,
+		handleToSelect,
+		handleFindPath,
+		handleUseCurrentLocation,
 		selectedBuildings,
 		pathCorridorIds,
 		directions,
@@ -408,10 +393,6 @@ export function useHospitalMap() {
 		setHoveredCellCoords,
 		mousePos,
 		setMousePos,
-		showBuildings,
-		setShowBuildings,
-		showRooms,
-		setShowRooms,
 		editMode,
 		setEditMode,
 		handleGridClick,
@@ -422,13 +403,23 @@ export function useHospitalMap() {
 		setDirections,
 		selectedBuildingForRoom,
 		setSelectedBuildingForRoom,
-		fromId,
-		setFromId,
-		toId,
-		setToId,
-		handleFromSelect,
-		handleToSelect,
-		handleUseCurrentLocation,
-		handleFindPath,
+		handleBuildingPlace,
+		handleBuildingRemove,
+		handleRoomRemove,
+		handleCorridorDraw,
+		handleRoomPlace,
+		toolMode,
+		setToolMode,
+		isDrawingCorridor,
+		corridorStart,
+		setCorridorStart,
+		buildingName,
+		setBuildingName,
+		setBuildingSize,
+		setBuildingColor,
+		buildingSize,
+		buildingColor,
+		locationError,
+		setLocationError,
 	};
 }

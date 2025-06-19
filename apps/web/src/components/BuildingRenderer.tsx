@@ -1,6 +1,7 @@
 import type { Building } from "@/data/building";
 import type { Corridor } from "@/data/corridor";
 import type { Room } from "@/data/room";
+import { useLabelStore } from "@/lib/store";
 import { Html, Line } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
@@ -35,6 +36,9 @@ export function BuildingRenderer({
 	const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
 	const pathIndicatorRef = useRef<Mesh>(null);
 	const animationTime = useRef(0);
+
+	// Get label visibility from Zustand store
+	const { showBuildingLabels, showRoomLabels } = useLabelStore();
 
 	// Reset animation time when path changes
 	useEffect(() => {
@@ -280,7 +284,7 @@ export function BuildingRenderer({
 									attach="material"
 								/>
 							)}
-							{building.name && (
+							{building.name && showBuildingLabels && (
 								<Html
 									center
 									position={[0, building.size[1] / 9 + 0.5, 0]}
@@ -332,7 +336,7 @@ export function BuildingRenderer({
 							metalness={hoveredRoomId === room.id ? 0.3 : 0.1}
 							roughness={hoveredRoomId === room.id ? 0.3 : 0.5}
 						/>
-						{room.name && (
+						{room.name && showRoomLabels && (
 							<Html
 								center
 								position={[0, room.size[1] / 2 + 0.5, 0]}
