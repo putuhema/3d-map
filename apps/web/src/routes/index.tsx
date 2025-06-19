@@ -1,320 +1,61 @@
-import { Compass } from "@/components/Compass";
-import { CoordinateDisplay } from "@/components/CoordinateDisplay";
-import { type Building, buildings as initialBuildings } from "@/data/building";
-import { type Corridor, corridors as initialCorridors } from "@/data/corridor";
-import { type Room, rooms as initialRooms } from "@/data/room";
-import { createFileRoute } from "@tanstack/react-router";
-
-export const Route = createFileRoute("/")({
-	component: HospitalMap,
-});
-
 import { BuildingRenderer } from "@/components/BuildingRenderer";
 import { BuildingTools } from "@/components/BuildingTools";
+import { Compass } from "@/components/Compass";
+import { CoordinateDisplay } from "@/components/CoordinateDisplay";
 import { GridSystem } from "@/components/GridSystem";
+import { DirectionsDisplay } from "@/components/hospital-map/DirectionsDisplay";
+import { ViewControls } from "@/components/hospital-map/ViewControls";
+import { useHospitalMap } from "@/hooks/useHospitalMap";
+import { cameraPositions, keyboardMap } from "@/utils/constants";
 import {
 	KeyboardControls,
 	OrbitControls,
 	PerspectiveCamera,
 } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { useCallback, useEffect, useState } from "react";
-import { Vector3 } from "three";
+import { createFileRoute } from "@tanstack/react-router";
 
-// Keyboard controls map
-const keyboardMap = [
-	{ name: "forward", keys: ["ArrowUp", "KeyW"] },
-	{ name: "backward", keys: ["ArrowDown", "KeyS"] },
-	{ name: "leftward", keys: ["ArrowLeft", "KeyA"] },
-	{ name: "rightward", keys: ["ArrowRight", "KeyD"] },
-];
+export const Route = createFileRoute("/")({
+	component: HospitalMap,
+});
 
-const cameraPositions = {
-	topDown: { position: [0, 15, 6] as [number, number, number] },
-	perspective: { position: [-10, 8, 15] as [number, number, number] },
-};
-
-// Main component
 export default function HospitalMap() {
-	const [viewMode, setViewMode] = useState<"topDown" | "perspective" | "walk">(
-		"perspective",
-	);
-	const [cameraMode, setCameraMode] = useState<"free" | "topDown">("free");
-	const [playerPosition, setPlayerPosition] = useState(new Vector3(0, 0.6, 15));
-	const [userLocation, setUserLocation] = useState<{
-		lat: number;
-		lng: number;
-	} | null>(null);
-	const [locationError, setLocationError] = useState<string | null>(null);
-	const [buildings, setBuildings] = useState<Building[]>(
-		() => initialBuildings as Building[],
-	);
-	const [corridors, setCorridors] = useState<Corridor[]>(
-		() => initialCorridors as Corridor[],
-	);
-	const [rooms, setRooms] = useState<Room[]>(() => initialRooms as Room[]);
-	const [toolMode, setToolMode] = useState<
-		"place" | "remove" | "corridor" | "room"
-	>("room");
-	const [isDrawingCorridor, setIsDrawingCorridor] = useState(false);
-	const [corridorStart, setCorridorStart] = useState<
-		[number, number, number] | null
-	>(null);
-	const [buildingName, setBuildingName] = useState("");
-	const [buildingSize, setBuildingSize] = useState<[number, number, number]>([
-		1, 1, 1,
-	]);
-	const [buildingColor, setBuildingColor] = useState("#4f46e5");
-	const [selectedBuildings, setSelectedBuildings] = useState<string[]>([]);
-	const [pathCorridorIds, setPathCorridorIds] = useState<string[]>([]);
-	const [directions, setDirections] = useState<string[]>([]);
-	const [hoveredCellCoords, setHoveredCellCoords] = useState<{
-		x: number;
-		y: number;
-		z: number;
-	} | null>(null);
-	const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
-		null,
-	);
-	const [showBuildings, setShowBuildings] = useState(true);
-	const [editMode, setEditMode] = useState(false);
-	useEffect(() => {
-		const storedBuildings = localStorage.getItem("buildings");
-		const storedCorridors = localStorage.getItem("corridors");
-		const storedRooms = localStorage.getItem("rooms");
-		if (storedBuildings) {
-			try {
-				setBuildings(JSON.parse(storedBuildings));
-			} catch (e) {
-				console.warn("Failed to parse stored buildings", e);
-			}
-		}
-		if (storedCorridors) {
-			try {
-				setCorridors(JSON.parse(storedCorridors));
-			} catch (e) {
-				console.warn("Failed to parse stored corridors", e);
-			}
-		}
-		if (storedRooms) {
-			try {
-				setRooms(JSON.parse(storedRooms));
-			} catch (e) {
-				console.warn("Failed to parse stored rooms", e);
-			}
-		}
-	}, []);
-
-	useEffect(() => {
-		localStorage.setItem("buildings", JSON.stringify(buildings));
-	}, [buildings]);
-
-	useEffect(() => {
-		localStorage.setItem("corridors", JSON.stringify(corridors));
-	}, [corridors]);
-
-	useEffect(() => {
-		localStorage.setItem("rooms", JSON.stringify(rooms));
-	}, [rooms]);
-
-	// useEffect(() => {
-	// 	if ("geolocation" in navigator) {
-	// 		navigator.geolocation.getCurrentPosition(
-	// 			(position) => {
-	// 				const { latitude, longitude } = position.coords;
-	// 				setUserLocation({ lat: latitude, lng: longitude });
-
-	// 				const mapX = (longitude - 106.8451) * 1000; // Adjust based on your map's center longitude
-	// 				const mapZ = (latitude - -6.2088) * 1000; // Adjust based on your map's center latitude
-
-	// 				setPlayerPosition(new Vector3(mapX, 0.6, mapZ));
-	// 			},
-	// 			(error) => {
-	// 				setLocationError(
-	// 					`Unable to retrieve your location: ${error.message}`,
-	// 				);
-	// 				console.error("Geolocation error:", error);
-	// 			},
-	// 			{
-	// 				enableHighAccuracy: true,
-	// 				timeout: 5000,
-	// 				maximumAge: 0,
-	// 			},
-	// 		);
-	// 	} else {
-	// 		setLocationError("Geolocation is not supported by your browser");
-	// 	}
-	// }, []);
-
-	useEffect(() => {
-		if (corridors.length === 0 || buildings.length === 0) return;
-		const threshold = 1; // max distance to snap
-		const endpoints = corridors.flatMap((c) => [c.start, c.end]);
-		let changed = false;
-		const snappedBuildings = buildings.map((b) => {
-			const [bx, by, bz] = b.position;
-			let closest: [number, number, number] | null = null;
-			let minDist = Number.POSITIVE_INFINITY;
-			for (const [ex, , ez] of endpoints) {
-				const dist = Math.hypot(bx - ex, bz - ez);
-				if (dist < minDist) {
-					minDist = dist;
-					closest = [ex, by, ez];
-				}
-			}
-			if (
-				closest &&
-				minDist < threshold &&
-				(bx !== closest[0] || bz !== closest[2])
-			) {
-				changed = true;
-				return { ...b, position: closest };
-			}
-			return b;
-		});
-		if (changed) setBuildings(snappedBuildings);
-	}, [corridors, buildings]);
-
-	const handleBuildingPlace = (building: Building) => {
-		setBuildings((prev) => [...prev, building]);
-	};
-
-	const handleBuildingRemove = (id: string) => {
-		setBuildings((prev) => prev.filter((b) => b.id !== id));
-	};
-
-	const handleRoomRemove = (id: string) => {
-		setRooms((prev) => prev.filter((r) => r.id !== id));
-	};
-
-	const handleCorridorDraw = (corridor: Corridor) => {
-		setCorridors((prev) => [...prev, corridor]);
-	};
-
-	const handleCorridorRemove = (id: string) => {
-		setCorridors((prev) => prev.filter((c) => c.id !== id));
-	};
-
-	const handleRoomPlace = (room: Room) => {
-		setRooms((prev) => [...prev, room]);
-	};
-
-	const handleGridClick = (x: number, y: number, gridSize = 100) => {
-		if (toolMode === "place") {
-			const centerX = x - (gridSize / 2 - 0.5);
-			const centerZ = y - (gridSize / 2 - 0.5);
-
-			const adjustedX = centerX - (buildingSize[0] - 1) / 2;
-			const adjustedZ = centerZ - (buildingSize[2] - 1) / 2;
-
-			handleBuildingPlace({
-				id: crypto.randomUUID(),
-				name: buildingName || "New Building",
-				position: [adjustedX, 0.5, adjustedZ], // Adjusted position
-				size: buildingSize,
-				color: buildingColor,
-			});
-		} else if (toolMode === "room") {
-			const centerX = x - (gridSize / 2 - 0.5);
-			const centerZ = y - (gridSize / 2 - 0.5);
-
-			const adjustedX = centerX - (buildingSize[0] - 1) / 2;
-			const adjustedZ = centerZ - (buildingSize[2] - 1) / 2;
-			console.log(buildingSize);
-			handleRoomPlace({
-				id: crypto.randomUUID(),
-				name: buildingName || "New Room",
-				position: [adjustedX, 0.5, adjustedZ],
-				size: buildingSize,
-				color: buildingColor,
-			});
-		} else if (toolMode === "corridor") {
-			if (!isDrawingCorridor) {
-				setCorridorStart([
-					x - (gridSize / 2 - 0.5),
-					0,
-					y - (gridSize / 2 - 0.5),
-				]);
-				setIsDrawingCorridor(true);
-			} else if (corridorStart) {
-				handleCorridorDraw({
-					id: crypto.randomUUID(),
-					start: [corridorStart[0], 0, corridorStart[2]],
-					end: [x - (gridSize / 2 - 0.5), 0, y - (gridSize / 2 - 0.5)],
-					width: 0.5,
-				});
-				setIsDrawingCorridor(false);
-				setCorridorStart(null);
-			}
-		}
-	};
-
-	// Helper: Find building by id
-	const getBuildingById = useCallback(
-		(id: string) => buildings.find((b) => b.id === id),
-		[buildings],
-	);
-
-	// Helper: Check if two positions are equal (ignoring y)
-	function positionsEqual(
-		a: [number, number, number],
-		b: [number, number, number],
-	) {
-		return Math.abs(a[0] - b[0]) < 0.01 && Math.abs(a[2] - b[2]) < 0.01;
-	}
-
-	// Helper: Generate a key for a position using only x and z
-	function posKey(pos: [number, number, number]) {
-		return `${pos[0]},${pos[2]}`;
-	}
-
-	// Pathfinding: BFS over corridors
-	function findCorridorPath(
-		corridors: Corridor[],
-		startPos: [number, number, number],
-		endPos: [number, number, number],
-	): string[] {
-		// Build adjacency list: Map position string -> corridor ids
-		const posToCorridors = new Map<
-			string,
-			{ corridor: Corridor; nextPos: [number, number, number] }[]
-		>();
-		for (const corridor of corridors) {
-			const startKey = posKey(corridor.start);
-			const endKey = posKey(corridor.end);
-			if (!posToCorridors.has(startKey)) posToCorridors.set(startKey, []);
-			if (!posToCorridors.has(endKey)) posToCorridors.set(endKey, []);
-			posToCorridors.get(startKey)?.push({ corridor, nextPos: corridor.end });
-			posToCorridors.get(endKey)?.push({ corridor, nextPos: corridor.start });
-		}
-		// BFS
-		const queue: { pos: [number, number, number]; path: string[] }[] = [
-			{ pos: [startPos[0], 0, startPos[2]], path: [] },
-		];
-		const visited = new Set<string>();
-		while (queue.length > 0) {
-			// biome-ignore lint/style/noNonNullAssertion: <explanation>
-			const { pos, path } = queue.shift()!;
-			const key = posKey(pos);
-			if (positionsEqual(pos, [endPos[0], 0, endPos[2]])) return path;
-			if (visited.has(key)) continue;
-			visited.add(key);
-			for (const neighbor of posToCorridors.get(key) || []) {
-				const nextPos: [number, number, number] = [
-					neighbor.nextPos[0],
-					0,
-					neighbor.nextPos[2],
-				];
-				if (!visited.has(posKey(nextPos))) {
-					queue.push({
-						pos: nextPos,
-						path: [...path, neighbor.corridor.id],
-					});
-				}
-			}
-		}
-		return [];
-	}
+	const {
+		viewMode,
+		setViewMode,
+		cameraMode,
+		playerPosition,
+		userLocation,
+		locationError,
+		buildings,
+		corridors,
+		rooms,
+		toolMode,
+		setToolMode,
+		buildingName,
+		setBuildingName,
+		buildingSize,
+		setBuildingSize,
+		buildingColor,
+		setBuildingColor,
+		selectedBuildings,
+		pathCorridorIds,
+		directions,
+		hoveredCellCoords,
+		setHoveredCellCoords,
+		mousePos,
+		setMousePos,
+		showBuildings,
+		setShowBuildings,
+		editMode,
+		setEditMode,
+		handleGridClick,
+		handleBuildingClick,
+		handleCorridorRemove,
+		setSelectedBuildings,
+		setPathCorridorIds,
+		setDirections,
+	} = useHospitalMap();
 
 	return (
 		<div
@@ -325,79 +66,16 @@ export default function HospitalMap() {
 				}
 			}}
 		>
-			<div className="absolute top-24 left-4 z-10 flex flex-col gap-2">
-				<div className="rounded-md bg-white/90 p-3 shadow-md backdrop-blur-sm">
-					{locationError && (
-						<div className="mb-2 text-red-600 text-sm">{locationError}</div>
-					)}
-					{userLocation && (
-						<div className="mb-2 text-emerald-600 text-sm">
-							Your location: {userLocation.lat.toFixed(6)},{" "}
-							{userLocation.lng.toFixed(6)}
-						</div>
-					)}
-					<div className="mb-2 flex items-center gap-2">
-						<button
-							type="button"
-							className={`rounded-md px-3 py-1.5 font-medium text-sm ${
-								viewMode === "topDown"
-									? "bg-emerald-600 text-white"
-									: "bg-gray-200 text-gray-700"
-							}`}
-							onClick={() => setViewMode("topDown")}
-						>
-							Top-Down
-						</button>
-						<button
-							type="button"
-							className={`rounded-md px-3 py-1.5 font-medium text-sm ${
-								viewMode === "perspective"
-									? "bg-emerald-600 text-white"
-									: "bg-gray-200 text-gray-700"
-							}`}
-							onClick={() => setViewMode("perspective")}
-						>
-							3D View
-						</button>
-						<button
-							type="button"
-							className={`rounded-md px-3 py-1.5 font-medium text-sm ${
-								viewMode === "walk"
-									? "bg-emerald-600 text-white"
-									: "bg-gray-200 text-gray-700"
-							}`}
-							onClick={() => setViewMode("walk")}
-						>
-							Walk Mode
-						</button>
-						<label className="ml-2 flex items-center gap-1 text-sm">
-							<input
-								type="checkbox"
-								checked={showBuildings}
-								onChange={(e) => setShowBuildings(e.target.checked)}
-								className="accent-emerald-600"
-							/>
-							Show Buildings
-						</label>
-						<label className="ml-2 flex items-center gap-1 text-sm">
-							<input
-								type="checkbox"
-								checked={editMode}
-								onChange={(e) => setEditMode(e.target.checked)}
-								className="accent-emerald-600"
-							/>
-							Edit Mode
-						</label>
-					</div>
-					{viewMode === "walk" && (
-						<div className="mt-2 text-gray-600 text-xs">
-							Use{" "}
-							<span className="rounded bg-gray-100 px-1 font-mono">WASD</span>{" "}
-							keys to walk around
-						</div>
-					)}
-				</div>
-			</div>
+			<ViewControls
+				viewMode={viewMode}
+				setViewMode={setViewMode}
+				showBuildings={showBuildings}
+				setShowBuildings={setShowBuildings}
+				editMode={editMode}
+				setEditMode={setEditMode}
+				locationError={locationError}
+				userLocation={userLocation}
+			/>
 
 			<KeyboardControls map={keyboardMap}>
 				<Canvas
@@ -457,64 +135,7 @@ export default function HospitalMap() {
 						buildings={buildings}
 						corridors={corridors}
 						rooms={rooms}
-						onBuildingClick={(id, roomId) => {
-							if (editMode && toolMode === "remove") {
-								if (roomId) {
-									handleRoomRemove(roomId);
-								} else {
-									handleBuildingRemove(id);
-								}
-								return;
-							}
-							if (selectedBuildings.length === 0) {
-								setSelectedBuildings([id]);
-								setPathCorridorIds([]);
-								setDirections([]);
-							} else if (selectedBuildings.length === 1) {
-								if (selectedBuildings[0] === id) return;
-								const first = getBuildingById(selectedBuildings[0]);
-								const second = getBuildingById(id);
-								if (first && second) {
-									// Normalize y to 0 for pathfinding
-									const path = findCorridorPath(
-										corridors,
-										[first.position[0], 0, first.position[2]],
-										[second.position[0], 0, second.position[2]],
-									);
-									setPathCorridorIds(path);
-									if (path.length === 0) {
-										setDirections([
-											"No path found between the selected buildings.",
-										]);
-									} else {
-										const steps = path.map((corridorId, idx) => {
-											const corridor = corridors.find(
-												(c) => c.id === corridorId,
-											);
-											if (!corridor) return "";
-											const from =
-												idx === 0
-													? [first.position[0], 0, first.position[2]]
-													: [
-															corridors.find((c) => c.id === path[idx - 1])
-																?.end[0] ?? 0,
-															0,
-															corridors.find((c) => c.id === path[idx - 1])
-																?.end[2] ?? 0,
-														];
-											const to = [corridor.end[0], 0, corridor.end[2]];
-											return `Take corridor ${corridorId} from (${from}) to (${to})`;
-										});
-										setDirections(steps);
-									}
-								}
-								setSelectedBuildings([]);
-							} else {
-								setSelectedBuildings([id]);
-								setPathCorridorIds([]);
-								setDirections([]);
-							}
-						}}
+						onBuildingClick={handleBuildingClick}
 						highlightedCorridorIds={pathCorridorIds}
 						highlightedBuildingIds={selectedBuildings}
 						showBuildings={showBuildings}
@@ -558,27 +179,14 @@ export default function HospitalMap() {
 				/>
 			</div>
 
-			{directions.length > 0 && (
-				<div className="absolute bottom-6 left-6 z-20 rounded bg-white/90 p-4 shadow">
-					<h3 className="mb-2 font-bold">Directions</h3>
-					<ol className="ml-4 list-decimal">
-						{directions.map((step) => (
-							<li key={step}>{step}</li>
-						))}
-					</ol>
-					<button
-						className="mt-2 rounded bg-gray-200 px-3 py-1"
-						onClick={() => {
-							setSelectedBuildings([]);
-							setPathCorridorIds([]);
-							setDirections([]);
-						}}
-						type="button"
-					>
-						Clear Selection
-					</button>
-				</div>
-			)}
+			<DirectionsDisplay
+				directions={directions}
+				onClear={() => {
+					setSelectedBuildings([]);
+					setPathCorridorIds([]);
+					setDirections([]);
+				}}
+			/>
 
 			{hoveredCellCoords && mousePos && (
 				<div
