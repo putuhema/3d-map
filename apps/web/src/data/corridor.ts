@@ -73,12 +73,6 @@ export const corridors = [
 		width: 0.8,
 	},
 	{
-		id: "996a33cf-9af7-4924-98dd-f73fa4d48ec4",
-		start: [10.5, 0, 34.5],
-		end: [10.5, 0, 32.5],
-		width: 0.8,
-	},
-	{
 		id: "cdcaa148-eaa3-4031-94de-5c1aaa800b03",
 		start: [0.5, 0, 26.5],
 		end: [0.5, 0, 21.5],
@@ -304,6 +298,12 @@ export const corridors = [
 		id: "ac76b3b7-7efb-41c6-8b39-ea29d8b8f0ec",
 		start: [0.5, 0, 34.5],
 		end: [0.5, 0, 26.5],
+		width: 0.8,
+	},
+	{
+		id: "fd6e6cf2-914b-43f2-addd-8d43e26e76b4",
+		start: [10.5, 0, 31.5],
+		end: [10.5, 0, 34.5],
 		width: 0.8,
 	},
 ];

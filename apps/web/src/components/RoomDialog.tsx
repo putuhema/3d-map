@@ -280,6 +280,12 @@ export function LocationDialog({
 					)}
 					<div className="space-y-2">
 						<div className="flex justify-between">
+							<span className="font-medium text-muted-foreground">ID :</span>
+							<span>{location.id}</span>
+						</div>
+					</div>
+					<div className="space-y-2">
+						<div className="flex justify-between">
 							<span className="font-medium text-muted-foreground">
 								Position:
 							</span>

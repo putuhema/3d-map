@@ -670,7 +670,7 @@ export function BuildingRenderer({
 								hasRooms={hasRooms}
 								isHighlighted={isHighlighted}
 								isSelected={isSelected}
-								opacity={0.2}
+								opacity={1}
 								isHovered={isHovered}
 								onClick={
 									!hasRooms
