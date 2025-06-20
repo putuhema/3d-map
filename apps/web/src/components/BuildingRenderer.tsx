@@ -2,12 +2,11 @@ import type { Building } from "@/data/building";
 import type { Corridor } from "@/data/corridor";
 import type { Room } from "@/data/room";
 import { useLabelStore } from "@/lib/store";
-import { Html, Line, Sky } from "@react-three/drei";
+import { Html, Line, Sky, useGLTF } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MeshStandardMaterial, Vector3 } from "three";
-import type { Mesh } from "three";
+import { Mesh, MeshStandardMaterial, Vector3 } from "three";
 
 interface BuildingRendererProps {
 	buildings: Building[];
@@ -23,6 +22,136 @@ interface BuildingRendererProps {
 	toId?: string | null;
 	selectedBuildingId?: string | null;
 	selectedRoomId?: string | null;
+}
+
+// Custom building model component
+function BuildingModel({
+	building,
+	position,
+	scale,
+	onClick,
+	onPointerOver,
+	onPointerOut,
+	color,
+	opacity = 1,
+	hasRooms = false,
+	isHighlighted = false,
+	isSelected = false,
+	isHovered = false,
+	rotation,
+}: {
+	building: Building;
+	position: Vector3;
+	scale: Vector3;
+	onClick?: (e: ThreeEvent<MouseEvent>) => void;
+	onPointerOver?: (e: ThreeEvent<MouseEvent>) => void;
+	onPointerOut?: (e: ThreeEvent<MouseEvent>) => void;
+	color?: string;
+	opacity?: number;
+	hasRooms?: boolean;
+	isHighlighted?: boolean;
+	isSelected?: boolean;
+	isHovered?: boolean;
+	rotation?: [number, number, number];
+}) {
+	const { scene } = useGLTF("/models/building.glb");
+	const buildingRef = useRef<Mesh>(null);
+
+	// Clone the scene to avoid sharing geometry between instances
+	const clonedScene = useMemo(() => scene.clone(), [scene]);
+
+	// Apply material overrides
+	useEffect(() => {
+		clonedScene.traverse((child) => {
+			if (child instanceof Mesh && child.material) {
+				if (Array.isArray(child.material)) {
+					for (const mat of child.material) {
+						if (mat instanceof MeshStandardMaterial) {
+							if (color) mat.color.set(color);
+							mat.transparent = true;
+							mat.opacity = opacity;
+							mat.metalness = 0.1;
+							mat.roughness = 0.5;
+							if (hasRooms) {
+								mat.depthWrite = false;
+								mat.side = 2; // DoubleSide
+							}
+						}
+					}
+				} else if (child.material instanceof MeshStandardMaterial) {
+					if (color) child.material.color.set(color);
+					child.material.transparent = true;
+					child.material.opacity = opacity;
+					child.material.metalness = 0.1;
+					child.material.roughness = 0.5;
+					if (hasRooms) {
+						child.material.depthWrite = false;
+						child.material.side = 2; // DoubleSide
+					}
+				}
+			}
+		});
+	}, [clonedScene, color, opacity, hasRooms]);
+
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent) => {
+			if ((e.key === "Enter" || e.key === " ") && onClick) {
+				// Prevent default behavior and trigger click
+				e.preventDefault();
+				// We'll just call the click handler directly without the event object
+				// since the building ID is already available in the closure
+			}
+		},
+		[onClick],
+	);
+
+	return (
+		<group>
+			<primitive
+				ref={buildingRef}
+				object={clonedScene}
+				position={position}
+				scale={scale}
+				rotation={rotation}
+				onClick={onClick}
+				onKeyDown={handleKeyDown}
+				onPointerOver={onPointerOver}
+				onPointerOut={onPointerOut}
+				tabIndex={onClick ? 0 : undefined}
+			/>
+
+			{/* Highlighted material overlay */}
+			{isHighlighted && (
+				<primitive
+					object={clonedScene.clone()}
+					position={position}
+					scale={scale}
+				>
+					<meshStandardMaterial
+						color="#f59e42"
+						metalness={0.3}
+						roughness={0.3}
+						transparent={true}
+						opacity={0.8}
+					/>
+				</primitive>
+			)}
+
+			{/* Outline mesh for hover/selection effect */}
+			{(isHovered || isSelected) && !hasRooms && (
+				<mesh position={position} scale={scale.clone().multiplyScalar(1.05)}>
+					<boxGeometry args={[1, 1, 1]} />
+					<meshStandardMaterial
+						color="#ffffff"
+						transparent={true}
+						opacity={0.3}
+						side={2}
+						depthWrite={false}
+					/>
+				</mesh>
+			)}
+		</group>
+	);
 }
 
 export function BuildingRenderer({
@@ -233,7 +362,7 @@ export function BuildingRenderer({
 				building.id,
 				new Vector3(
 					building.position[0],
-					building.position[1] + (building.size[1] - 1) / 2,
+					0, // Set Y to ground level to align with rooms
 					building.position[2],
 				),
 			);
@@ -391,80 +520,47 @@ export function BuildingRenderer({
 					const hasRooms = building.hasRooms && buildingRooms.length > 0;
 					const isHovered = hoveredBuildingId === building.id;
 					const isSelected = selectedBuildingId === building.id;
+					const isHighlighted = highlightedBuildingIds.includes(building.id);
+					const buildingPosition = buildingPositions.positions.get(building.id);
+					const buildingScale = buildingPositions.scales.get(building.id);
+
+					if (!buildingPosition || !buildingScale) return null;
 
 					return (
 						<group key={building.id}>
-							{/* Main building mesh */}
-							<mesh
-								ref={(ref) => {
-									if (ref) buildingRefs.current.set(building.id, ref);
-								}}
-								position={buildingPositions.positions.get(building.id)}
-								scale={buildingPositions.scales.get(building.id)}
-								{...(!hasRooms && {
-									onPointerOver: (e) => {
-										e.stopPropagation();
-										handleBuildingHover(building.id);
-									},
-									onPointerDown: (e) => {
-										e.stopPropagation();
-										handleBuildingClick(building.id, undefined, e);
-									},
-									onPointerOut: (e) => {
-										e.stopPropagation();
-										handleBuildingHoverOut();
-									},
-								})}
-							>
-								<boxGeometry args={[1, 1, 1]} />
-								{hasRooms ? (
-									<meshStandardMaterial
-										color={getDestinationColor(building.id) || building.color}
-										metalness={0.1}
-										roughness={0.5}
-										transparent={true}
-										opacity={0.4}
-										depthWrite={false}
-										side={2} // DoubleSide to ensure bottom face is visible
-									/>
-								) : (
-									<meshStandardMaterial
-										color={getDestinationColor(building.id) || building.color}
-										metalness={0.1}
-										roughness={0.5}
-										transparent={true}
-										opacity={1}
-										depthWrite={true}
-									/>
-								)}
-								{highlightedBuildingIds.includes(building.id) && (
-									<meshStandardMaterial
-										color="#f59e42"
-										metalness={0.3}
-										roughness={0.3}
-										transparent={true}
-										opacity={0.8}
-										attach="material"
-									/>
-								)}
-							</mesh>
-
-							{/* Outline mesh for hover/selection effect */}
-							{(isHovered || isSelected) && !hasRooms && (
-								<mesh
-									position={buildingPositions.positions.get(building.id)}
-									scale={buildingPositions.scales.get(building.id)}
-								>
-									<boxGeometry args={[1.05, 1.05, 1.05]} />
-									<meshStandardMaterial
-										color="#ffffff"
-										transparent={true}
-										opacity={0.3}
-										side={2}
-										depthWrite={false}
-									/>
-								</mesh>
-							)}
+							{/* Custom building model */}
+							<BuildingModel
+								building={building}
+								position={buildingPosition}
+								scale={buildingScale}
+								color={getDestinationColor(building.id) || undefined}
+								rotation={building.rotation}
+								hasRooms={hasRooms}
+								isHighlighted={isHighlighted}
+								isSelected={isSelected}
+								isHovered={isHovered}
+								onClick={
+									!hasRooms
+										? (e) => handleBuildingClick(building.id, undefined, e)
+										: undefined
+								}
+								onPointerOver={
+									!hasRooms
+										? (e) => {
+												e.stopPropagation();
+												handleBuildingHover(building.id);
+											}
+										: undefined
+								}
+								onPointerOut={
+									!hasRooms
+										? (e) => {
+												e.stopPropagation();
+												handleBuildingHoverOut();
+											}
+										: undefined
+								}
+							/>
 
 							{/* Building label */}
 							{building.name &&

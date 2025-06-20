@@ -5,6 +5,7 @@ export type Building = {
 	size: [number, number, number];
 	color: string;
 	hasRooms?: boolean;
+	rotation?: [number, number, number];
 };
 
 export const buildings = [
@@ -15,6 +16,7 @@ export const buildings = [
 		size: [2, 2, 2],
 		color: "#C1DBB3",
 		hasRooms: false,
+		rotation: [0, -Math.PI / 2, 0],
 	},
 	{
 		id: "94385c5f-2fb0-4e15-a1f5-c550bbc98c7c",
@@ -55,6 +57,7 @@ export const buildings = [
 		size: [3, 2, 3],
 		color: "#C1DBB3",
 		hasRooms: false,
+		rotation: [0, -Math.PI / 2, 0],
 	},
 	{
 		id: "c872fd99-b722-4ddb-839b-807c062514bb",
@@ -87,6 +90,7 @@ export const buildings = [
 		size: [7, 2, 4],
 		color: "#C1DBB3",
 		hasRooms: false,
+		rotation: [0, Math.PI, 0],
 	},
 	{
 		id: "733d217b-ab1a-4e3d-95e0-1fbaea066512",
@@ -175,6 +179,7 @@ export const buildings = [
 		size: [7, 2, 3],
 		color: "#C1DBB3",
 		hasRooms: false,
+		rotation: [0, Math.PI, 0],
 	},
 	{
 		id: "d558586d-2762-4061-8997-5d00a4b436c8",
@@ -191,6 +196,7 @@ export const buildings = [
 		size: [3, 2, 5],
 		color: "#C1DBB3",
 		hasRooms: false,
+		rotation: [0, Math.PI / 2, 0],
 	},
 	{
 		id: "26e5b0c7-6b4e-48fe-8802-d7819f2d2dca",
