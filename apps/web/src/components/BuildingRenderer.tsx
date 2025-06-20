@@ -6,7 +6,10 @@ import { Html, Line, Sky, useGLTF } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mesh, MeshStandardMaterial, Vector3 } from "three";
+import { type Material, Mesh, MeshStandardMaterial, Vector3 } from "three";
+
+// Preload the GLB model
+useGLTF.preload("/models/building-90.glb");
 
 interface BuildingRendererProps {
 	buildings: Building[];
@@ -56,41 +59,126 @@ function BuildingModel({
 }) {
 	const { scene } = useGLTF("/models/building.glb");
 	const buildingRef = useRef<Mesh>(null);
+	const clonedMaterialsRef = useRef<Material[]>([]);
+
+	// Debug logging for model loading
+	useEffect(() => {
+		if (scene) {
+			console.log("GLB model loaded successfully:", scene);
+			// Log scene structure for debugging
+			scene.traverse((child) => {
+				if (child instanceof Mesh) {
+					console.log("Mesh found:", child.name, "materials:", child.material);
+				}
+			});
+		}
+	}, [scene]);
 
 	// Clone the scene to avoid sharing geometry between instances
-	const clonedScene = useMemo(() => scene.clone(), [scene]);
+	const clonedScene = useMemo(() => {
+		if (!scene) return null;
+		return scene.clone();
+	}, [scene]);
 
-	// Apply material overrides
+	// Apply material overrides only when necessary
 	useEffect(() => {
-		clonedScene.traverse((child) => {
-			if (child instanceof Mesh && child.material) {
-				if (Array.isArray(child.material)) {
-					for (const mat of child.material) {
-						if (mat instanceof MeshStandardMaterial) {
-							if (color) mat.color.set(color);
-							mat.transparent = true;
-							mat.opacity = opacity;
-							mat.metalness = 0.1;
-							mat.roughness = 0.5;
-							if (hasRooms) {
-								mat.depthWrite = false;
-								mat.side = 2; // DoubleSide
+		if (!clonedScene) return;
+
+		// Clean up previous cloned materials
+		for (const mat of clonedMaterialsRef.current) {
+			if (mat.dispose) {
+				mat.dispose();
+			}
+		}
+		clonedMaterialsRef.current = [];
+
+		// Only apply overrides if we have a specific color or opacity change
+		const shouldOverride = color || opacity !== 1 || hasRooms;
+
+		if (shouldOverride) {
+			clonedScene.traverse((child) => {
+				if (child instanceof Mesh && child.material) {
+					if (Array.isArray(child.material)) {
+						for (let i = 0; i < child.material.length; i++) {
+							const mat = child.material[i];
+							// Clone the material to avoid affecting other instances
+							const clonedMat = mat.clone();
+							clonedMaterialsRef.current.push(clonedMat);
+
+							// Only override color if explicitly provided
+							if (color && clonedMat.color) {
+								clonedMat.color.set(color);
 							}
+
+							// Only set transparency if opacity is not 1
+							if (opacity !== 1) {
+								clonedMat.transparent = true;
+								clonedMat.opacity = opacity;
+							}
+
+							// Apply room-specific settings
+							if (hasRooms) {
+								clonedMat.depthWrite = false;
+								clonedMat.side = 2; // DoubleSide
+							}
+
+							// Ensure proper material properties
+							if (clonedMat.metalness !== undefined) {
+								clonedMat.metalness = 0.1;
+							}
+							if (clonedMat.roughness !== undefined) {
+								clonedMat.roughness = 0.5;
+							}
+
+							// Replace the material in the array
+							child.material[i] = clonedMat;
 						}
-					}
-				} else if (child.material instanceof MeshStandardMaterial) {
-					if (color) child.material.color.set(color);
-					child.material.transparent = true;
-					child.material.opacity = opacity;
-					child.material.metalness = 0.1;
-					child.material.roughness = 0.5;
-					if (hasRooms) {
-						child.material.depthWrite = false;
-						child.material.side = 2; // DoubleSide
+					} else if (child.material) {
+						// Clone the material to avoid affecting other instances
+						const clonedMat = child.material.clone();
+						clonedMaterialsRef.current.push(clonedMat);
+
+						// Only override color if explicitly provided
+						if (color && clonedMat.color) {
+							clonedMat.color.set(color);
+						}
+
+						// Only set transparency if opacity is not 1
+						if (opacity !== 1) {
+							clonedMat.transparent = true;
+							clonedMat.opacity = opacity;
+						}
+
+						// Apply room-specific settings
+						if (hasRooms) {
+							clonedMat.depthWrite = false;
+							clonedMat.side = 2; // DoubleSide
+						}
+
+						// Ensure proper material properties for standard materials
+						if (clonedMat.metalness !== undefined) {
+							clonedMat.metalness = 0.1;
+						}
+						if (clonedMat.roughness !== undefined) {
+							clonedMat.roughness = 0.5;
+						}
+
+						// Replace the material
+						child.material = clonedMat;
 					}
 				}
+			});
+		}
+
+		// Cleanup function
+		return () => {
+			for (const mat of clonedMaterialsRef.current) {
+				if (mat.dispose) {
+					mat.dispose();
+				}
 			}
-		});
+			clonedMaterialsRef.current = [];
+		};
 	}, [clonedScene, color, opacity, hasRooms]);
 
 	const handleKeyDown = useCallback(
@@ -104,6 +192,61 @@ function BuildingModel({
 		},
 		[onClick],
 	);
+
+	// Don't render if scene is not loaded
+	if (!clonedScene) {
+		// Fallback to simple box geometry if GLB model fails to load
+		return (
+			<group>
+				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+				<mesh
+					position={position}
+					scale={scale}
+					rotation={rotation}
+					onClick={onClick}
+					onPointerOver={onPointerOver}
+					onPointerOut={onPointerOut}
+				>
+					<boxGeometry args={[1, 1, 1]} />
+					<meshStandardMaterial
+						color={color || "#8B7355"}
+						transparent={true}
+						opacity={opacity}
+						metalness={0.1}
+						roughness={0.5}
+					/>
+				</mesh>
+
+				{/* Highlighted material overlay */}
+				{isHighlighted && (
+					<mesh position={position} scale={scale} rotation={rotation}>
+						<boxGeometry args={[1, 1, 1]} />
+						<meshStandardMaterial
+							color="#f59e42"
+							metalness={0.3}
+							roughness={0.3}
+							transparent={true}
+							opacity={0.8}
+						/>
+					</mesh>
+				)}
+
+				{/* Outline mesh for hover/selection effect */}
+				{(isHovered || isSelected) && !hasRooms && (
+					<mesh position={position} scale={scale.clone().multiplyScalar(1.05)}>
+						<boxGeometry args={[1, 1, 1]} />
+						<meshStandardMaterial
+							color="#ffffff"
+							transparent={true}
+							opacity={0.3}
+							side={2}
+							depthWrite={false}
+						/>
+					</mesh>
+				)}
+			</group>
+		);
+	}
 
 	return (
 		<group>
@@ -126,6 +269,7 @@ function BuildingModel({
 					object={clonedScene.clone()}
 					position={position}
 					scale={scale}
+					rotation={rotation}
 				>
 					<meshStandardMaterial
 						color="#f59e42"
@@ -490,17 +634,6 @@ export function BuildingRenderer({
 				mieDirectionalG={0.8}
 			/>
 
-			{showRooms && (
-				<mesh
-					position={[0, -0.1, 0]}
-					rotation={[-Math.PI / 2, 0, 0]}
-					receiveShadow
-				>
-					<planeGeometry args={[1000, 1000]} />
-					<meshStandardMaterial color="#D6C0B3" />
-				</mesh>
-			)}
-
 			{highlightedCorridorIds.length > 0 && (
 				<mesh ref={pathIndicatorRef} position={[0, 0.1, 0]}>
 					<sphereGeometry args={[0.2, 16, 16]} />
@@ -528,7 +661,6 @@ export function BuildingRenderer({
 
 					return (
 						<group key={building.id}>
-							{/* Custom building model */}
 							<BuildingModel
 								building={building}
 								position={buildingPosition}
@@ -538,6 +670,7 @@ export function BuildingRenderer({
 								hasRooms={hasRooms}
 								isHighlighted={isHighlighted}
 								isSelected={isSelected}
+								opacity={0.2}
 								isHovered={isHovered}
 								onClick={
 									!hasRooms
@@ -562,7 +695,6 @@ export function BuildingRenderer({
 								}
 							/>
 
-							{/* Building label */}
 							{building.name &&
 								shouldShowLabel(building.id, showBuildingLabels) && (
 									<Html

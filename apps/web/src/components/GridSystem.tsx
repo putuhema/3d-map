@@ -69,22 +69,22 @@ export function GridSystem({
 		// Check if within grid bounds
 		if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
 			setHoveredCell([gridX, gridY]);
-			if (onCellHover) {
-				// Calculate world coordinates of cell center
-				const x = gridX * cellSize - halfSize + cellSize / 2;
-				const y = 0;
-				const z = gridY * cellSize - halfSize + cellSize / 2;
-				onCellHover({ x, y, z });
-			}
+			// if (onCellHover) {
+			// 	// Calculate world coordinates of cell center
+			// 	const x = gridX * cellSize - halfSize + cellSize / 2;
+			// 	const y = 0;
+			// 	const z = gridY * cellSize - halfSize + cellSize / 2;
+			// 	onCellHover({ x, y, z });
+			// }
 		} else {
 			setHoveredCell(null);
-			if (onCellHover) onCellHover(null);
+			// if (onCellHover) onCellHover(null);
 		}
 	};
 
 	const handlePointerOut = () => {
 		setHoveredCell(null);
-		if (onCellHover) onCellHover(null);
+		// if (onCellHover) onCellHover(null);
 	};
 
 	return (
@@ -94,7 +94,7 @@ export function GridSystem({
 				rotation={[-Math.PI / 2, 0, 0]}
 				position={[0, 0.01, 0]}
 				onClick={handleClick}
-				// onPointerMove={handlePointerMove}
+				onPointerMove={handlePointerMove}
 				onPointerOut={handlePointerOut}
 			>
 				<planeGeometry args={[gridSize * cellSize, gridSize * cellSize]} />

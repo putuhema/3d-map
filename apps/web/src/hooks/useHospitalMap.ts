@@ -78,46 +78,46 @@ export function useHospitalMap() {
 		0, 0, 6,
 	]);
 
-	// // Load saved state from localStorage
-	// useEffect(() => {
-	// 	const storedBuildings = localStorage.getItem("buildings");
-	// 	const storedCorridors = localStorage.getItem("corridors");
-	// 	const storedRooms = localStorage.getItem("rooms");
-	// 	if (storedBuildings) {
-	// 		try {
-	// 			setBuildings(JSON.parse(storedBuildings));
-	// 		} catch (e) {
-	// 			console.warn("Failed to parse stored buildings", e);
-	// 		}
-	// 	}
-	// 	if (storedCorridors) {
-	// 		try {
-	// 			setCorridors(JSON.parse(storedCorridors));
-	// 		} catch (e) {
-	// 			console.warn("Failed to parse stored corridors", e);
-	// 		}
-	// 	}
-	// 	if (storedRooms) {
-	// 		try {
-	// 			setRooms(JSON.parse(storedRooms));
-	// 		} catch (e) {
-	// 			console.warn("Failed to parse stored rooms", e);
-	// 		}
-	// 	}
-	// }, []);
+	// Load saved state from localStorage
+	useEffect(() => {
+		const storedBuildings = localStorage.getItem("buildings");
+		const storedCorridors = localStorage.getItem("corridors");
+		const storedRooms = localStorage.getItem("rooms");
+		if (storedBuildings) {
+			try {
+				setBuildings(JSON.parse(storedBuildings));
+			} catch (e) {
+				console.warn("Failed to parse stored buildings", e);
+			}
+		}
+		if (storedCorridors) {
+			try {
+				setCorridors(JSON.parse(storedCorridors));
+			} catch (e) {
+				console.warn("Failed to parse stored corridors", e);
+			}
+		}
+		if (storedRooms) {
+			try {
+				setRooms(JSON.parse(storedRooms));
+			} catch (e) {
+				console.warn("Failed to parse stored rooms", e);
+			}
+		}
+	}, []);
 
-	// // Save state to localStorage
-	// useEffect(() => {
-	// 	localStorage.setItem("buildings", JSON.stringify(buildings));
-	// }, [buildings]);
+	// Save state to localStorage
+	useEffect(() => {
+		localStorage.setItem("buildings", JSON.stringify(buildings));
+	}, [buildings]);
 
-	// useEffect(() => {
-	// 	localStorage.setItem("corridors", JSON.stringify(corridors));
-	// }, [corridors]);
+	useEffect(() => {
+		localStorage.setItem("corridors", JSON.stringify(corridors));
+	}, [corridors]);
 
-	// useEffect(() => {
-	// 	localStorage.setItem("rooms", JSON.stringify(rooms));
-	// }, [rooms]);
+	useEffect(() => {
+		localStorage.setItem("rooms", JSON.stringify(rooms));
+	}, [rooms]);
 
 	// Helper: Find building by id
 	const getBuildingById = useCallback(
@@ -438,7 +438,7 @@ export function useHospitalMap() {
 					id: crypto.randomUUID(),
 					start: [corridorStart[0], 0, corridorStart[2]],
 					end: [x - (gridSize / 2 - 0.5), 0, y - (gridSize / 2 - 0.5)],
-					width: 0.3,
+					width: 0.8,
 				});
 				setIsDrawingCorridor(false);
 				setCorridorStart(null);

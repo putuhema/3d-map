@@ -8,7 +8,9 @@ export type Room = {
 	image: string;
 };
 
-export const rooms = [
+export const rooms = [];
+
+export const roomsx = [
 	{
 		id: "4fd91852-86f2-4584-9cbc-238c99a938d7",
 		name: "Kasir",
