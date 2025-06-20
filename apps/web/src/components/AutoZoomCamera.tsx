@@ -164,11 +164,12 @@ export function AutoZoomCamera({
 			// Store the current view mode before switching to top-down
 			if (viewMode !== "topDown") {
 				setPreviousViewMode(viewMode);
+				setViewMode("topDown");
 			}
 
-			// Switch to top-down view for room viewing
-			setViewMode("topDown");
-			setCameraMode("topDown");
+			if (cameraMode !== "topDown") {
+				setCameraMode("topDown");
+			}
 
 			// Animate to the new target and distance
 			animateCamera(cameraTarget, optimalDistance);

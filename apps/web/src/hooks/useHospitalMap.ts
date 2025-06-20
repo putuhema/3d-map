@@ -63,6 +63,12 @@ export function useHospitalMap() {
 		Room | Building | null
 	>(null);
 
+	// Selection state for outline display
+	const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(
+		null,
+	);
+	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+
 	// Destination selector state
 	const [destinationSelectorExpanded, setDestinationSelectorExpanded] =
 		useState(false);
@@ -217,7 +223,7 @@ export function useHospitalMap() {
 	// Effect to recalculate camera target when room selection changes
 	useEffect(() => {
 		calculateCameraTargetForRooms();
-	}, [fromId, toId, calculateCameraTargetForRooms]);
+	}, [fromId, toId]);
 
 	// Destination selector functions
 	const handleFromSelect = useCallback(
@@ -533,6 +539,8 @@ export function useHospitalMap() {
 			if (room) {
 				setSelectedLocation(room);
 				setLocationDialogOpen(true);
+				setSelectedRoomId(roomId);
+				setSelectedBuildingId(null); // Clear building selection
 			}
 		} else {
 			// Clicked on a building
@@ -540,6 +548,8 @@ export function useHospitalMap() {
 			if (building) {
 				setSelectedLocation(building);
 				setLocationDialogOpen(true);
+				setSelectedBuildingId(id);
+				setSelectedRoomId(null); // Clear room selection
 			}
 		}
 	};
@@ -610,5 +620,9 @@ export function useHospitalMap() {
 		setCameraTarget,
 		handleReset,
 		handleLocationClick,
+		selectedBuildingId,
+		setSelectedBuildingId,
+		selectedRoomId,
+		setSelectedRoomId,
 	};
 }

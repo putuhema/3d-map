@@ -6,7 +6,7 @@ import { Html, Line, Sky } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Color, MeshStandardMaterial, Vector3 } from "three";
+import { MeshStandardMaterial, Vector3 } from "three";
 import type { Mesh } from "three";
 
 interface BuildingRendererProps {
@@ -21,6 +21,8 @@ interface BuildingRendererProps {
 	showRooms?: boolean;
 	fromId?: string | null;
 	toId?: string | null;
+	selectedBuildingId?: string | null;
+	selectedRoomId?: string | null;
 }
 
 export function BuildingRenderer({
@@ -35,9 +37,15 @@ export function BuildingRenderer({
 	showRooms = true,
 	fromId,
 	toId,
+	selectedBuildingId,
+	selectedRoomId,
 }: BuildingRendererProps) {
 	const buildingRefs = useRef<Map<string, Mesh>>(new Map());
+	const roomRefs = useRef<Map<string, Mesh>>(new Map());
 	const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
+	const [hoveredBuildingId, setHoveredBuildingId] = useState<string | null>(
+		null,
+	);
 	const pathIndicatorRef = useRef<Mesh>(null);
 	const animationTime = useRef(0);
 
@@ -107,6 +115,154 @@ export function BuildingRenderer({
 		return grouped;
 	}, [rooms]);
 
+	// Memoize path calculation to prevent recalculation on every frame
+	const pathData = useMemo(() => {
+		if (highlightedCorridorIds.length === 0) return null;
+
+		// Get highlighted corridors in the correct order from pathfinding
+		const highlightedCorridors: Corridor[] = [];
+		for (const corridorId of highlightedCorridorIds) {
+			const corridor = corridors.find((c) => c.id === corridorId);
+			if (corridor) {
+				highlightedCorridors.push(corridor);
+			}
+		}
+
+		if (highlightedCorridors.length === 0) return null;
+
+		// Create a continuous path by following each corridor's geometry
+		const pathPoints: Vector3[] = [];
+
+		// First, let's create a map of points to their connected corridors
+		const pointConnections = new Map<
+			string,
+			{ pos: Vector3; corridors: Corridor[] }
+		>();
+
+		// Helper to get point key
+		const getPointKey = (x: number, z: number) => `${x},${z}`;
+
+		// Build connections map
+		for (const corridor of highlightedCorridors) {
+			const startKey = getPointKey(corridor.start[0], corridor.start[2]);
+			const endKey = getPointKey(corridor.end[0], corridor.end[2]);
+
+			if (!pointConnections.has(startKey)) {
+				pointConnections.set(startKey, {
+					pos: new Vector3(corridor.start[0], 0, corridor.start[2]),
+					corridors: [],
+				});
+			}
+			if (!pointConnections.has(endKey)) {
+				pointConnections.set(endKey, {
+					pos: new Vector3(corridor.end[0], 0, corridor.end[2]),
+					corridors: [],
+				});
+			}
+
+			const startPoint = pointConnections.get(startKey);
+			const endPoint = pointConnections.get(endKey);
+			if (startPoint && endPoint) {
+				startPoint.corridors.push(corridor);
+				endPoint.corridors.push(corridor);
+			}
+		}
+
+		// Find entry point (point with only one connection)
+		let entryPoint: Vector3 | undefined;
+		let currentKey: string | undefined;
+
+		for (const [key, data] of pointConnections.entries()) {
+			if (data.corridors.length === 1) {
+				entryPoint = data.pos;
+				currentKey = key;
+				break;
+			}
+		}
+
+		if (entryPoint) {
+			// Build ordered path
+			pathPoints.push(entryPoint);
+			const visitedCorridors = new Set<string>();
+
+			while (currentKey) {
+				const currentPoint = pointConnections.get(currentKey);
+				if (!currentPoint) break;
+
+				// Find next unvisited corridor
+				const nextCorridor = currentPoint.corridors.find(
+					(c) => !visitedCorridors.has(c.id),
+				);
+				if (!nextCorridor) break;
+
+				visitedCorridors.add(nextCorridor.id);
+
+				// Determine which end is the next point
+				const nextKey =
+					getPointKey(nextCorridor.start[0], nextCorridor.start[2]) ===
+					currentKey
+						? getPointKey(nextCorridor.end[0], nextCorridor.end[2])
+						: getPointKey(nextCorridor.start[0], nextCorridor.start[2]);
+
+				const nextPoint = pointConnections.get(nextKey);
+				if (nextPoint) {
+					pathPoints.push(nextPoint.pos);
+					currentKey = nextKey;
+				} else {
+					break;
+				}
+			}
+		}
+
+		// Calculate total path length
+		let totalLength = 0;
+		for (let i = 1; i < pathPoints.length; i++) {
+			totalLength += pathPoints[i - 1].distanceTo(pathPoints[i]);
+		}
+
+		return { pathPoints, totalLength };
+	}, [highlightedCorridorIds, corridors]);
+
+	// Memoize building positions and scales to prevent unnecessary object creation
+	const buildingPositions = useMemo(() => {
+		const positions = new Map<string, Vector3>();
+		const scales = new Map<string, Vector3>();
+
+		for (const building of buildings) {
+			positions.set(
+				building.id,
+				new Vector3(
+					building.position[0],
+					building.position[1] + (building.size[1] - 1) / 2,
+					building.position[2],
+				),
+			);
+			scales.set(building.id, new Vector3(...building.size));
+		}
+
+		return { positions, scales };
+	}, [buildings]);
+
+	// Memoize room positions and scales to prevent unnecessary object creation
+	const roomPositions = useMemo(() => {
+		const positions = new Map<string, Vector3>();
+		const scales = new Map<string, Vector3>();
+
+		for (const room of rooms) {
+			positions.set(
+				room.id,
+				new Vector3(
+					room.position[0],
+					room.position[1] + (room.size[1] - 1) / 2,
+					room.position[2],
+				),
+			);
+			scales.set(room.id, new Vector3(...room.size));
+		}
+
+		return { positions, scales };
+	}, [rooms]);
+
 	const handleBuildingClick = (
 		id: string,
 		roomId: string | undefined,
@@ -121,143 +277,35 @@ export function BuildingRenderer({
 		onCorridorClick?.(id);
 	};
 
+	const handleBuildingHover = useCallback((buildingId: string) => {
+		setHoveredBuildingId(buildingId);
+	}, []);
+
+	const handleBuildingHoverOut = useCallback(() => {
+		setHoveredBuildingId(null);
+	}, []);
+
+	const handleRoomHover = useCallback((roomId: string) => {
+		setHoveredRoomId(roomId);
+	}, []);
+
+	const handleRoomHoverOut = useCallback(() => {
+		setHoveredRoomId(null);
+	}, []);
+
 	const corridorMaterial = useMemo(
 		() => new MeshStandardMaterial({ color: "#E4E0E1" }),
 		[],
 	);
 
-	// Create custom material for buildings with rooms
-	const createBuildingMaterial = useCallback(
-		(building: Building, hasRooms: boolean) => {
-			if (!hasRooms) {
-				return new MeshStandardMaterial({
-					color: getDestinationColor(building.id) || building.color,
-					metalness: 0.1,
-					roughness: 0.5,
-					transparent: true,
-					opacity: 1,
-					depthWrite: true,
-				});
-			}
-
-			// For buildings with rooms, create a material that shows color only on bottom face
-			return new MeshStandardMaterial({
-				color: getDestinationColor(building.id) || building.color,
-				metalness: 0.1,
-				roughness: 0.5,
-				transparent: true,
-				opacity: 0.4,
-				depthWrite: false,
-			});
-		},
-		[getDestinationColor],
-	);
-
-	// Animated path indicator
+	// Optimized animated path indicator
 	useFrame((state) => {
-		if (pathIndicatorRef.current && highlightedCorridorIds.length > 0) {
+		if (pathIndicatorRef.current && pathData) {
 			animationTime.current += state.clock.getDelta() * 25;
 
-			// Get highlighted corridors in the correct order from pathfinding
-			const highlightedCorridors: Corridor[] = [];
-			for (const corridorId of highlightedCorridorIds) {
-				const corridor = corridors.find((c) => c.id === corridorId);
-				if (corridor) {
-					highlightedCorridors.push(corridor);
-				}
-			}
+			const { pathPoints, totalLength } = pathData;
 
-			if (highlightedCorridors.length > 0) {
-				// Create a continuous path by following each corridor's geometry
-				const pathPoints: Vector3[] = [];
-
-				// First, let's create a map of points to their connected corridors
-				const pointConnections = new Map<
-					string,
-					{ pos: Vector3; corridors: Corridor[] }
-				>();
-
-				// Helper to get point key
-				const getPointKey = (x: number, z: number) => `${x},${z}`;
-
-				// Build connections map
-				for (const corridor of highlightedCorridors) {
-					const startKey = getPointKey(corridor.start[0], corridor.start[2]);
-					const endKey = getPointKey(corridor.end[0], corridor.end[2]);
-
-					if (!pointConnections.has(startKey)) {
-						pointConnections.set(startKey, {
-							pos: new Vector3(corridor.start[0], 0, corridor.start[2]),
-							corridors: [],
-						});
-					}
-					if (!pointConnections.has(endKey)) {
-						pointConnections.set(endKey, {
-							pos: new Vector3(corridor.end[0], 0, corridor.end[2]),
-							corridors: [],
-						});
-					}
-
-					const startPoint = pointConnections.get(startKey);
-					const endPoint = pointConnections.get(endKey);
-					if (startPoint && endPoint) {
-						startPoint.corridors.push(corridor);
-						endPoint.corridors.push(corridor);
-					}
-				}
-
-				// Find entry point (point with only one connection)
-				let entryPoint: Vector3 | undefined;
-				let currentKey: string | undefined;
-
-				for (const [key, data] of pointConnections.entries()) {
-					if (data.corridors.length === 1) {
-						entryPoint = data.pos;
-						currentKey = key;
-						break;
-					}
-				}
-
-				if (entryPoint) {
-					// Build ordered path
-					pathPoints.push(entryPoint);
-					const visitedCorridors = new Set<string>();
-
-					while (currentKey) {
-						const currentPoint = pointConnections.get(currentKey);
-						if (!currentPoint) break;
-
-						// Find next unvisited corridor
-						const nextCorridor = currentPoint.corridors.find(
-							(c) => !visitedCorridors.has(c.id),
-						);
-						if (!nextCorridor) break;
-
-						visitedCorridors.add(nextCorridor.id);
-
-						// Determine which end is the next point
-						const nextKey =
-							getPointKey(nextCorridor.start[0], nextCorridor.start[2]) ===
-							currentKey
-								? getPointKey(nextCorridor.end[0], nextCorridor.end[2])
-								: getPointKey(nextCorridor.start[0], nextCorridor.start[2]);
-
-						const nextPoint = pointConnections.get(nextKey);
-						if (nextPoint) {
-							pathPoints.push(nextPoint.pos);
-							currentKey = nextKey;
-						} else {
-							break;
-						}
-					}
-				}
-
-				// Calculate total path length
-				let totalLength = 0;
-				for (let i = 1; i < pathPoints.length; i++) {
-					totalLength += pathPoints[i - 1].distanceTo(pathPoints[i]);
-				}
-
+			if (pathPoints.length > 1) {
 				// Linear motion that resets at the end
 				const duration = 2; // seconds for one complete path traversal
 				const t = (animationTime.current % duration) / duration;
@@ -341,28 +389,32 @@ export function BuildingRenderer({
 				buildings.map((building) => {
 					const buildingRooms = roomsByBuilding.get(building.id) || [];
 					const hasRooms = building.hasRooms && buildingRooms.length > 0;
+					const isHovered = hoveredBuildingId === building.id;
+					const isSelected = selectedBuildingId === building.id;
 
 					return (
 						<group key={building.id}>
-							{/* Building mesh */}
-							{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+							{/* Main building mesh */}
 							<mesh
 								ref={(ref) => {
 									if (ref) buildingRefs.current.set(building.id, ref);
 								}}
-								position={
-									new Vector3(
-										building.position[0],
-										building.position[1] + (building.size[1] - 1) / 2,
-										building.position[2],
-									)
-								}
-								scale={new Vector3(...building.size)}
-								onClick={
-									hasRooms
-										? undefined
-										: (e) => handleBuildingClick(building.id, undefined, e)
-								}
+								position={buildingPositions.positions.get(building.id)}
+								scale={buildingPositions.scales.get(building.id)}
+								{...(!hasRooms && {
+									onPointerOver: (e) => {
+										e.stopPropagation();
+										handleBuildingHover(building.id);
+									},
+									onPointerDown: (e) => {
+										e.stopPropagation();
+										handleBuildingClick(building.id, undefined, e);
+									},
+									onPointerOut: (e) => {
+										e.stopPropagation();
+										handleBuildingHoverOut();
+									},
+								})}
 							>
 								<boxGeometry args={[1, 1, 1]} />
 								{hasRooms ? (
@@ -395,97 +447,144 @@ export function BuildingRenderer({
 										attach="material"
 									/>
 								)}
-								{building.name &&
-									shouldShowLabel(building.id, showBuildingLabels) && (
-										<Html
-											center
-											position={[0, building.size[1] / 9 + 0.5, 0]}
-											style={{
-												background: isDestination(building.id)
-													? isFromDestination(building.id)
-														? "rgba(34, 197, 94, 0.9)"
-														: "rgba(239, 68, 68, 0.9)"
-													: "#57776d",
-												color: "white",
-												padding: "4px 8px",
-												borderRadius: "4px",
-												fontSize: "12px",
-												whiteSpace: "nowrap",
-												pointerEvents: "none",
-												fontWeight: isDestination(building.id)
-													? "bold"
-													: "normal",
-											}}
-										>
-											{isDestination(building.id)
-												? `${building.name} (${isFromDestination(building.id) ? "FROM" : "TO"})`
-												: building.name}
-										</Html>
-									)}
 							</mesh>
+
+							{/* Outline mesh for hover/selection effect */}
+							{(isHovered || isSelected) && !hasRooms && (
+								<mesh
+									position={buildingPositions.positions.get(building.id)}
+									scale={buildingPositions.scales.get(building.id)}
+								>
+									<boxGeometry args={[1.05, 1.05, 1.05]} />
+									<meshStandardMaterial
+										color="#ffffff"
+										transparent={true}
+										opacity={0.3}
+										side={2}
+										depthWrite={false}
+									/>
+								</mesh>
+							)}
+
+							{/* Building label */}
+							{building.name &&
+								shouldShowLabel(building.id, showBuildingLabels) && (
+									<Html
+										center
+										position={[0, building.size[1] / 9 + 0.5, 0]}
+										style={{
+											background: isDestination(building.id)
+												? isFromDestination(building.id)
+													? "rgba(34, 197, 94, 0.9)"
+													: "rgba(239, 68, 68, 0.9)"
+												: "#57776d",
+											color: "white",
+											padding: "4px 8px",
+											borderRadius: "4px",
+											fontSize: "12px",
+											whiteSpace: "nowrap",
+											pointerEvents: "none",
+											fontWeight: isDestination(building.id)
+												? "bold"
+												: "normal",
+										}}
+									>
+										{isDestination(building.id)
+											? `${building.name} (${
+													isFromDestination(building.id) ? "FROM" : "TO"
+												})`
+											: building.name}
+									</Html>
+								)}
 						</group>
 					);
 				})}
 
 			{showRooms &&
-				rooms.map((room) => (
-					// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-					<mesh
-						key={room.id}
-						position={
-							new Vector3(
-								room.position[0],
-								room.position[1] + (room.size[1] - 1) / 2,
-								room.position[2],
-							)
-						}
-						scale={new Vector3(...room.size)}
-						onClick={(e) => handleBuildingClick(room.buildingId, room.id, e)}
-						onPointerOver={(e) => {
-							e.stopPropagation();
-							setHoveredRoomId(room.id);
-						}}
-						onPointerOut={(e) => {
-							e.stopPropagation();
-							setHoveredRoomId(null);
-						}}
-						renderOrder={2}
-					>
-						<boxGeometry args={[1, 1, 1]} />
-						<meshStandardMaterial
-							color={getDestinationColor(room.id) || room.color}
-							transparent={true}
-							opacity={1}
-							metalness={hoveredRoomId === room.id ? 0.3 : 0.1}
-							roughness={hoveredRoomId === room.id ? 0.3 : 0.5}
-							depthWrite={true}
-						/>
-						{room.name && shouldShowLabel(room.id, showRoomLabels) && (
-							<Html
-								center
-								position={[0, room.size[1] / 2 + 0.5, 0]}
-								style={{
-									background: isDestination(room.id)
-										? isFromDestination(room.id)
-											? "rgba(34, 197, 94, 0.9)"
-											: "rgba(239, 68, 68, 0.9)"
-										: "#23302b",
-									color: "white",
-									padding: "4px 8px",
-									borderRadius: "4px",
-									fontSize: "14px",
-									whiteSpace: "nowrap",
-									pointerEvents: "none",
-									fontWeight: isDestination(room.id) ? "bold" : "normal",
+				rooms.map((room) => {
+					const isHovered = hoveredRoomId === room.id;
+					const isSelected = selectedRoomId === room.id;
+
+					return (
+						<group key={room.id}>
+							<mesh
+								ref={(ref) => {
+									if (ref) roomRefs.current.set(room.id, ref);
 								}}
+								position={roomPositions.positions.get(room.id)}
+								scale={roomPositions.scales.get(room.id)}
+								onPointerOver={(e) => {
+									e.stopPropagation();
+									handleRoomHover(room.id);
+								}}
+								onPointerDown={(e) => {
+									e.stopPropagation();
+									handleBuildingClick(room.buildingId, room.id, e);
+								}}
+								onPointerOut={(e) => {
+									e.stopPropagation();
+									handleRoomHoverOut();
+								}}
+								renderOrder={2}
 							>
-								{isDestination(room.id)
-									? `${room.name} (${isFromDestination(room.id) ? "FROM" : "TO"})`
-									: room.name}
-							</Html>
-						)}
-					</mesh>
-				))}
+								<boxGeometry args={[1, 1, 1]} />
+								<meshStandardMaterial
+									color={getDestinationColor(room.id) || room.color}
+									transparent={true}
+									opacity={1}
+									metalness={hoveredRoomId === room.id ? 0.3 : 0.1}
+									roughness={hoveredRoomId === room.id ? 0.3 : 0.5}
+									depthWrite={true}
+								/>
+							</mesh>
+
+							{(isHovered || isSelected) && (
+								<mesh
+									position={roomPositions.positions.get(room.id)}
+									scale={roomPositions.scales.get(room.id)}
+									renderOrder={3}
+								>
+									<boxGeometry args={[1.05, 1.05, 1.05]} />
+									<meshStandardMaterial
+										color="#ffffff"
+										transparent={true}
+										opacity={0.3}
+										side={2}
+										depthWrite={false}
+									/>
+								</mesh>
+							)}
+
+							{/* Room label */}
+							{room.name && shouldShowLabel(room.id, showRoomLabels) && (
+								<Html
+									center
+									position={[0, room.size[1] / 2 + 0.5, 0]}
+									style={{
+										background: isDestination(room.id)
+											? isFromDestination(room.id)
+												? "rgba(34, 197, 94, 0.9)"
+												: "rgba(239, 68, 68, 0.9)"
+											: "#23302b",
+										color: "white",
+										padding: "4px 8px",
+										borderRadius: "4px",
+										fontSize: "14px",
+										whiteSpace: "nowrap",
+										pointerEvents: "none",
+										fontWeight: isDestination(room.id) ? "bold" : "normal",
+									}}
+								>
+									{isDestination(room.id)
+										? `${room.name} (${
+												isFromDestination(room.id) ? "FROM" : "TO"
+											})`
+										: room.name}
+								</Html>
+							)}
+						</group>
+					);
+				})}
 
 			{corridors.map((corridor) => {
 				const startXZ = new Vector3(corridor.start[0], 0, corridor.start[2]);

@@ -63,6 +63,8 @@ export default function DevMode() {
 		destinationSelectorExpanded,
 		setDestinationSelectorExpanded,
 		cameraTarget,
+		selectedBuildingId,
+		selectedRoomId,
 	} = useHospitalMap();
 
 	const { viewMode, setViewMode } = useViewStore();
