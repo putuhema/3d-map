@@ -1,10 +1,10 @@
 import { AutoZoomCamera } from "@/components/AutoZoomCamera";
-import { BuildingRenderer } from "@/components/BuildingRenderer";
 import { BuildingTools } from "@/components/BuildingTools";
 import { Compass } from "@/components/Compass";
 import { CoordinateDisplay } from "@/components/CoordinateDisplay";
-import { DestinationSelector } from "@/components/DestinationSelector";
 import { GridSystem } from "@/components/GridSystem";
+import { BuildingRenderer } from "@/components/building-renderer";
+import { DestinationSelector } from "@/components/destination-selector";
 import { ViewControls } from "@/components/hospital-map/ViewControls";
 import { useHospitalMap } from "@/hooks/useHospitalMap";
 import { useViewStore } from "@/lib/store";

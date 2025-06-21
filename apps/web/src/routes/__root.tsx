@@ -14,7 +14,7 @@ type MapSearch = {
 	fromId?: string | null;
 	toId?: string | null;
 	selector?: boolean | null;
-	dialog?: boolean | null;
+	dialog?: string | null;
 	currentId?: string | null;
 	type?: "building" | "room" | "corridor" | null;
 };
@@ -26,7 +26,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			fromId: search.fromId as string | null,
 			toId: search.toId as string | null,
 			selector: search.selector as boolean | null,
-			dialog: search.dialog as boolean | null,
+			dialog: search.dialog as string | null,
 			currentId: search.currentId as string | null,
 			type: search.type as "building" | "room" | "corridor" | null,
 		};
@@ -34,11 +34,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 	head: () => ({
 		meta: [
 			{
-				title: "My App",
+				title: "Map | RSUD Mamuju Tengah",
 			},
 			{
 				name: "description",
-				content: "My App is a web application",
+				content: "Digital Map of RSUD Mamuju Tengah",
 			},
 		],
 		links: [

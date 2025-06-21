@@ -1,8 +1,8 @@
 import { AutoZoomCamera } from "@/components/AutoZoomCamera";
-import { BuildingRenderer } from "@/components/BuildingRenderer";
 import { CameraModeIndicator } from "@/components/CameraModeIndicator";
-import { DestinationSelector } from "@/components/DestinationSelector";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
+import { BuildingRenderer } from "@/components/building-renderer";
+import { DestinationSelector } from "@/components/destination-selector";
 import { LocationDialog } from "@/components/location-dialog";
 import MapControl from "@/components/map-control";
 import { useHospitalMap } from "@/hooks/useHospitalMap";
@@ -34,7 +34,6 @@ export default function HospitalMap() {
 		showRooms,
 		selectedBuildings,
 		pathCorridorIds,
-		selectedLocation,
 		resetUI,
 		resetNavigation,
 		handleFindPath,
@@ -101,7 +100,7 @@ export default function HospitalMap() {
 				isPathfinding={isPathfinding}
 			/>
 
-			<LocationDialog location={selectedLocation} />
+			<LocationDialog onFindPath={handleFindPathWithLoading} />
 
 			<Canvas {...canvasConfig}>
 				<AutoZoomCamera cameraTarget={cameraTarget} rooms={rooms} />

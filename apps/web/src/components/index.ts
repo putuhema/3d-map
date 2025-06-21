@@ -1,5 +1,5 @@
 // Main BuildingRenderer component
-export { BuildingRenderer } from "./BuildingRenderer";
+export { BuildingRenderer } from "./building-renderer";
 
 // Building components
 export { BuildingModel, BuildingLabel } from "./building";

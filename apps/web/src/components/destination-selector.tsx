@@ -29,11 +29,11 @@ export function DestinationSelector({
 	onFindPath,
 	isPathfinding = false,
 }: DestinationSelectorProps) {
-	const { fromId, toId, selector } = useSearch({ from: Route.fullPath });
+	const { fromId, toId, selector, type } = useSearch({ from: Route.fullPath });
 	const navigate = useNavigate({ from: Route.fullPath });
 
 	const handleExpandedChange = (expanded: boolean) => {
-		navigate({ search: { fromId, toId, selector: expanded } });
+		navigate({ search: { selector: expanded } });
 	};
 
 	const allLocations = useMemo(() => {
@@ -61,7 +61,8 @@ export function DestinationSelector({
 	}, [buildings, rooms]);
 
 	const getSelectedName = useCallback(
-		(id: string) => {
+		(id: string | null | undefined) => {
+			if (!id) return "Pilih lokasi";
 			const location = allLocations.find((loc) => loc.id === id);
 			return location ? location.displayName : "Pilih lokasi";
 		},
@@ -73,7 +74,7 @@ export function DestinationSelector({
 		[fromId, toId],
 	);
 
-	const getSummaryText = useCallback(() => {
+	const getSummaryText = () => {
 		if (!fromId && !toId) {
 			return "Pilih lokasi";
 		}
@@ -83,12 +84,13 @@ export function DestinationSelector({
 		if (!fromId && toId) {
 			return `Ke: ${getSelectedName(toId)}`;
 		}
+
 		return `${getSelectedName(fromId)} → ${getSelectedName(toId)}`;
-	}, [fromId, toId, getSelectedName]);
+	};
 
 	return (
 		<div className="absolute top-0 right-0 left-0 z-20 p-4">
-			<AnimatePresence mode="wait">
+			<AnimatePresence mode="popLayout">
 				{!selector ? (
 					<motion.div
 						key="collapsed"
@@ -151,17 +153,28 @@ export function DestinationSelector({
 										From
 									</label>
 									<Select
-										value={fromId || ""}
-										onValueChange={(value) =>
-											navigate({ search: { fromId: value, toId, selector } })
-										}
+										value={`${fromId},${type}` || ""}
+										onValueChange={(value) => {
+											const [id, type] = value.split(",");
+											navigate({
+												search: {
+													fromId: id,
+													toId,
+													selector,
+													type: type as "building" | "room",
+												},
+											});
+										}}
 									>
 										<SelectTrigger className="w-full bg-background">
 											<SelectValue placeholder="Pilih Lokasi" />
 										</SelectTrigger>
 										<SelectContent className="max-h-[200px] overflow-y-auto">
 											{allLocations.map((location) => (
-												<SelectItem key={location.id} value={location.id}>
+												<SelectItem
+													key={location.id}
+													value={`${location.id},${location.type}`}
+												>
 													{location.displayName}
 												</SelectItem>
 											))}
@@ -183,17 +196,30 @@ export function DestinationSelector({
 										To
 									</label>
 									<Select
-										value={toId || ""}
-										onValueChange={(value) =>
-											navigate({ search: { fromId, toId: value, selector } })
-										}
+										value={`${toId},${type}` || ""}
+										onValueChange={(value) => {
+											const [id, type] = value.split(",");
+											navigate({
+												search: {
+													fromId,
+													toId: id,
+													type: type as "building" | "room",
+												},
+											});
+										}}
 									>
-										<SelectTrigger className="w-full bg-background">
+										<SelectTrigger
+											disabled={!fromId}
+											className="w-full bg-background"
+										>
 											<SelectValue placeholder="Pilih Lokasi" />
 										</SelectTrigger>
 										<SelectContent className="max-h-[200px] overflow-y-auto">
 											{allLocations.map((location) => (
-												<SelectItem key={location.id} value={location.id}>
+												<SelectItem
+													key={location.id}
+													value={`${location.id},${location.type}`}
+												>
 													{location.displayName}
 												</SelectItem>
 											))}

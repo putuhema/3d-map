@@ -2,21 +2,15 @@ import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { Building } from "@/data/building";
-import type { Room } from "@/data/room";
+import { useHospitalMap } from "@/hooks";
 import { Route } from "@/routes/__root";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-
-interface LocationDialogProps {
-	location: Room | Building | null;
-	buildings?: Building[];
-	rooms?: Room[];
-}
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface ZoomableImageProps {
 	src: string;
@@ -233,18 +227,46 @@ function ZoomableImage({ src, alt }: ZoomableImageProps) {
 	);
 }
 
-export function LocationDialog({ location }: LocationDialogProps) {
-	if (!location) return null;
+export function LocationDialog({
+	onFindPath,
+}: {
+	onFindPath?: () => void;
+}) {
+	const { getRoomById, getBuildingById } = useHospitalMap();
 
-	const { dialog } = useSearch({ from: Route.fullPath });
+	const { fromId, dialog, toId, type } = useSearch({ from: Route.fullPath });
 	const navigate = useNavigate({ from: Route.fullPath });
 
-	const handleOpenChange = (newOpen: boolean) => {
-		navigate({ search: { dialog: newOpen } });
-	};
+	const location = useMemo(() => {
+		if (!toId && !dialog) return null;
+
+		const id = toId || dialog;
+		if (!id) return null;
+
+		if (type === "room") {
+			return getRoomById(id);
+		}
+		if (type === "building") {
+			return getBuildingById(id);
+		}
+		return null;
+	}, [toId, dialog, type, getRoomById, getBuildingById]);
+
+	if (!location) return null;
 
 	return (
-		<Dialog open={dialog ?? false} onOpenChange={handleOpenChange}>
+		<Dialog
+			open={!!dialog || !!toId}
+			onOpenChange={(newOpen) => {
+				navigate({
+					search: {
+						dialog: newOpen ? dialog : undefined,
+						type: undefined,
+						toId: newOpen ? toId : undefined,
+					},
+				});
+			}}
+		>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="font-semibold text-xl">
@@ -262,6 +284,18 @@ export function LocationDialog({ location }: LocationDialogProps) {
 						</div>
 					</div>
 				</div>
+				{fromId && toId && (
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								onFindPath?.();
+							}}
+						>
+							Cari Rute
+						</Button>
+					</DialogFooter>
+				)}
 			</DialogContent>
 		</Dialog>
 	);

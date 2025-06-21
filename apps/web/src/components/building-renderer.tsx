@@ -136,8 +136,11 @@ export const BuildingRenderer = ({
 								onPointerOut={!hasRooms ? handleBuildingHoverOut : undefined}
 							/>
 							{building.name &&
-								showBuildingLabels &&
+								(showBuildingLabels ||
+									isDestination(building.id) ||
+									isFromDestination(building.id)) &&
 								(isDestination(building.id) ||
+									isFromDestination(building.id) ||
 									isBuildingCloseEnough(buildingPosition)) && (
 									<BuildingLabel
 										buildingName={building.name}
@@ -179,19 +182,23 @@ export const BuildingRenderer = ({
 								onPointerOut={handleRoomHoverOut}
 								rotation={room.rotation}
 							/>
-							{room.name && room.name !== "Wall" && showRoomLabels && (
-								<RoomLabel
-									roomName={room.name}
-									position={[
-										roomPosition.x,
-										roomPosition.y + roomScale.y / 2,
-										roomPosition.z,
-									]}
-									rotation={room.rotation}
-									isDestination={isDestination(room.id)}
-									isFromDestination={isFromDestination(room.id)}
-								/>
-							)}
+							{room.name &&
+								room.name !== "Wall" &&
+								(showRoomLabels ||
+									isDestination(room.id) ||
+									isFromDestination(room.id)) && (
+									<RoomLabel
+										roomName={room.name}
+										position={[
+											roomPosition.x,
+											roomPosition.y + roomScale.y / 2,
+											roomPosition.z,
+										]}
+										rotation={room.rotation}
+										isDestination={isDestination(room.id)}
+										isFromDestination={isFromDestination(room.id)}
+									/>
+								)}
 						</group>
 					);
 				})}

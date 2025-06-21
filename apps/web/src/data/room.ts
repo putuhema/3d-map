@@ -54,7 +54,7 @@ export const rooms: Room[] = [
 		color: "#4F46E5",
 		buildingId: "a0531362-2533-48cb-994f-b511aed9da8b",
 		image: "",
-		rotation: [0, -Math.PI / 2, 0],
+		rotation: [0, Math.PI / 2, 0],
 	},
 	{
 		id: "a0f8f911-c2f5-4e3a-8828-7e14aa15d4e9",
@@ -131,13 +131,12 @@ export const rooms: Room[] = [
 	},
 	{
 		id: "d44461fc-c795-488f-94ff-ce70b87d11a0",
-		name: "Gudang RM",
+		name: "Wall",
 		position: [5.5, 0.5, 21.5],
 		size: [1, 1, 1],
 		color: "#4F46E5",
 		buildingId: "a0531362-2533-48cb-994f-b511aed9da8b",
 		image: "",
-		rotation: [0, -Math.PI / 2, 0],
 	},
 	{
 		id: "aa21561a-6c20-4d89-ba17-77326e9fbe20",

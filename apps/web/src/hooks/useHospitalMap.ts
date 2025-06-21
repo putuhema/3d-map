@@ -10,7 +10,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
 export function useHospitalMap() {
-	const { fromId, toId } = useSearch({ from: Route.fullPath });
+	const { fromId, toId, dialog, type } = useSearch({ from: Route.fullPath });
 	const navigate = useNavigate({ from: Route.fullPath });
 	const [showBuildings, setShowBuildings] = useState(true);
 	3;
@@ -111,7 +111,9 @@ export function useHospitalMap() {
 
 	// Helper: Find room by id
 	const getRoomById = useCallback(
-		(id: string) => roomsState.find((r) => r.id === id),
+		(id: string) => {
+			return roomsState.find((r) => r.id === id);
+		},
 		[roomsState],
 	);
 
@@ -439,14 +441,14 @@ export function useHospitalMap() {
 				const room = getRoomById(roomId);
 				if (room) {
 					setSelectedLocation(room);
-					navigate({ search: { dialog: true } });
+					navigate({ search: { dialog: roomId, type: "room" } });
 				}
 			} else {
 				// Clicked on a building
 				const building = getBuildingById(id);
 				if (building) {
 					setSelectedLocation(building);
-					navigate({ search: { dialog: true } });
+					navigate({ search: { dialog: id, type: "building" } });
 				}
 			}
 
@@ -527,7 +529,7 @@ export function useHospitalMap() {
 				const room = getRoomById(roomId);
 				if (room) {
 					setSelectedLocation(room);
-					navigate({ search: { dialog: true } });
+					navigate({ search: { dialog: roomId, type: "room" } });
 					setSelectedRoomId(roomId);
 					setSelectedBuildingId(null); // Clear building selection
 				}
@@ -536,7 +538,7 @@ export function useHospitalMap() {
 				const building = getBuildingById(id);
 				if (building) {
 					setSelectedLocation(building);
-					navigate({ search: { dialog: true } });
+					navigate({ search: { dialog: id, type: "building" } });
 					setSelectedBuildingId(id);
 					setSelectedRoomId(null); // Clear room selection
 				}
