@@ -164,8 +164,17 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 								hasRooms={hasRooms}
 								isHighlighted={isHighlighted}
 								isSelected={isSelected}
-								opacity={1}
+								opacity={0}
 								isHovered={isHovered}
+								borderColor={
+									isSelected
+										? "#3b82f6" // Blue for selected
+										: isHighlighted
+											? "#f59e0b" // Amber for highlighted
+											: isHovered
+												? "#10b981" // Green for hovered
+												: "#3b82f6"
+								}
 								onClick={
 									!hasRooms ? handleBuildingClickForId(building.id) : undefined
 								}

@@ -5,7 +5,12 @@ import { DestinationSelector } from "@/components/DestinationSelector";
 import { LocationDialog } from "@/components/RoomDialog";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import MapControl from "@/components/map-control";
-import { useHospitalMap } from "@/hooks/useHospitalMap";
+import { useCamera } from "@/hooks/useCamera";
+import { useDataState } from "@/hooks/useDataState";
+import { useLocationInteraction } from "@/hooks/useLocationInteraction";
+import { useNavigation } from "@/hooks/useNavigation";
+import { usePlayerState } from "@/hooks/usePlayerState";
+import { useUIState } from "@/hooks/useUIState";
 import { Canvas } from "@react-three/fiber";
 import {
 	EffectComposer,
@@ -30,31 +35,99 @@ export const Route = createFileRoute("/")({
 export default function HospitalMap() {
 	const [isMobileDevice, setIsMobileDevice] = useState(false);
 
+	// Core data state
 	const {
-		playerPosition,
 		buildings,
 		corridors,
 		rooms,
+		getBuildingById,
+		getRoomById,
+		getPositionById,
+	} = useDataState();
+
+	// Player state
+	const { playerPosition } = usePlayerState();
+
+	// UI state
+	const {
 		showBuildings,
 		showRooms,
+		selectedBuildings,
+		pathCorridorIds,
+		roomDialogOpen,
+		setRoomDialogOpen,
+		selectedLocation,
+		setSelectedLocation,
+		destinationSelectorExpanded,
+		setDestinationSelectorExpanded,
+		resetUI,
+		clearPath,
+	} = useUIState();
+
+	// Navigation state
+	const {
 		fromId,
 		toId,
 		handleFromSelect,
-		handleToSelect,
-		handleFindPath,
+		handleToSelect: navigationHandleToSelect,
 		handleUseCurrentLocation,
-		selectedBuildings,
-		pathCorridorIds,
-		handleRoomDialogClose,
-		locationDialogOpen,
-		setLocationDialogOpen,
-		selectedLocation,
-		destinationSelectorExpanded,
-		setDestinationSelectorExpanded,
-		cameraTarget,
-		handleReset,
+		findPath,
+		resetNavigation,
+	} = useNavigation({
+		corridors,
+		rooms,
+		playerPosition: { x: playerPosition.x, z: playerPosition.z },
+		getPositionById,
+		getRoomById,
+		getBuildingById,
+	});
+
+	// Camera state
+	const { cameraTarget } = useCamera({
+		fromId,
+		toId,
+		playerPosition: { x: playerPosition.x, z: playerPosition.z },
+		getRoomById,
+		getBuildingById,
+	});
+
+	// Location interaction
+	const {
+		handleToSelect: locationHandleToSelect,
 		handleLocationClick,
-	} = useHospitalMap();
+		handleRoomDialogClose,
+	} = useLocationInteraction({
+		getRoomById,
+		getBuildingById,
+		setSelectedLocation,
+		setLocationDialogOpen: setRoomDialogOpen,
+		setSelectedBuildingId: () => {}, // Not needed for this component
+		setSelectedRoomId: () => {}, // Not needed for this component
+		setDestinationSelectorExpanded,
+		clearPath,
+	});
+
+	// Combined handleToSelect
+	const handleToSelect = useCallback(
+		(id: string, type: "building" | "room" | "corridor") => {
+			navigationHandleToSelect(id, type);
+			locationHandleToSelect(id, type);
+		},
+		[navigationHandleToSelect, locationHandleToSelect],
+	);
+
+	// Pathfinding handler
+	const handleFindPath = useCallback(() => {
+		const { path, directions: pathDirections } = findPath();
+		// Update path state through navigation store
+		// This will be handled by the navigation hook
+	}, [findPath]);
+
+	// Reset function
+	const handleReset = useCallback(() => {
+		resetUI();
+		resetNavigation();
+	}, [resetUI, resetNavigation]);
 
 	// Detect mobile device on mount
 	useEffect(() => {
@@ -112,8 +185,8 @@ export default function HospitalMap() {
 
 			<LocationDialog
 				location={selectedLocation}
-				open={locationDialogOpen}
-				onOpenChange={setLocationDialogOpen}
+				open={roomDialogOpen}
+				onOpenChange={setRoomDialogOpen}
 				onClose={handleRoomDialogClose}
 				buildings={buildings}
 				rooms={rooms}

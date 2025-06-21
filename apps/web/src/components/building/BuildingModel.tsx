@@ -21,6 +21,7 @@ interface BuildingModelProps {
 	isSelected?: boolean;
 	isHovered?: boolean;
 	rotation?: [number, number, number];
+	borderColor?: string;
 }
 
 export const BuildingModel = memo(function BuildingModel({
@@ -37,6 +38,7 @@ export const BuildingModel = memo(function BuildingModel({
 	isSelected = false,
 	isHovered = false,
 	rotation,
+	borderColor,
 }: BuildingModelProps) {
 	// Use the building's custom model path or default to the standard building model
 	const modelPath = getBuildingModelPath(building);
@@ -192,6 +194,19 @@ export const BuildingModel = memo(function BuildingModel({
 					</mesh>
 				</Select>
 
+				{/* Border wireframe */}
+				{borderColor && (
+					<mesh position={position} scale={scale} rotation={rotation}>
+						<boxGeometry args={[1, 1, 1]} />
+						<meshBasicMaterial
+							color={borderColor}
+							wireframe={true}
+							transparent={true}
+							opacity={0.8}
+						/>
+					</mesh>
+				)}
+
 				{/* Highlighted material overlay */}
 				{isHighlighted && (
 					<mesh position={position} scale={scale} rotation={rotation}>
@@ -224,6 +239,19 @@ export const BuildingModel = memo(function BuildingModel({
 					tabIndex={onClick ? 0 : undefined}
 				/>
 			</Select>
+
+			{/* Border wireframe */}
+			{borderColor && (
+				<mesh position={position} scale={scale} rotation={rotation}>
+					<boxGeometry args={[1, 1, 1]} />
+					<meshBasicMaterial
+						color={borderColor}
+						wireframe={true}
+						transparent={true}
+						opacity={0.8}
+					/>
+				</mesh>
+			)}
 
 			{/* Highlighted material overlay */}
 			{isHighlighted && (

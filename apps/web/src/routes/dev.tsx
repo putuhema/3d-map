@@ -6,34 +6,51 @@ import { CoordinateDisplay } from "@/components/CoordinateDisplay";
 import { DestinationSelector } from "@/components/DestinationSelector";
 import { GridSystem } from "@/components/GridSystem";
 import { ViewControls } from "@/components/hospital-map/ViewControls";
-import { useHospitalMap } from "@/hooks/useHospitalMap";
+import { useCamera } from "@/hooks/useCamera";
+import { useDataState } from "@/hooks/useDataState";
+import { useEditMode } from "@/hooks/useEditMode";
+import { useLegacyBuildingClick } from "@/hooks/useLegacyBuildingClick";
+import { useLocationInteraction } from "@/hooks/useLocationInteraction";
+import { useNavigation } from "@/hooks/useNavigation";
+import { usePlayerState } from "@/hooks/usePlayerState";
+import { useUIState } from "@/hooks/useUIState";
 import { useViewStore } from "@/lib/store";
 import { Canvas } from "@react-three/fiber";
 import { createFileRoute } from "@tanstack/react-router";
+import { useCallback } from "react";
 
 export const Route = createFileRoute("/dev")({
 	component: DevMode,
 });
 
 export default function DevMode() {
+	// Core data state
 	const {
-		playerPosition,
-		userLocation,
-		locationError,
 		buildings,
 		corridors,
 		rooms,
-		toolMode,
-		setToolMode,
-		buildingName,
-		setBuildingName,
-		buildingSize,
-		setBuildingSize,
-		buildingColor,
-		setBuildingColor,
+		getBuildingById,
+		getRoomById,
+		getPositionById,
+		addBuilding,
+		removeBuilding,
+		addRoom,
+		removeRoom,
+		addCorridor,
+		removeCorridor,
+	} = useDataState();
+
+	// Player state
+	const { playerPosition, locationError, userLocation } = usePlayerState();
+
+	// UI state
+	const {
 		selectedBuildings,
+		setSelectedBuildings,
 		pathCorridorIds,
+		setPathCorridorIds,
 		directions,
+		setDirections,
 		hoveredCellCoords,
 		setHoveredCellCoords,
 		mousePos,
@@ -42,30 +59,157 @@ export default function DevMode() {
 		setShowBuildings,
 		showRooms,
 		setShowRooms,
-		editMode,
-		setEditMode,
-		handleGridClick,
-		handleBuildingClick,
-		handleCorridorRemove,
-		setSelectedBuildings,
-		setPathCorridorIds,
-		setDirections,
-		fromId,
-		toId,
-		handleFromSelect,
-		handleToSelect,
-		handleFindPath,
-		handleUseCurrentLocation,
 		roomDialogOpen,
 		setRoomDialogOpen,
 		selectedRoom,
-		handleRoomDialogClose,
 		destinationSelectorExpanded,
 		setDestinationSelectorExpanded,
-		cameraTarget,
 		selectedBuildingId,
 		selectedRoomId,
-	} = useHospitalMap();
+	} = useUIState();
+
+	// Navigation state
+	const {
+		fromId,
+		toId,
+		handleFromSelect,
+		handleToSelect: navigationHandleToSelect,
+		handleUseCurrentLocation,
+		findPath,
+	} = useNavigation({
+		corridors,
+		rooms,
+		playerPosition: { x: playerPosition.x, z: playerPosition.z },
+		getPositionById,
+		getRoomById,
+		getBuildingById,
+	});
+
+	// Edit mode state
+	const {
+		editMode,
+		setEditMode,
+		toolMode,
+		setToolMode,
+		buildingName,
+		setBuildingName,
+		buildingSize,
+		setBuildingSize,
+		buildingColor,
+		setBuildingColor,
+		handleGridClick,
+		handleBuildingClick: editHandleBuildingClick,
+		handleCorridorRemove: editHandleCorridorRemove,
+	} = useEditMode({
+		buildings,
+		onBuildingPlace: addBuilding,
+		onBuildingRemove: removeBuilding,
+		onRoomPlace: addRoom,
+		onRoomRemove: removeRoom,
+		onCorridorDraw: addCorridor,
+		onCorridorRemove: removeCorridor,
+	});
+
+	// Camera state
+	const { cameraTarget } = useCamera({
+		fromId,
+		toId,
+		playerPosition: { x: playerPosition.x, z: playerPosition.z },
+		getRoomById,
+		getBuildingById,
+	});
+
+	// Location interaction
+	const {
+		handleToSelect: locationHandleToSelect,
+		handleLocationClick,
+		handleRoomDialogClose,
+	} = useLocationInteraction({
+		getRoomById,
+		getBuildingById,
+		setSelectedLocation: () => {}, // Not needed for dev mode
+		setLocationDialogOpen: setRoomDialogOpen,
+		setSelectedBuildingId: () => {}, // Not needed for dev mode
+		setSelectedRoomId: () => {}, // Not needed for dev mode
+		setDestinationSelectorExpanded,
+		clearPath: () => {
+			setSelectedBuildings([]);
+			setPathCorridorIds([]);
+			setDirections([]);
+		},
+	});
+
+	// Legacy building click for backward compatibility
+	const { handleBuildingClick: legacyHandleBuildingClick } =
+		useLegacyBuildingClick({
+			selectedBuildings,
+			setSelectedBuildings,
+			setPathCorridorIds,
+			setDirections,
+			getPositionById,
+			corridors,
+			rooms,
+		});
+
+	// Combined building click handler
+	const handleBuildingClick = useCallback(
+		(id: string, roomId?: string) => {
+			// Handle edit mode first
+			if (editMode && toolMode === "remove") {
+				editHandleBuildingClick(id, roomId);
+				return;
+			}
+
+			// Handle legacy pathfinding logic
+			legacyHandleBuildingClick(id, roomId);
+		},
+		[editMode, toolMode, editHandleBuildingClick, legacyHandleBuildingClick],
+	);
+
+	// Combined handleToSelect
+	const handleToSelect = useCallback(
+		(id: string, type: "building" | "room" | "corridor") => {
+			navigationHandleToSelect(id, type);
+			locationHandleToSelect(id, type);
+		},
+		[navigationHandleToSelect, locationHandleToSelect],
+	);
+
+	// Pathfinding handler
+	const handleFindPath = useCallback(() => {
+		const { path, directions: pathDirections } = findPath();
+		setPathCorridorIds(path);
+		setDirections(pathDirections);
+	}, [findPath, setPathCorridorIds, setDirections]);
+
+	// Enhanced corridor remove that clears path if needed
+	const handleCorridorRemove = useCallback(
+		(id: string) => {
+			editHandleCorridorRemove(id);
+			if (pathCorridorIds.includes(id)) {
+				setPathCorridorIds([]);
+				setDirections([]);
+			}
+		},
+		[
+			editHandleCorridorRemove,
+			pathCorridorIds,
+			setPathCorridorIds,
+			setDirections,
+		],
+	);
+
+	// Handle cell hover with proper type conversion
+	const handleCellHover = useCallback(
+		(coords: { x: number; y: number; z: number } | null) => {
+			if (coords) {
+				setHoveredCellCoords([coords.x, coords.z]);
+			} else {
+				setHoveredCellCoords(null);
+			}
+		},
+		[setHoveredCellCoords],
+	);
 
 	const { viewMode, setViewMode } = useViewStore();
 
@@ -74,7 +218,7 @@ export default function DevMode() {
 			className="relative h-screen w-full"
 			onMouseMove={(e) => {
 				if (hoveredCellCoords) {
-					setMousePos({ x: e.clientX, y: e.clientY });
+					setMousePos([e.clientX, e.clientY]);
 				}
 			}}
 		>
@@ -157,7 +301,7 @@ export default function DevMode() {
 							handleGridClick(x, y, 100);
 						}
 					}}
-					onCellHover={(coords) => setHoveredCellCoords(coords)}
+					onCellHover={handleCellHover}
 				/>
 			</Canvas>
 
@@ -199,14 +343,13 @@ export default function DevMode() {
 
 			{hoveredCellCoords && mousePos && (
 				<div
-					className="pointer-events-none fixed z-50"
-					style={{ left: mousePos.x + 16, top: mousePos.y + 16 }}
+					className="fixed z-50 rounded bg-black/80 px-2 py-1 text-white text-xs"
+					style={{
+						left: mousePos[0] + 10,
+						top: mousePos[1] - 10,
+					}}
 				>
-					<CoordinateDisplay
-						x={hoveredCellCoords.x}
-						y={hoveredCellCoords.y}
-						z={hoveredCellCoords.z}
-					/>
+					({hoveredCellCoords[0]}, {hoveredCellCoords[1]})
 				</div>
 			)}
 		</div>
