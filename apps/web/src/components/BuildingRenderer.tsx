@@ -2,14 +2,20 @@ import type { Building } from "@/data/building";
 import type { Corridor } from "@/data/corridor";
 import type { Room } from "@/data/room";
 import { useLabelStore } from "@/lib/store";
+import {
+	BUILDING_MODELS,
+	getBuildingModelPath,
+	getUniqueModelPaths,
+} from "@/utils/buildingModels";
 import { Html, Line, Sky, useGLTF } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Material, Mesh, MeshStandardMaterial, Vector3 } from "three";
 
-// Preload the GLB model
-useGLTF.preload("/models/building-90.glb");
+// Preload all available GLB models
+useGLTF.preload(BUILDING_MODELS.DEFAULT);
+useGLTF.preload(BUILDING_MODELS.ROTATED_90);
 
 interface BuildingRendererProps {
 	buildings: Building[];
@@ -57,24 +63,12 @@ function BuildingModel({
 	isHovered?: boolean;
 	rotation?: [number, number, number];
 }) {
-	const { scene } = useGLTF("/models/building.glb");
+	// Use the building's custom model path or default to the standard building model
+	const modelPath = getBuildingModelPath(building);
+	const { scene } = useGLTF(modelPath);
 	const buildingRef = useRef<Mesh>(null);
 	const clonedMaterialsRef = useRef<Material[]>([]);
 
-	// Debug logging for model loading
-	useEffect(() => {
-		if (scene) {
-			console.log("GLB model loaded successfully:", scene);
-			// Log scene structure for debugging
-			scene.traverse((child) => {
-				if (child instanceof Mesh) {
-					console.log("Mesh found:", child.name, "materials:", child.material);
-				}
-			});
-		}
-	}, [scene]);
-
-	// Clone the scene to avoid sharing geometry between instances
 	const clonedScene = useMemo(() => {
 		if (!scene) return null;
 		return scene.clone();
@@ -223,7 +217,7 @@ function BuildingModel({
 						<boxGeometry args={[1, 1, 1]} />
 						<meshStandardMaterial
 							color="#f59e42"
-							metalness={0.3}
+							// metalness={0.3}
 							roughness={0.3}
 							transparent={true}
 							opacity={0.8}
@@ -325,6 +319,14 @@ export function BuildingRenderer({
 	// Get label visibility from Zustand store
 	const { showBuildingLabels, showRoomLabels } = useLabelStore();
 
+	// Preload models that are actually used by the buildings being rendered
+	useEffect(() => {
+		const uniqueModelPaths = getUniqueModelPaths(buildings);
+		for (const modelPath of uniqueModelPaths) {
+			useGLTF.preload(modelPath);
+		}
+	}, [buildings]);
+
 	// Helper functions to determine destination status
 	const isFromDestination = useCallback(
 		(id: string) => {
@@ -351,10 +353,10 @@ export function BuildingRenderer({
 	const getDestinationColor = useCallback(
 		(id: string) => {
 			if (isFromDestination(id)) {
-				return "#22c55e"; // Green for from destination
+				return "#D1D8BE"; // Green for from destination
 			}
 			if (isToDestination(id)) {
-				return "#ef4444"; // Red for to destination
+				return "#80D8C3"; // Red for to destination
 			}
 			return null;
 		},

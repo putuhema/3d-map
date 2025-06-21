@@ -6,6 +6,7 @@ export type Building = {
 	color: string;
 	hasRooms?: boolean;
 	rotation?: [number, number, number];
+	modelPath?: string; // Path to custom GLB model, defaults to "/models/building.glb"
 };
 
 export const buildings = [
@@ -19,11 +20,12 @@ export const buildings = [
 	},
 	{
 		id: "9cfefb21-7c32-44a4-a677-1989cffc2570",
-		name: "Kantor",
+		name: "IGD",
 		position: [3.5, 0.5, 30.5],
 		size: [3, 2, 5],
 		color: "#4f46e5",
 		hasRooms: false,
+		modelPath: "ROTATED_90",
 	},
 	{
 		id: "a0531362-2533-48cb-994f-b511aed9da8b",
@@ -63,11 +65,12 @@ export const buildings = [
 	},
 	{
 		id: "014934f4-de8f-4ee2-aad0-c4eb05f18c5b",
-		name: "Kantor",
+		name: "Radiologi",
 		position: [-9.5, 0.5, 25.5],
 		size: [7, 2, 5],
 		color: "#4f46e5",
 		hasRooms: false,
+		modelPath: "ROTATED_90",
 	},
 	{
 		id: "aa5d7ddf-cbe7-4b93-b17c-00088a7e6597",
@@ -87,11 +90,12 @@ export const buildings = [
 	},
 	{
 		id: "ac365416-38aa-4ae0-b8c8-6f627f3b7804",
-		name: "Kantor",
+		name: "Masjid",
 		position: [-11.5, 0.5, 31.5],
 		size: [3, 2, 3],
 		color: "#4f46e5",
 		hasRooms: false,
+		rotation: [0, -Math.PI / 2, 0],
 	},
 	{
 		id: "1c775b86-68c3-478d-a8c5-3e869dd35919",
@@ -175,6 +179,7 @@ export const buildings = [
 		size: [5, 2, 5],
 		color: "#4f46e5",
 		hasRooms: false,
+		rotation: [0, Math.PI, 0],
 	},
 	{
 		id: "e28859ce-79fd-4489-b9cc-64895999da9b",
