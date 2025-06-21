@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import type { Building } from "@/data/building";
+import type { Corridor } from "@/data/corridor";
 import type { Room } from "@/data/room";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, MapPin, X } from "lucide-react";
@@ -16,8 +17,8 @@ import {
 interface DestinationSelectorProps {
 	buildings: Building[];
 	rooms: Room[];
-	onFromSelect: (id: string, type: "building" | "room") => void;
-	onToSelect: (id: string, type: "building" | "room") => void;
+	onFromSelect: (id: string, type: "building" | "room" | "corridor") => void;
+	onToSelect: (id: string, type: "building" | "room" | "corridor") => void;
 	onFindPath: () => void;
 	onUseCurrentLocation: () => void;
 	fromId: string | null;
@@ -61,7 +62,7 @@ export function DestinationSelector({
 		}
 	};
 
-	// Get all locations (buildings + rooms)
+	// Get all locations (buildings + rooms + corridors)
 	const allLocations = useMemo(() => {
 		const buildingLocations = buildings
 			.filter((building) => building.name !== "")
@@ -113,20 +114,26 @@ export function DestinationSelector({
 		return location ? location.displayName : "Select destination";
 	};
 
-	const handleFromSelect = (id: string, type: "building" | "room") => {
+	const handleFromSelect = (
+		id: string,
+		type: "building" | "room" | "corridor",
+	) => {
 		onFromSelect(id, type);
 		setFromOpen(false);
 		setFromSearch("");
 	};
 
-	const handleToSelect = (id: string, type: "building" | "room") => {
+	const handleToSelect = (
+		id: string,
+		type: "building" | "room" | "corridor",
+	) => {
 		onToSelect(id, type);
 		setToOpen(false);
 		setToSearch("");
 	};
 
 	// Helper function to get location type by id
-	const getLocationType = (id: string): "building" | "room" => {
+	const getLocationType = (id: string): "building" | "room" | "corridor" => {
 		const location = allLocations.find((loc) => loc.id === id);
 		return location?.type || "building";
 	};

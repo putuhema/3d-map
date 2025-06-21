@@ -8,9 +8,7 @@ export type Room = {
 	image: string;
 };
 
-export const rooms = [];
-
-export const roomsx = [
+export const rooms: Room[] = [
 	{
 		id: "4fd91852-86f2-4584-9cbc-238c99a938d7",
 		name: "Kasir",
@@ -63,6 +61,7 @@ export const roomsx = [
 		size: [2, 1, 2],
 		color: "#8abeae",
 		buildingId: "8e99cb47-93dd-40ee-aa8e-583e71b35382",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "15da6fc2-4662-4569-9349-4c48f8f4b6fb",
@@ -80,6 +79,7 @@ export const roomsx = [
 		size: [1, 1, 2],
 		color: "#9cd6c3",
 		buildingId: "a854092b-260a-46e2-9186-de7f34f8d979",
+		image: "/rooms/casemix.jpeg",
 	},
 	{
 		id: "6a79ed81-1385-468a-8c81-03968d773d1e",
@@ -195,24 +195,6 @@ export const roomsx = [
 		position: [-3, 0.5, 2],
 		size: [2, 1, 2],
 		color: "#79a798",
-		buildingId: "26e5b0c7-6b4e-48fe-8802-d7819f2d2dca",
-		image: "/rooms/casemix.jpeg",
-	},
-	{
-		id: "9d735e12-1dd3-475e-80cb-57e7c8ecc4e2",
-		name: "Poli Bedah",
-		position: [-3, 0.5, 0],
-		size: [2, 1, 2],
-		color: "#8abeae",
-		buildingId: "26e5b0c7-6b4e-48fe-8802-d7819f2d2dca",
-		image: "/rooms/casemix.jpeg",
-	},
-	{
-		id: "29c8dfe5-8acd-42a0-beeb-eeb933deef1b",
-		name: "Poli Gigi",
-		position: [-3, 0.5, -2],
-		size: [2, 1, 2],
-		color: "#9cd6c3",
 		buildingId: "26e5b0c7-6b4e-48fe-8802-d7819f2d2dca",
 		image: "/rooms/casemix.jpeg",
 	},

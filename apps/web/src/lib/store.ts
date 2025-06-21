@@ -25,6 +25,15 @@ interface TutorialState {
 	dismissTutorial: () => void;
 }
 
+interface NavigationState {
+	fromId: string | null;
+	toId: string | null;
+	setFromId: (id: string | null) => void;
+	setToId: (id: string | null) => void;
+	updateUrl: () => void;
+	syncFromUrl: () => void;
+}
+
 export const useLabelStore = create<LabelState>((set) => ({
 	showBuildingLabels: false,
 	showRoomLabels: false,
@@ -59,3 +68,41 @@ export const useTutorialStore = create<TutorialState>()(
 		},
 	),
 );
+
+export const useNavigationStore = create<NavigationState>((set, get) => ({
+	fromId: null,
+	toId: null,
+	setFromId: (id: string | null) => {
+		set({ fromId: id });
+		get().updateUrl();
+	},
+	setToId: (id: string | null) => {
+		set({ toId: id });
+		get().updateUrl();
+	},
+	updateUrl: () => {
+		const { fromId, toId } = get();
+		const url = new URL(window.location.href);
+
+		if (fromId) {
+			url.searchParams.set("from", fromId);
+		} else {
+			url.searchParams.delete("from");
+		}
+
+		if (toId) {
+			url.searchParams.set("to", toId);
+		} else {
+			url.searchParams.delete("to");
+		}
+
+		window.history.replaceState({}, "", url.toString());
+	},
+	syncFromUrl: () => {
+		const url = new URL(window.location.href);
+		const fromId = url.searchParams.get("from");
+		const toId = url.searchParams.get("to");
+
+		set({ fromId, toId });
+	},
+}));

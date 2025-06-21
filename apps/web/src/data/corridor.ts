@@ -5,7 +5,7 @@ export type Corridor = {
 	width: number;
 };
 
-export const corridors = [
+export const corridors: Corridor[] = [
 	{
 		id: "fec98d41-94b9-4a98-81b2-80008b704aeb",
 		start: [-11.5, 0, 43.5],

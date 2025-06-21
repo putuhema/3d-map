@@ -9,7 +9,7 @@ export type Building = {
 	modelPath?: string; // Path to custom GLB model, defaults to "/models/building.glb"
 };
 
-export const buildings = [
+export const buildings: Building[] = [
 	{
 		id: "19fd6f44-02e1-4d87-a08b-8ea41b8a3218",
 		name: "Kantor",

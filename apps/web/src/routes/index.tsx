@@ -7,8 +7,13 @@ import { TutorialOverlay } from "@/components/TutorialOverlay";
 import MapControl from "@/components/map-control";
 import { useHospitalMap } from "@/hooks/useHospitalMap";
 import { Canvas } from "@react-three/fiber";
+import {
+	EffectComposer,
+	Outline,
+	Selection,
+} from "@react-three/postprocessing";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const isMobile = () => {
 	return (
@@ -57,23 +62,34 @@ export default function HospitalMap() {
 	}, []);
 
 	// Mobile-optimized Canvas configuration
-	const canvasConfig = {
-		shadows: !isMobileDevice, // Disable shadows on mobile for better performance
-		dpr: isMobileDevice
-			? ([1, 1.5] as [number, number])
-			: ([1, 2] as [number, number]), // Lower DPR on mobile
-		gl: {
-			antialias: !isMobileDevice, // Disable antialiasing on mobile for performance
-			powerPreference: "high-performance" as const,
-			stencil: false,
-			depth: true,
+	const canvasConfig = useMemo(
+		() => ({
+			shadows: !isMobileDevice, // Disable shadows on mobile for better performance
+			dpr: isMobileDevice
+				? ([1, 1.5] as [number, number])
+				: ([1, 2] as [number, number]), // Lower DPR on mobile
+			gl: {
+				antialias: !isMobileDevice, // Disable antialiasing on mobile for performance
+				powerPreference: "high-performance" as const,
+				stencil: false,
+				depth: true,
+			},
+			camera: {
+				fov: isMobileDevice ? 50 : 45, // Slightly wider FOV on mobile
+				near: 0.1,
+				far: 1000,
+			},
+		}),
+		[isMobileDevice],
+	);
+
+	const handleCorridorClick = useCallback(
+		(id: string) => {
+			// When a corridor is clicked, set it as the starting point
+			handleFromSelect(id, "corridor");
 		},
-		camera: {
-			fov: isMobileDevice ? 50 : 45, // Slightly wider FOV on mobile
-			near: 0.1,
-			far: 1000,
-		},
-	};
+		[handleFromSelect],
+	);
 
 	return (
 		<div className="relative h-screen w-full">
@@ -122,22 +138,24 @@ export default function HospitalMap() {
 				/>
 				<directionalLight position={[-5, 8, -10]} intensity={0.3} />
 
-				<BuildingRenderer
-					buildings={buildings}
-					corridors={corridors}
-					rooms={rooms}
-					onBuildingClick={handleLocationClick}
-					onCorridorClick={(id) => {
-						// For corridors, we could show corridor information or just ignore
-						console.log("Corridor clicked:", id);
-					}}
-					highlightedCorridorIds={pathCorridorIds}
-					highlightedBuildingIds={selectedBuildings}
-					showBuildings={showBuildings}
-					showRooms={showRooms}
-					fromId={fromId}
-					toId={toId}
-				/>
+				<Selection>
+					<EffectComposer multisampling={0} autoClear={false}>
+						<Outline blur visibleEdgeColor={0xffffff} edgeStrength={50} />
+					</EffectComposer>
+					<BuildingRenderer
+						buildings={buildings}
+						corridors={corridors}
+						rooms={rooms}
+						onBuildingClick={handleLocationClick}
+						onCorridorClick={handleCorridorClick}
+						highlightedCorridorIds={pathCorridorIds}
+						highlightedBuildingIds={selectedBuildings}
+						showBuildings={showBuildings}
+						showRooms={showRooms}
+						fromId={fromId}
+						toId={toId}
+					/>
+				</Selection>
 			</Canvas>
 
 			<MapControl onReset={handleReset} />

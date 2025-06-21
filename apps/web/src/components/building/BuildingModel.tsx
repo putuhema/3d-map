@@ -2,7 +2,8 @@ import type { Building } from "@/data/building";
 import { getBuildingModelPath } from "@/utils/buildingModels";
 import { useGLTF } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { Select } from "@react-three/postprocessing";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type { Material, Vector3 } from "three";
 import { Mesh } from "three";
 
@@ -22,7 +23,7 @@ interface BuildingModelProps {
 	rotation?: [number, number, number];
 }
 
-export function BuildingModel({
+export const BuildingModel = memo(function BuildingModel({
 	building,
 	position,
 	scale,
@@ -159,29 +160,37 @@ export function BuildingModel({
 		[onClick],
 	);
 
+	// Memoize the enabled state for Select component to prevent unnecessary re-renders
+	const isSelectEnabled = useMemo(
+		() => isHovered || isSelected,
+		[isHovered, isSelected],
+	);
+
 	// Don't render if scene is not loaded
 	if (!clonedScene) {
 		// Fallback to simple box geometry if GLB model fails to load
 		return (
 			<group>
-				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-				<mesh
-					position={position}
-					scale={scale}
-					rotation={rotation}
-					onClick={onClick}
-					onPointerOver={onPointerOver}
-					onPointerOut={onPointerOut}
-				>
-					<boxGeometry args={[1, 1, 1]} />
-					<meshStandardMaterial
-						color={color || "#8B7355"}
-						transparent={true}
-						opacity={opacity}
-						metalness={0.1}
-						roughness={0.5}
-					/>
-				</mesh>
+				<Select enabled={isSelectEnabled}>
+					{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+					<mesh
+						position={position}
+						scale={scale}
+						rotation={rotation}
+						onClick={onClick}
+						onPointerOver={onPointerOver}
+						onPointerOut={onPointerOut}
+					>
+						<boxGeometry args={[1, 1, 1]} />
+						<meshStandardMaterial
+							color={color || "#8B7355"}
+							transparent={true}
+							opacity={opacity}
+							metalness={0.1}
+							roughness={0.5}
+						/>
+					</mesh>
+				</Select>
 
 				{/* Highlighted material overlay */}
 				{isHighlighted && (
@@ -195,38 +204,26 @@ export function BuildingModel({
 						/>
 					</mesh>
 				)}
-
-				{/* Outline mesh for hover/selection effect */}
-				{(isHovered || isSelected) && !hasRooms && (
-					<mesh position={position} scale={scale.clone().multiplyScalar(1.05)}>
-						<boxGeometry args={[1, 1, 1]} />
-						<meshStandardMaterial
-							color="#ffffff"
-							transparent={true}
-							opacity={0.3}
-							side={2}
-							depthWrite={false}
-						/>
-					</mesh>
-				)}
 			</group>
 		);
 	}
 
 	return (
 		<group>
-			<primitive
-				ref={buildingRef}
-				object={clonedScene}
-				position={position}
-				scale={scale}
-				rotation={rotation}
-				onClick={onClick}
-				onKeyDown={handleKeyDown}
-				onPointerOver={onPointerOver}
-				onPointerOut={onPointerOut}
-				tabIndex={onClick ? 0 : undefined}
-			/>
+			<Select enabled={isSelectEnabled}>
+				<primitive
+					ref={buildingRef}
+					object={clonedScene}
+					position={position}
+					scale={scale}
+					rotation={rotation}
+					onClick={onClick}
+					onKeyDown={handleKeyDown}
+					onPointerOver={onPointerOver}
+					onPointerOut={onPointerOut}
+					tabIndex={onClick ? 0 : undefined}
+				/>
+			</Select>
 
 			{/* Highlighted material overlay */}
 			{isHighlighted && (
@@ -245,20 +242,6 @@ export function BuildingModel({
 					/>
 				</primitive>
 			)}
-
-			{/* Outline mesh for hover/selection effect */}
-			{(isHovered || isSelected) && !hasRooms && (
-				<mesh position={position} scale={scale.clone().multiplyScalar(1.05)}>
-					<boxGeometry args={[1, 1, 1]} />
-					<meshStandardMaterial
-						color="#ffffff"
-						transparent={true}
-						opacity={0.3}
-						side={2}
-						depthWrite={false}
-					/>
-				</mesh>
-			)}
 		</group>
 	);
-}
+});

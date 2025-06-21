@@ -2,12 +2,14 @@ import { useBuildingRenderer } from "@/hooks/useBuildingRenderer";
 import { useLabelStore } from "@/lib/store";
 import type { BuildingRendererProps } from "@/types/building";
 import { Sky } from "@react-three/drei";
+import { Select } from "@react-three/postprocessing";
+import { memo, useCallback, useMemo } from "react";
 import { BuildingLabel, BuildingModel } from "./building";
 import { CorridorRenderer } from "./corridor";
 import { PathIndicator } from "./path";
 import { RoomLabel } from "./room";
 
-export function BuildingRenderer({
+export const BuildingRenderer = memo(function BuildingRenderer({
 	buildings,
 	corridors,
 	rooms,
@@ -48,6 +50,78 @@ export function BuildingRenderer({
 	});
 
 	const { showBuildingLabels, showRoomLabels } = useLabelStore();
+
+	// Memoize event handlers to prevent recreation on every render
+	const handleBuildingClick = useCallback(
+		(buildingId: string) => {
+			onBuildingClick?.(buildingId, undefined);
+		},
+		[onBuildingClick],
+	);
+
+	const handleBuildingClickForId = useCallback(
+		(buildingId: string) => {
+			return () => onBuildingClick?.(buildingId, undefined);
+		},
+		[onBuildingClick],
+	);
+
+	const handleRoomClick = useCallback(
+		(buildingId: string, roomId: string) => {
+			onBuildingClick?.(buildingId, roomId);
+		},
+		[onBuildingClick],
+	);
+
+	const handleRoomHoverCallback = useCallback(
+		(roomId: string) => {
+			handleRoomHover(roomId);
+		},
+		[handleRoomHover],
+	);
+
+	const handleRoomHoverOutCallback = useCallback(() => {
+		handleRoomHoverOut();
+	}, [handleRoomHoverOut]);
+
+	const handleBuildingHoverCallback = useCallback(
+		(buildingId: string) => {
+			handleBuildingHover(buildingId);
+		},
+		[handleBuildingHover],
+	);
+
+	const handleBuildingHoverForId = useCallback(
+		(buildingId: string) => {
+			return () => handleBuildingHover(buildingId);
+		},
+		[handleBuildingHover],
+	);
+
+	const handleBuildingHoverOutCallback = useCallback(() => {
+		handleBuildingHoverOut();
+	}, [handleBuildingHoverOut]);
+
+	const handleRoomHoverForId = useCallback(
+		(roomId: string) => {
+			return () => handleRoomHover(roomId);
+		},
+		[handleRoomHover],
+	);
+
+	const handleRoomClickForIds = useCallback(
+		(buildingId: string, roomId: string) => {
+			return () => onBuildingClick?.(buildingId, roomId);
+		},
+		[onBuildingClick],
+	);
+
+	const handleCorridorClick = useCallback(
+		(id: string, e: unknown) => {
+			onCorridorClick?.(id);
+		},
+		[onCorridorClick],
+	);
 
 	return (
 		<group>
@@ -93,15 +167,13 @@ export function BuildingRenderer({
 								opacity={1}
 								isHovered={isHovered}
 								onClick={
-									!hasRooms
-										? (e) => onBuildingClick?.(building.id, undefined)
-										: undefined
+									!hasRooms ? handleBuildingClickForId(building.id) : undefined
 								}
 								onPointerOver={
-									!hasRooms ? () => handleBuildingHover(building.id) : undefined
+									!hasRooms ? handleBuildingHoverForId(building.id) : undefined
 								}
 								onPointerOut={
-									!hasRooms ? () => handleBuildingHoverOut() : undefined
+									!hasRooms ? handleBuildingHoverOutCallback : undefined
 								}
 							/>
 							{building.name &&
@@ -134,41 +206,35 @@ export function BuildingRenderer({
 
 					if (!roomPosition || !roomScale) return null;
 
+					// Memoize the enabled state for Select component
+					const isSelectEnabled = isHovered || isSelected;
+
 					return (
 						<group key={room.id}>
-							<mesh
-								ref={undefined}
-								position={roomPosition}
-								scale={roomScale}
-								onPointerOver={() => handleRoomHover(room.id)}
-								onPointerDown={() =>
-									onBuildingClick?.(room.buildingId, room.id)
-								}
-								onPointerOut={() => handleRoomHoverOut()}
-								renderOrder={2}
-							>
-								<boxGeometry args={[1, 1, 1]} />
-								<meshStandardMaterial
-									color={getDestinationColor(room.id) || room.color}
-									transparent={true}
-									opacity={1}
-									metalness={isHovered ? 0.3 : 0.1}
-									roughness={isHovered ? 0.3 : 0.5}
-									depthWrite={true}
-								/>
-							</mesh>
-							{(isHovered || isSelected) && (
-								<mesh position={roomPosition} scale={roomScale} renderOrder={3}>
-									<boxGeometry args={[1.05, 1.05, 1.05]} />
+							<Select enabled={isSelectEnabled}>
+								<mesh
+									ref={undefined}
+									position={roomPosition}
+									scale={roomScale}
+									onPointerOver={handleRoomHoverForId(room.id)}
+									onPointerDown={handleRoomClickForIds(
+										room.buildingId,
+										room.id,
+									)}
+									onPointerOut={handleRoomHoverOutCallback}
+									renderOrder={2}
+								>
+									<boxGeometry args={[1, 1, 1]} />
 									<meshStandardMaterial
-										color="#ffffff"
+										color={getDestinationColor(room.id) || room.color}
 										transparent={true}
-										opacity={0.3}
-										side={2}
-										depthWrite={false}
+										opacity={1}
+										metalness={isHovered ? 0.3 : 0.1}
+										roughness={isHovered ? 0.3 : 0.5}
+										depthWrite={true}
 									/>
 								</mesh>
-							)}
+							</Select>
 							{room.name && showRoomLabels && (
 								<RoomLabel
 									roomName={room.name}
@@ -185,8 +251,8 @@ export function BuildingRenderer({
 			<CorridorRenderer
 				corridors={corridors}
 				highlightedCorridorIds={highlightedCorridorIds}
-				onCorridorClick={(id, e) => onCorridorClick?.(id)}
+				onCorridorClick={handleCorridorClick}
 			/>
 		</group>
 	);
-}
+});
