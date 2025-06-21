@@ -12,10 +12,10 @@ export interface BuildingRendererProps {
 	highlightedBuildingIds?: string[];
 	showBuildings?: boolean;
 	showRooms?: boolean;
-	fromId?: string | null;
-	toId?: string | null;
 	selectedBuildingId?: string | null;
 	selectedRoomId?: string | null;
+	fromId?: string | null;
+	toId?: string | null;
 }
 
 export interface UseBuildingRendererProps {
@@ -23,6 +23,6 @@ export interface UseBuildingRendererProps {
 	corridors: Corridor[];
 	rooms: Room[];
 	highlightedCorridorIds: string[];
-	fromId: string | null;
-	toId: string | null;
+	fromId?: string | null;
+	toId?: string | null;
 }

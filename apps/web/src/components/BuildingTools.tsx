@@ -126,10 +126,9 @@ function Minimap({
 				/>
 				<g transform={transform}>
 					{/* Grid lines */}
-					{/* biome-ignore lint/suspicious/noArrayIndexKey: grid lines are static and index is safe as key */}
 					{Array.from({ length: gridSize + 1 }).map((_, i) => (
-						// biome-ignore lint/suspicious/noArrayIndexKey: grid lines are static and index is safe as key
-						<g key={`minimap-g-${gridSize}-${i}`}>
+						// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+						<g key={i}>
 							{/* Vertical lines */}
 							<line
 								x1={i * (minimapSize / gridSize)}

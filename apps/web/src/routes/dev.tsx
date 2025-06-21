@@ -6,17 +6,11 @@ import { CoordinateDisplay } from "@/components/CoordinateDisplay";
 import { DestinationSelector } from "@/components/DestinationSelector";
 import { GridSystem } from "@/components/GridSystem";
 import { ViewControls } from "@/components/hospital-map/ViewControls";
-import { useCamera } from "@/hooks/useCamera";
-import { useDataState } from "@/hooks/useDataState";
-import { useEditMode } from "@/hooks/useEditMode";
-import { useLegacyBuildingClick } from "@/hooks/useLegacyBuildingClick";
-import { useLocationInteraction } from "@/hooks/useLocationInteraction";
-import { useNavigation } from "@/hooks/useNavigation";
-import { usePlayerState } from "@/hooks/usePlayerState";
-import { useUIState } from "@/hooks/useUIState";
+import { useHospitalMap } from "@/hooks/useHospitalMap";
 import { useViewStore } from "@/lib/store";
+import { Route as RootRoute } from "@/routes/__root";
 import { Canvas } from "@react-three/fiber";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useCallback } from "react";
 
 export const Route = createFileRoute("/dev")({
@@ -24,32 +18,22 @@ export const Route = createFileRoute("/dev")({
 });
 
 export default function DevMode() {
-	// Core data state
+	const { fromId, toId } = useSearch({ from: RootRoute.fullPath });
 	const {
+		// Core data
 		buildings,
 		corridors,
 		rooms,
-		getBuildingById,
-		getRoomById,
-		getPositionById,
-		addBuilding,
-		removeBuilding,
-		addRoom,
-		removeRoom,
-		addCorridor,
-		removeCorridor,
-	} = useDataState();
 
-	// Player state
-	const { playerPosition, locationError, userLocation } = usePlayerState();
+		// Player state
+		playerPosition,
+		locationError,
+		userLocation,
 
-	// UI state
-	const {
+		// UI state
 		selectedBuildings,
-		setSelectedBuildings,
 		pathCorridorIds,
 		setPathCorridorIds,
-		directions,
 		setDirections,
 		hoveredCellCoords,
 		setHoveredCellCoords,
@@ -59,34 +43,11 @@ export default function DevMode() {
 		setShowBuildings,
 		showRooms,
 		setShowRooms,
-		roomDialogOpen,
-		setRoomDialogOpen,
-		selectedRoom,
-		destinationSelectorExpanded,
-		setDestinationSelectorExpanded,
-		selectedBuildingId,
-		selectedRoomId,
-	} = useUIState();
 
-	// Navigation state
-	const {
-		fromId,
-		toId,
-		handleFromSelect,
-		handleToSelect: navigationHandleToSelect,
-		handleUseCurrentLocation,
-		findPath,
-	} = useNavigation({
-		corridors,
-		rooms,
-		playerPosition: { x: playerPosition.x, z: playerPosition.z },
-		getPositionById,
-		getRoomById,
-		getBuildingById,
-	});
+		// Navigation state
+		handleFindPath,
 
-	// Edit mode state
-	const {
+		// Edit mode state
 		editMode,
 		setEditMode,
 		toolMode,
@@ -100,56 +61,21 @@ export default function DevMode() {
 		handleGridClick,
 		handleBuildingClick: editHandleBuildingClick,
 		handleCorridorRemove: editHandleCorridorRemove,
-	} = useEditMode({
-		buildings,
-		onBuildingPlace: addBuilding,
-		onBuildingRemove: removeBuilding,
-		onRoomPlace: addRoom,
-		onRoomRemove: removeRoom,
-		onCorridorDraw: addCorridor,
-		onCorridorRemove: removeCorridor,
-	});
 
-	// Camera state
-	const { cameraTarget } = useCamera({
-		fromId,
-		toId,
-		playerPosition: { x: playerPosition.x, z: playerPosition.z },
-		getRoomById,
-		getBuildingById,
-	});
+		// Camera state
+		cameraTarget,
 
-	// Location interaction
-	const {
-		handleToSelect: locationHandleToSelect,
+		// Location interaction
 		handleLocationClick,
 		handleRoomDialogClose,
-	} = useLocationInteraction({
-		getRoomById,
-		getBuildingById,
-		setSelectedLocation: () => {}, // Not needed for dev mode
-		setLocationDialogOpen: setRoomDialogOpen,
-		setSelectedBuildingId: () => {}, // Not needed for dev mode
-		setSelectedRoomId: () => {}, // Not needed for dev mode
-		setDestinationSelectorExpanded,
-		clearPath: () => {
-			setSelectedBuildings([]);
-			setPathCorridorIds([]);
-			setDirections([]);
-		},
-	});
 
-	// Legacy building click for backward compatibility
-	const { handleBuildingClick: legacyHandleBuildingClick } =
-		useLegacyBuildingClick({
-			selectedBuildings,
-			setSelectedBuildings,
-			setPathCorridorIds,
-			setDirections,
-			getPositionById,
-			corridors,
-			rooms,
-		});
+		// Building operations
+		handleBuildingPlace,
+		handleBuildingRemove,
+		handleRoomPlace,
+		handleRoomRemove,
+		handleCorridorDraw,
+	} = useHospitalMap();
 
 	// Combined building click handler
 	const handleBuildingClick = useCallback(
@@ -160,27 +86,16 @@ export default function DevMode() {
 				return;
 			}
 
-			// Handle legacy pathfinding logic
-			legacyHandleBuildingClick(id, roomId);
+			// Handle location click for showing dialog
+			handleLocationClick(id, roomId);
 		},
-		[editMode, toolMode, editHandleBuildingClick, legacyHandleBuildingClick],
-	);
-
-	// Combined handleToSelect
-	const handleToSelect = useCallback(
-		(id: string, type: "building" | "room" | "corridor") => {
-			navigationHandleToSelect(id, type);
-			locationHandleToSelect(id, type);
-		},
-		[navigationHandleToSelect, locationHandleToSelect],
+		[editMode, toolMode, editHandleBuildingClick, handleLocationClick],
 	);
 
 	// Pathfinding handler
-	const handleFindPath = useCallback(() => {
-		const { path, directions: pathDirections } = findPath();
-		setPathCorridorIds(path);
-		setDirections(pathDirections);
-	}, [findPath, setPathCorridorIds, setDirections]);
+	const handleFindPathWithLoading = useCallback(() => {
+		handleFindPath();
+	}, [handleFindPath]);
 
 	// Enhanced corridor remove that clears path if needed
 	const handleCorridorRemove = useCallback(
@@ -225,15 +140,7 @@ export default function DevMode() {
 			<DestinationSelector
 				buildings={buildings}
 				rooms={rooms}
-				onFromSelect={handleFromSelect}
-				onToSelect={handleToSelect}
-				onFindPath={handleFindPath}
-				onUseCurrentLocation={handleUseCurrentLocation}
-				fromId={fromId}
-				toId={toId}
-				playerPosition={playerPosition}
-				isExpanded={destinationSelectorExpanded}
-				onExpandedChange={setDestinationSelectorExpanded}
+				onFindPath={handleFindPathWithLoading}
 			/>
 
 			<ViewControls
@@ -266,9 +173,8 @@ export default function DevMode() {
 			>
 				<AutoZoomCamera
 					cameraTarget={cameraTarget}
-					fromId={fromId}
-					toId={toId}
 					rooms={rooms}
+					playerPosition={playerPosition}
 				/>
 
 				<ambientLight intensity={0.5} />
@@ -286,11 +192,12 @@ export default function DevMode() {
 					corridors={corridors}
 					rooms={rooms}
 					onBuildingClick={handleBuildingClick}
-					onCorridorClick={handleCorridorRemove}
 					highlightedCorridorIds={pathCorridorIds}
 					highlightedBuildingIds={selectedBuildings}
 					showBuildings={showBuildings}
 					showRooms={showRooms}
+					fromId={fromId}
+					toId={toId}
 				/>
 
 				<GridSystem
@@ -298,12 +205,7 @@ export default function DevMode() {
 					cellSize={1}
 					onCellClick={(x: number, y: number) => {
 						if (editMode) {
-							handleGridClick(
-								x,
-								y,
-								100,
-								"1c775b86-68c3-478d-a8c5-3e869dd35919",
-							);
+							handleGridClick(x, y, 100);
 						}
 					}}
 					onCellHover={handleCellHover}

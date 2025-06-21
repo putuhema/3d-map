@@ -1,7 +1,9 @@
 import { useBuildingRenderer } from "@/hooks/useBuildingRenderer";
 import { useLabelStore } from "@/lib/store";
+import { Route } from "@/routes/__root";
 import type { UseBuildingRendererProps } from "@/types/building";
 import { Sky } from "@react-three/drei";
+import { useSearch } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { BuildingLabel } from "./building/BuildingLabel";
 import { BuildingModel } from "./building/BuildingModel";
@@ -19,16 +21,13 @@ export const BuildingRenderer = ({
 	showBuildings,
 	showRooms,
 	onBuildingClick,
-	onCorridorClick,
-	fromId,
-	toId,
 }: UseBuildingRendererProps & {
 	highlightedBuildingIds: string[];
 	showBuildings: boolean;
 	showRooms: boolean;
 	onBuildingClick?: (id: string, roomId?: string) => void;
-	onCorridorClick?: (id: string) => void;
 }) => {
+	const { fromId, toId } = useSearch({ from: Route.fullPath });
 	const {
 		hoveredRoomId,
 		hoveredBuildingId,
@@ -37,7 +36,6 @@ export const BuildingRenderer = ({
 		buildingPositions,
 		roomPositions,
 		isFromDestination,
-		isToDestination,
 		isDestination,
 		getDestinationColor,
 		isBuildingCloseEnough,
@@ -50,8 +48,8 @@ export const BuildingRenderer = ({
 		corridors,
 		rooms,
 		highlightedCorridorIds,
-		fromId: fromId ?? null,
-		toId: toId ?? null,
+		fromId,
+		toId,
 	});
 
 	const { showBuildingLabels, showRoomLabels } = useLabelStore();
@@ -68,13 +66,6 @@ export const BuildingRenderer = ({
 			onBuildingClick?.(buildingId, roomId);
 		},
 		[onBuildingClick],
-	);
-
-	const handleCorridorClick = useCallback(
-		(id: string) => {
-			onCorridorClick?.(id);
-		},
-		[onCorridorClick],
 	);
 
 	const handleBuildingHoverCallback = useCallback(
@@ -209,7 +200,7 @@ export const BuildingRenderer = ({
 			<CorridorRenderer
 				corridors={corridors}
 				highlightedCorridorIds={highlightedCorridorIds}
-				onCorridorClick={handleCorridorClick}
+				onCorridorClick={() => {}}
 			/>
 		</group>
 	);

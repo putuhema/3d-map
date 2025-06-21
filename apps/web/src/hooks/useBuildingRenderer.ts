@@ -22,6 +22,12 @@ export function useBuildingRenderer({
 	);
 	const animationTime = useRef(0);
 	const cameraPositionRef = useRef(new Vector3());
+	const corridorsRef = useRef(corridors);
+
+	// Update corridors ref when corridors change
+	useEffect(() => {
+		corridorsRef.current = corridors;
+	}, [corridors]);
 
 	// Distance threshold for label visibility (in world units)
 	const LABEL_DISTANCE_THRESHOLD = 50;
@@ -91,10 +97,6 @@ export function useBuildingRenderer({
 	// Memoize path calculation
 	const pathData = useMemo(() => {
 		if (highlightedCorridorIds.length === 0) return null;
-
-		// Use a ref to store corridors to prevent dependency issues
-		const corridorsRef = useRef(corridors);
-		corridorsRef.current = corridors;
 
 		const highlightedCorridors: Corridor[] = [];
 		for (const corridorId of highlightedCorridorIds) {
@@ -190,7 +192,7 @@ export function useBuildingRenderer({
 		}
 
 		return { pathPoints, totalLength };
-	}, [highlightedCorridorIds]); // Only depend on highlightedCorridorIds
+	}, [highlightedCorridorIds]);
 
 	// Memoize building positions and scales
 	const buildingPositions = useMemo(() => {

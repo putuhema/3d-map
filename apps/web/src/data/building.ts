@@ -7,6 +7,7 @@ export type Building = {
 	hasRooms?: boolean;
 	rotation?: [number, number, number];
 	modelPath?: string; // Path to custom GLB model, defaults to "/models/building.glb"
+	image?: string;
 };
 
 export const buildings: Building[] = [

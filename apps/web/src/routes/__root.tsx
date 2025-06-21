@@ -10,8 +10,27 @@ import "../index.css";
 
 export type RouterAppContext = Record<string, never>;
 
+type MapSearch = {
+	fromId?: string | null;
+	toId?: string | null;
+	selector?: boolean | null;
+	dialog?: boolean | null;
+	currentId?: string | null;
+	type?: "building" | "room" | "corridor" | null;
+};
+
 export const Route = createRootRouteWithContext<RouterAppContext>()({
 	component: RootComponent,
+	validateSearch: (search: Record<string, unknown>): MapSearch => {
+		return {
+			fromId: search.fromId as string | null,
+			toId: search.toId as string | null,
+			selector: search.selector as boolean | null,
+			dialog: search.dialog as boolean | null,
+			currentId: search.currentId as string | null,
+			type: search.type as "building" | "room" | "corridor" | null,
+		};
+	},
 	head: () => ({
 		meta: [
 			{

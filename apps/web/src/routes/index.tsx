@@ -2,18 +2,18 @@ import { AutoZoomCamera } from "@/components/AutoZoomCamera";
 import { BuildingRenderer } from "@/components/BuildingRenderer";
 import { CameraModeIndicator } from "@/components/CameraModeIndicator";
 import { DestinationSelector } from "@/components/DestinationSelector";
-import { LocationDialog } from "@/components/RoomDialog";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
+import { LocationDialog } from "@/components/location-dialog";
 import MapControl from "@/components/map-control";
-import { useCamera } from "@/hooks/useCamera";
-import { useDataState } from "@/hooks/useDataState";
-import { useLocationInteraction } from "@/hooks/useLocationInteraction";
-import { useNavigation } from "@/hooks/useNavigation";
-import { usePlayerState } from "@/hooks/usePlayerState";
-import { useUIState } from "@/hooks/useUIState";
+import { useHospitalMap } from "@/hooks/useHospitalMap";
+
 import { Canvas } from "@react-three/fiber";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+
+export const Route = createFileRoute("/")({
+	component: HospitalMap,
+});
 
 const isMobile = () => {
 	return (
@@ -23,116 +23,40 @@ const isMobile = () => {
 	);
 };
 
-export const Route = createFileRoute("/")({
-	component: HospitalMap,
-});
-
 export default function HospitalMap() {
 	const [isMobileDevice, setIsMobileDevice] = useState(false);
 
-	// Core data state
 	const {
 		buildings,
 		corridors,
 		rooms,
-		getBuildingById,
-		getRoomById,
-		getPositionById,
-	} = useDataState();
-
-	// Player state
-	const { playerPosition } = usePlayerState();
-
-	// UI state
-	const {
 		showBuildings,
 		showRooms,
 		selectedBuildings,
 		pathCorridorIds,
-		setPathCorridorIds,
-		directions,
-		setDirections,
-		roomDialogOpen,
-		setRoomDialogOpen,
 		selectedLocation,
-		setSelectedLocation,
-		destinationSelectorExpanded,
-		setDestinationSelectorExpanded,
 		resetUI,
-		clearPath,
-	} = useUIState();
-
-	// Navigation state
-	const {
-		fromId,
-		toId,
-		handleFromSelect,
-		handleToSelect: navigationHandleToSelect,
-		handleUseCurrentLocation,
-		findPath,
 		resetNavigation,
-	} = useNavigation({
-		corridors,
-		rooms,
-		playerPosition: { x: playerPosition.x, z: playerPosition.z },
-		getPositionById,
-		getRoomById,
-		getBuildingById,
-	});
-
-	// Camera state
-	const { cameraTarget } = useCamera({
-		fromId,
-		toId,
-		playerPosition: { x: playerPosition.x, z: playerPosition.z },
-		getRoomById,
-		getBuildingById,
-	});
-
-	// Location interaction
-	const {
-		handleToSelect: locationHandleToSelect,
+		handleFindPath,
+		cameraTarget,
 		handleLocationClick,
-		handleRoomDialogClose,
-	} = useLocationInteraction({
-		getRoomById,
-		getBuildingById,
-		setSelectedLocation,
-		setLocationDialogOpen: setRoomDialogOpen,
-		setSelectedBuildingId: () => {}, // Not needed for this component
-		setSelectedRoomId: () => {}, // Not needed for this component
-		setDestinationSelectorExpanded,
-		clearPath,
-	});
+	} = useHospitalMap();
 
-	// Combined handleToSelect
-	const handleToSelect = useCallback(
-		(id: string, type: "building" | "room" | "corridor") => {
-			navigationHandleToSelect(id, type);
-			locationHandleToSelect(id, type);
-		},
-		[navigationHandleToSelect, locationHandleToSelect],
-	);
-
-	// Pathfinding handler with loading state
 	const [isPathfinding, setIsPathfinding] = useState(false);
 
-	const handleFindPath = useCallback(() => {
+	const handleFindPathWithLoading = useCallback(() => {
 		if (isPathfinding) return; // Prevent multiple simultaneous operations
 
 		setIsPathfinding(true);
 		try {
-			const { path, directions: pathDirections } = findPath();
-			setPathCorridorIds(path);
-			setDirections(pathDirections);
+			handleFindPath();
 		} catch (error) {
 			console.error("Pathfinding error:", error);
 		} finally {
 			setIsPathfinding(false);
 		}
-	}, [findPath, setPathCorridorIds, setDirections, isPathfinding]);
+	}, [handleFindPath, isPathfinding]);
 
-	// Reset function
 	const handleReset = useCallback(() => {
 		resetUI();
 		resetNavigation();
@@ -165,14 +89,6 @@ export default function HospitalMap() {
 		[isMobileDevice],
 	);
 
-	const handleCorridorClick = useCallback(
-		(id: string) => {
-			// When a corridor is clicked, set it as the starting point
-			handleFromSelect(id, "corridor");
-		},
-		[handleFromSelect],
-	);
-
 	return (
 		<div className="relative h-screen w-full">
 			<TutorialOverlay />
@@ -181,35 +97,14 @@ export default function HospitalMap() {
 			<DestinationSelector
 				buildings={buildings}
 				rooms={rooms}
-				onFromSelect={handleFromSelect}
-				onToSelect={handleToSelect}
-				onFindPath={handleFindPath}
-				onUseCurrentLocation={handleUseCurrentLocation}
-				fromId={fromId}
-				toId={toId}
-				playerPosition={playerPosition}
-				isExpanded={destinationSelectorExpanded}
-				onExpandedChange={setDestinationSelectorExpanded}
+				onFindPath={handleFindPathWithLoading}
 				isPathfinding={isPathfinding}
 			/>
 
-			<LocationDialog
-				location={selectedLocation}
-				open={roomDialogOpen}
-				onOpenChange={setRoomDialogOpen}
-				onClose={handleRoomDialogClose}
-				buildings={buildings}
-				rooms={rooms}
-			/>
+			<LocationDialog location={selectedLocation} />
 
 			<Canvas {...canvasConfig}>
-				<AutoZoomCamera
-					cameraTarget={cameraTarget}
-					fromId={fromId}
-					toId={toId}
-					rooms={rooms}
-					playerPosition={playerPosition}
-				/>
+				<AutoZoomCamera cameraTarget={cameraTarget} rooms={rooms} />
 
 				<ambientLight intensity={0.5} />
 				<directionalLight
@@ -226,13 +121,10 @@ export default function HospitalMap() {
 					corridors={corridors}
 					rooms={rooms}
 					onBuildingClick={handleLocationClick}
-					onCorridorClick={handleCorridorClick}
 					highlightedCorridorIds={pathCorridorIds}
 					highlightedBuildingIds={selectedBuildings}
 					showBuildings={showBuildings}
 					showRooms={showRooms}
-					fromId={fromId}
-					toId={toId}
 				/>
 			</Canvas>
 

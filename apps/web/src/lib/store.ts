@@ -25,13 +25,6 @@ interface TutorialState {
 	dismissTutorial: () => void;
 }
 
-interface NavigationState {
-	fromId: string | null;
-	toId: string | null;
-	setFromId: (id: string | null) => void;
-	setToId: (id: string | null) => void;
-}
-
 export const useLabelStore = create<LabelState>((set) => ({
 	showBuildingLabels: false,
 	showRoomLabels: false,
@@ -66,14 +59,3 @@ export const useTutorialStore = create<TutorialState>()(
 		},
 	),
 );
-
-export const useNavigationStore = create<NavigationState>((set) => ({
-	fromId: null,
-	toId: null,
-	setFromId: (id: string | null) => {
-		set({ fromId: id });
-	},
-	setToId: (id: string | null) => {
-		set({ toId: id });
-	},
-}));

@@ -17,7 +17,7 @@ export function PathIndicator({ pathData }: PathIndicatorProps) {
 	// Optimized animated path indicator
 	useFrame((state) => {
 		if (pathIndicatorRef.current && pathData) {
-			animationTime.current += state.clock.getDelta() * 25;
+			animationTime.current += state.clock.getDelta() * 50;
 
 			const { pathPoints, totalLength } = pathData;
 

@@ -7,15 +7,13 @@ import {
 } from "@/components/ui/dialog";
 import type { Building } from "@/data/building";
 import type { Room } from "@/data/room";
-import { getBuildingForRoom, getRoomsForBuilding } from "@/lib/utils";
+import { Route } from "@/routes/__root";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface LocationDialogProps {
 	location: Room | Building | null;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	onClose?: () => void;
 	buildings?: Building[];
 	rooms?: Room[];
 }
@@ -235,113 +233,33 @@ function ZoomableImage({ src, alt }: ZoomableImageProps) {
 	);
 }
 
-export function LocationDialog({
-	location,
-	open,
-	onOpenChange,
-	onClose,
-	buildings = [],
-	rooms = [],
-}: LocationDialogProps) {
+export function LocationDialog({ location }: LocationDialogProps) {
 	if (!location) return null;
 
+	const { dialog } = useSearch({ from: Route.fullPath });
+	const navigate = useNavigate({ from: Route.fullPath });
+
 	const handleOpenChange = (newOpen: boolean) => {
-		onOpenChange(newOpen);
-		// If the dialog is closing and we have an onClose callback, call it
-		if (!newOpen && onClose) {
-			onClose();
-		}
+		navigate({ search: { dialog: newOpen } });
 	};
 
-	// Check if location is a room (has buildingId property)
-	const isRoom = "buildingId" in location;
-	const locationType = isRoom ? "Room" : "Building";
-
-	// Get additional information
-	const buildingRooms = !isRoom ? getRoomsForBuilding(location.id, rooms) : [];
-	const parentBuilding = isRoom
-		? getBuildingForRoom(location.id, rooms, buildings)
-		: null;
-
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
+		<Dialog open={dialog ?? false} onOpenChange={handleOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="font-semibold text-xl">
-						{location.name || `Unnamed ${locationType}`}
+						{location.name}
 					</DialogTitle>
 				</DialogHeader>
 				<div className="space-y-4">
-					{isRoom && (location as Room).image && (
-						<ZoomableImage
-							src={(location as Room).image}
-							alt={location.name || locationType}
-						/>
+					{location.image && (
+						<ZoomableImage src={location.image} alt={location.name} />
 					)}
 					<div className="space-y-2">
 						<div className="flex justify-between">
 							<span className="font-medium text-muted-foreground">ID :</span>
 							<span>{location.id}</span>
 						</div>
-					</div>
-					<div className="space-y-2">
-						<div className="flex justify-between">
-							<span className="font-medium text-muted-foreground">
-								Position:
-							</span>
-							<span className="text-sm">
-								({location.position[0]}, {location.position[1]},{" "}
-								{location.position[2]})
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="font-medium text-muted-foreground">Size:</span>
-							<span className="text-sm">
-								{location.size[0]} × {location.size[1]} × {location.size[2]}
-							</span>
-						</div>
-						<div className="flex justify-between">
-							<span className="font-medium text-muted-foreground">Color:</span>
-							<div className="flex items-center gap-2">
-								<div
-									className="h-4 w-4 rounded border"
-									style={{ backgroundColor: location.color }}
-								/>
-								<span className="text-sm">{location.color}</span>
-							</div>
-						</div>
-						{isRoom && (
-							<div className="flex justify-between">
-								<span className="font-medium text-muted-foreground">Type:</span>
-								<span className="text-sm">{locationType}</span>
-							</div>
-						)}
-						{!isRoom && (location as Building).hasRooms !== undefined && (
-							<div className="flex justify-between">
-								<span className="font-medium text-muted-foreground">
-									Has Rooms:
-								</span>
-								<span className="text-sm">
-									{(location as Building).hasRooms ? "Yes" : "No"}
-								</span>
-							</div>
-						)}
-						{!isRoom && buildingRooms.length > 0 && (
-							<div className="flex justify-between">
-								<span className="font-medium text-muted-foreground">
-									Room Count:
-								</span>
-								<span className="text-sm">{buildingRooms.length} rooms</span>
-							</div>
-						)}
-						{isRoom && parentBuilding && (
-							<div className="flex justify-between">
-								<span className="font-medium text-muted-foreground">
-									Parent Building:
-								</span>
-								<span className="text-sm">{parentBuilding.name}</span>
-							</div>
-						)}
 					</div>
 				</div>
 			</DialogContent>

@@ -1,21 +1,20 @@
 import { useViewStore } from "@/lib/store";
+import { Route } from "@/routes/__root";
 import { cameraPositions } from "@/utils/constants";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
+import { useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TOUCH } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 interface AutoZoomCameraProps {
 	cameraTarget: [number, number, number];
-	fromId: string | null;
-	toId: string | null;
 	rooms: Array<{
 		id: string;
 		position: [number, number, number];
 		size: [number, number, number];
 	}>;
-	playerPosition?: { x: number; y: number; z: number };
 }
 
 // Mobile detection utility
@@ -27,13 +26,8 @@ const isMobile = () => {
 	);
 };
 
-export function AutoZoomCamera({
-	cameraTarget,
-	fromId,
-	toId,
-	rooms,
-	playerPosition,
-}: AutoZoomCameraProps) {
+export function AutoZoomCamera({ cameraTarget, rooms }: AutoZoomCameraProps) {
+	const { fromId, toId } = useSearch({ from: Route.fullPath });
 	const controlsRef = useRef<OrbitControlsImpl>(null);
 	const { viewMode, cameraMode, setViewMode, setCameraMode } = useViewStore();
 	const animationRef = useRef<number | null>(null);
@@ -64,17 +58,10 @@ export function AutoZoomCamera({
 		let toPos: [number, number, number] | null = null;
 
 		// Handle current location case
-		if (fromId === "current") {
-			if (playerPosition) {
-				fromPos = [playerPosition.x, 0, playerPosition.z];
-			} else {
-				return null; // Skip auto-zoom for current location if no player position
-			}
-		} else {
-			const fromRoom = rooms.find((r) => r.id === fromId);
-			if (fromRoom) {
-				fromPos = fromRoom.position;
-			}
+
+		const fromRoom = rooms.find((r) => r.id === fromId);
+		if (fromRoom) {
+			fromPos = fromRoom.position;
 		}
 
 		// Handle destination (can be room or building)
@@ -122,7 +109,7 @@ export function AutoZoomCamera({
 		}
 
 		return optimalDistance;
-	}, [fromId, toId, rooms, isMobileDevice, playerPosition]);
+	}, [fromId, toId, rooms, isMobileDevice]);
 
 	// Function to smoothly animate camera
 	const animateCamera = useCallback(

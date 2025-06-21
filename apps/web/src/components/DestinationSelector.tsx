@@ -3,7 +3,7 @@ import type { Building } from "@/data/building";
 import type { Room } from "@/data/room";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, MapPin, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 
 import {
 	Select,
@@ -12,49 +12,30 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Route } from "@/routes/__root";
+import { useNavigate } from "@tanstack/react-router";
+import { useSearch } from "@tanstack/react-router";
 
 interface DestinationSelectorProps {
 	buildings: Building[];
 	rooms: Room[];
-	onFromSelect: (id: string, type: "building" | "room" | "corridor") => void;
-	onToSelect: (id: string, type: "building" | "room" | "corridor") => void;
 	onFindPath: () => void;
-	onUseCurrentLocation: () => void;
-	fromId: string | null;
-	toId: string | null;
-	playerPosition: { x: number; y: number; z: number };
-	isExpanded?: boolean;
-	onExpandedChange?: (expanded: boolean) => void;
 	isPathfinding?: boolean;
 }
 
 export function DestinationSelector({
 	buildings,
 	rooms,
-	onFromSelect,
-	onToSelect,
 	onFindPath,
-	onUseCurrentLocation,
-	fromId,
-	toId,
-	playerPosition,
-	isExpanded,
-	onExpandedChange,
 	isPathfinding = false,
 }: DestinationSelectorProps) {
-	const [fromSearch, setFromSearch] = useState("");
-	const [toSearch, setToSearch] = useState("");
-	const [fromOpen, setFromOpen] = useState(false);
-	const [toOpen, setToOpen] = useState(false);
+	const { fromId, toId, selector } = useSearch({ from: Route.fullPath });
+	const navigate = useNavigate({ from: Route.fullPath });
 
-	// Handle expanded state changes
 	const handleExpandedChange = (expanded: boolean) => {
-		if (onExpandedChange) {
-			onExpandedChange(expanded);
-		}
+		navigate({ search: { fromId, toId, selector: expanded } });
 	};
 
-	// Get all locations (buildings + rooms + corridors)
 	const allLocations = useMemo(() => {
 		const buildingLocations = buildings
 			.filter((building) => building.name !== "")
@@ -79,56 +60,10 @@ export function DestinationSelector({
 		);
 	}, [buildings, rooms]);
 
-	// Filter locations based on search
-	const filteredFromLocations = useMemo(() => {
-		return allLocations.filter((location) =>
-			location.name.toLowerCase().includes(fromSearch.toLowerCase()),
-		);
-	}, [allLocations, fromSearch]);
-
-	const filteredToLocations = useMemo(() => {
-		return allLocations.filter((location) =>
-			location.name.toLowerCase().includes(toSearch.toLowerCase()),
-		);
-	}, [allLocations, toSearch]);
-
-	// Get selected location names
-	const getSelectedFromName = useCallback(() => {
-		if (fromId === "current") {
-			return `Current Location (${playerPosition.x.toFixed(1)}, ${playerPosition.z.toFixed(1)})`;
-		}
-		const location = allLocations.find((loc) => loc.id === fromId);
-		return location ? location.displayName : "Select starting point";
-	}, [fromId, playerPosition.x, playerPosition.z, allLocations]);
-
-	const getSelectedToName = useCallback(() => {
-		const location = allLocations.find((loc) => loc.id === toId);
-		return location ? location.displayName : "Select destination";
-	}, [toId, allLocations]);
-
-	const handleFromSelect = useCallback(
-		(id: string, type: "building" | "room" | "corridor") => {
-			onFromSelect(id, type);
-			setFromOpen(false);
-			setFromSearch("");
-		},
-		[onFromSelect],
-	);
-
-	const handleToSelect = useCallback(
-		(id: string, type: "building" | "room" | "corridor") => {
-			onToSelect(id, type);
-			setToOpen(false);
-			setToSearch("");
-		},
-		[onToSelect],
-	);
-
-	// Helper function to get location type by id
-	const getLocationType = useCallback(
-		(id: string): "building" | "room" | "corridor" => {
+	const getSelectedName = useCallback(
+		(id: string) => {
 			const location = allLocations.find((loc) => loc.id === id);
-			return location?.type || "building";
+			return location ? location.displayName : "Pilih lokasi";
 		},
 		[allLocations],
 	);
@@ -138,24 +73,23 @@ export function DestinationSelector({
 		[fromId, toId],
 	);
 
-	// Get summary text for collapsed state
 	const getSummaryText = useCallback(() => {
 		if (!fromId && !toId) {
-			return "Plan your route";
+			return "Pilih lokasi";
 		}
 		if (fromId && !toId) {
-			return `From: ${getSelectedFromName()}`;
+			return `Dari: ${getSelectedName(fromId)}`;
 		}
 		if (!fromId && toId) {
-			return `To: ${getSelectedToName()}`;
+			return `Ke: ${getSelectedName(toId)}`;
 		}
-		return `${getSelectedFromName()} → ${getSelectedToName()}`;
-	}, [fromId, toId, getSelectedFromName, getSelectedToName]);
+		return `${getSelectedName(fromId)} → ${getSelectedName(toId)}`;
+	}, [fromId, toId, getSelectedName]);
 
 	return (
 		<div className="absolute top-0 right-0 left-0 z-20 p-4">
 			<AnimatePresence mode="wait">
-				{!isExpanded ? (
+				{!selector ? (
 					<motion.div
 						key="collapsed"
 						initial={{ opacity: 0, scale: 0.8 }}
@@ -219,14 +153,14 @@ export function DestinationSelector({
 									<Select
 										value={fromId || ""}
 										onValueChange={(value) =>
-											handleFromSelect(value, getLocationType(value))
+											navigate({ search: { fromId: value, toId, selector } })
 										}
 									>
 										<SelectTrigger className="w-full bg-background">
 											<SelectValue placeholder="Pilih Lokasi" />
 										</SelectTrigger>
 										<SelectContent className="max-h-[200px] overflow-y-auto">
-											{filteredFromLocations.map((location) => (
+											{allLocations.map((location) => (
 												<SelectItem key={location.id} value={location.id}>
 													{location.displayName}
 												</SelectItem>
@@ -251,14 +185,14 @@ export function DestinationSelector({
 									<Select
 										value={toId || ""}
 										onValueChange={(value) =>
-											handleToSelect(value, getLocationType(value))
+											navigate({ search: { fromId, toId: value, selector } })
 										}
 									>
 										<SelectTrigger className="w-full bg-background">
 											<SelectValue placeholder="Pilih Lokasi" />
 										</SelectTrigger>
 										<SelectContent className="max-h-[200px] overflow-y-auto">
-											{filteredToLocations.map((location) => (
+											{allLocations.map((location) => (
 												<SelectItem key={location.id} value={location.id}>
 													{location.displayName}
 												</SelectItem>
