@@ -3,7 +3,7 @@ import type { Building } from "@/data/building";
 import type { Room } from "@/data/room";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, MapPin, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
 	Select,
@@ -25,6 +25,7 @@ interface DestinationSelectorProps {
 	playerPosition: { x: number; y: number; z: number };
 	isExpanded?: boolean;
 	onExpandedChange?: (expanded: boolean) => void;
+	isPathfinding?: boolean;
 }
 
 export function DestinationSelector({
@@ -39,23 +40,15 @@ export function DestinationSelector({
 	playerPosition,
 	isExpanded,
 	onExpandedChange,
+	isPathfinding = false,
 }: DestinationSelectorProps) {
 	const [fromSearch, setFromSearch] = useState("");
 	const [toSearch, setToSearch] = useState("");
 	const [fromOpen, setFromOpen] = useState(false);
 	const [toOpen, setToOpen] = useState(false);
-	const [isExpandedState, setIsExpandedState] = useState(isExpanded || false);
 
-	// Sync internal state with prop
-	useEffect(() => {
-		if (isExpanded !== undefined) {
-			setIsExpandedState(isExpanded);
-		}
-	}, [isExpanded]);
-
-	// Handle internal state changes and call callback
+	// Handle expanded state changes
 	const handleExpandedChange = (expanded: boolean) => {
-		setIsExpandedState(expanded);
 		if (onExpandedChange) {
 			onExpandedChange(expanded);
 		}
@@ -100,53 +93,53 @@ export function DestinationSelector({
 	}, [allLocations, toSearch]);
 
 	// Get selected location names
-	const getSelectedFromName = () => {
+	const getSelectedFromName = useCallback(() => {
 		if (fromId === "current") {
 			return `Current Location (${playerPosition.x.toFixed(1)}, ${playerPosition.z.toFixed(1)})`;
 		}
 		const location = allLocations.find((loc) => loc.id === fromId);
 		return location ? location.displayName : "Select starting point";
-	};
+	}, [fromId, playerPosition.x, playerPosition.z, allLocations]);
 
-	const getSelectedToName = () => {
+	const getSelectedToName = useCallback(() => {
 		const location = allLocations.find((loc) => loc.id === toId);
 		return location ? location.displayName : "Select destination";
-	};
+	}, [toId, allLocations]);
 
-	const handleFromSelect = (
-		id: string,
-		type: "building" | "room" | "corridor",
-	) => {
-		onFromSelect(id, type);
-		setFromOpen(false);
-		setFromSearch("");
-	};
+	const handleFromSelect = useCallback(
+		(id: string, type: "building" | "room" | "corridor") => {
+			onFromSelect(id, type);
+			setFromOpen(false);
+			setFromSearch("");
+		},
+		[onFromSelect],
+	);
 
-	const handleToSelect = (
-		id: string,
-		type: "building" | "room" | "corridor",
-	) => {
-		onToSelect(id, type);
-		setToOpen(false);
-		setToSearch("");
-	};
+	const handleToSelect = useCallback(
+		(id: string, type: "building" | "room" | "corridor") => {
+			onToSelect(id, type);
+			setToOpen(false);
+			setToSearch("");
+		},
+		[onToSelect],
+	);
 
 	// Helper function to get location type by id
-	const getLocationType = (id: string): "building" | "room" | "corridor" => {
-		const location = allLocations.find((loc) => loc.id === id);
-		return location?.type || "building";
-	};
+	const getLocationType = useCallback(
+		(id: string): "building" | "room" | "corridor" => {
+			const location = allLocations.find((loc) => loc.id === id);
+			return location?.type || "building";
+		},
+		[allLocations],
+	);
 
-	const handleUseCurrentLocation = () => {
-		onUseCurrentLocation();
-		setFromOpen(false);
-		setFromSearch("");
-	};
-
-	const canFindPath = fromId && toId && fromId !== toId;
+	const canFindPath = useMemo(
+		() => fromId && toId && fromId !== toId,
+		[fromId, toId],
+	);
 
 	// Get summary text for collapsed state
-	const getSummaryText = () => {
+	const getSummaryText = useCallback(() => {
 		if (!fromId && !toId) {
 			return "Plan your route";
 		}
@@ -157,12 +150,12 @@ export function DestinationSelector({
 			return `To: ${getSelectedToName()}`;
 		}
 		return `${getSelectedFromName()} → ${getSelectedToName()}`;
-	};
+	}, [fromId, toId, getSelectedFromName, getSelectedToName]);
 
 	return (
 		<div className="absolute top-0 right-0 left-0 z-20 p-4">
 			<AnimatePresence mode="wait">
-				{!isExpandedState ? (
+				{!isExpanded ? (
 					<motion.div
 						key="collapsed"
 						initial={{ opacity: 0, scale: 0.8 }}
@@ -281,10 +274,10 @@ export function DestinationSelector({
 								>
 									<Button
 										onClick={onFindPath}
-										disabled={!canFindPath}
+										disabled={!canFindPath || isPathfinding}
 										className="w-full"
 									>
-										Cari Rute
+										{isPathfinding ? "Mencari..." : "Cari Rute"}
 									</Button>
 								</motion.div>
 							</motion.div>

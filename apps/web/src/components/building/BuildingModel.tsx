@@ -2,7 +2,6 @@ import type { Building } from "@/data/building";
 import { getBuildingModelPath } from "@/utils/buildingModels";
 import { useGLTF } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
-import { Select } from "@react-three/postprocessing";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type { Material, Vector3 } from "three";
 import { Mesh } from "three";
@@ -68,7 +67,7 @@ export const BuildingModel = memo(function BuildingModel({
 
 		if (shouldOverride) {
 			clonedScene.traverse((child) => {
-				if (child instanceof Mesh && child.material) {
+				if (child instanceof Mesh) {
 					if (Array.isArray(child.material)) {
 						for (let i = 0; i < child.material.length; i++) {
 							const mat = child.material[i];
@@ -85,6 +84,7 @@ export const BuildingModel = memo(function BuildingModel({
 							if (opacity !== 1) {
 								clonedMat.transparent = true;
 								clonedMat.opacity = opacity;
+								// Ensure depthWrite is false for transparent materials
 								clonedMat.depthWrite = false;
 							}
 
@@ -94,7 +94,7 @@ export const BuildingModel = memo(function BuildingModel({
 								clonedMat.side = 2; // DoubleSide
 							}
 
-							// Ensure proper material properties
+							// Ensure proper material properties for standard materials
 							if (clonedMat.metalness !== undefined) {
 								clonedMat.metalness = 0.1;
 							}
@@ -102,7 +102,7 @@ export const BuildingModel = memo(function BuildingModel({
 								clonedMat.roughness = 0.5;
 							}
 
-							// Replace the material in the array
+							// Replace the material
 							child.material[i] = clonedMat;
 						}
 					} else if (child.material) {
@@ -165,37 +165,29 @@ export const BuildingModel = memo(function BuildingModel({
 		[onClick],
 	);
 
-	// Memoize the enabled state for Select component to prevent unnecessary re-renders
-	const isSelectEnabled = useMemo(
-		() => isHovered || isSelected,
-		[isHovered, isSelected],
-	);
-
 	// Don't render if scene is not loaded
 	if (!clonedScene) {
 		// Fallback to simple box geometry if GLB model fails to load
 		return (
 			<group>
-				<Select enabled={isSelectEnabled}>
-					{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-					<mesh
-						position={position}
-						scale={scale}
-						rotation={rotation}
-						onClick={onClick}
-						onPointerOver={onPointerOver}
-						onPointerOut={onPointerOut}
-					>
-						<boxGeometry args={[1, 1, 1]} />
-						<meshStandardMaterial
-							color={color || "#8B7355"}
-							transparent={true}
-							opacity={opacity}
-							metalness={0.1}
-							roughness={0.5}
-						/>
-					</mesh>
-				</Select>
+				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+				<mesh
+					position={position}
+					scale={scale}
+					rotation={rotation}
+					onClick={onClick}
+					onPointerOver={onPointerOver}
+					onPointerOut={onPointerOut}
+				>
+					<boxGeometry args={[1, 1, 1]} />
+					<meshStandardMaterial
+						color={color || "#8B7355"}
+						transparent={true}
+						opacity={opacity}
+						metalness={0.1}
+						roughness={0.5}
+					/>
+				</mesh>
 
 				{/* Border wireframe */}
 				{borderColor && (
@@ -228,20 +220,18 @@ export const BuildingModel = memo(function BuildingModel({
 
 	return (
 		<group>
-			<Select enabled={isSelectEnabled}>
-				<primitive
-					ref={buildingRef}
-					object={clonedScene}
-					position={position}
-					scale={scale}
-					rotation={rotation}
-					onClick={onClick}
-					onKeyDown={handleKeyDown}
-					onPointerOver={onPointerOver}
-					onPointerOut={onPointerOut}
-					tabIndex={onClick ? 0 : undefined}
-				/>
-			</Select>
+			<primitive
+				ref={buildingRef}
+				object={clonedScene}
+				position={position}
+				scale={scale}
+				rotation={rotation}
+				onClick={onClick}
+				onKeyDown={handleKeyDown}
+				onPointerOver={onPointerOver}
+				onPointerOut={onPointerOut}
+				tabIndex={onClick ? 0 : undefined}
+			/>
 
 			{/* Border wireframe */}
 			{borderColor && (

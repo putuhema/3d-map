@@ -3,7 +3,7 @@ import type { Corridor } from "@/data/corridor";
 import type { Room } from "@/data/room";
 import { useNavigationStore } from "@/lib/store";
 import { findCorridorPath } from "@/utils/pathfinding";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 
 interface UseNavigationProps {
 	corridors: Corridor[];
@@ -22,13 +22,7 @@ export function useNavigation({
 	getRoomById,
 	getBuildingById,
 }: UseNavigationProps) {
-	const { fromId, toId, setFromId, setToId, syncFromUrl } =
-		useNavigationStore();
-
-	// Sync URL parameters on mount
-	useEffect(() => {
-		syncFromUrl();
-	}, [syncFromUrl]);
+	const { fromId, toId, setFromId, setToId } = useNavigationStore();
 
 	const handleFromSelect = useCallback(
 		(id: string, type: "building" | "room" | "corridor") => {
@@ -49,8 +43,27 @@ export function useNavigation({
 	}, [setFromId]);
 
 	const findPath = useCallback(() => {
-		if (!fromId || !toId || fromId === toId)
+		// Safety checks
+		if (!fromId || !toId || fromId === toId) {
 			return { path: [], directions: [] };
+		}
+
+		// Check if data is available
+		if (!corridors || corridors.length === 0 || !rooms) {
+			console.warn("No corridor or room data available for pathfinding");
+			return { path: [], directions: ["No navigation data available."] };
+		}
+
+		// Validate player position for current location
+		if (fromId === "current") {
+			if (
+				!Number.isFinite(playerPosition.x) ||
+				!Number.isFinite(playerPosition.z)
+			) {
+				console.warn("Invalid player position for pathfinding");
+				return { path: [], directions: ["Invalid player position."] };
+			}
+		}
 
 		let fromPos: [number, number, number] | null = null;
 
@@ -62,7 +75,24 @@ export function useNavigation({
 
 		const toPos = getPositionById(toId);
 
-		if (fromPos && toPos) {
+		// Validate positions
+		if (!fromPos || !toPos) {
+			return {
+				path: [],
+				directions: ["Could not find positions for selected locations."],
+			};
+		}
+
+		// Check if positions are valid numbers
+		if (
+			!fromPos.every((coord) => Number.isFinite(coord)) ||
+			!toPos.every((coord) => Number.isFinite(coord))
+		) {
+			console.warn("Invalid positions detected in pathfinding");
+			return { path: [], directions: ["Invalid position data."] };
+		}
+
+		try {
 			const path = findCorridorPath(
 				corridors,
 				rooms,
@@ -77,32 +107,35 @@ export function useNavigation({
 				};
 			}
 
-			const steps = path.map((pathId, idx) => {
-				const corridor = corridors.find((c) => c.id === pathId);
-				const room = rooms.find((r) => r.id === pathId);
+			const steps = path
+				.map((pathId, idx) => {
+					const corridor = corridors.find((c) => c.id === pathId);
+					const room = rooms.find((r) => r.id === pathId);
 
-				if (corridor) {
-					const from =
-						idx === 0
-							? [fromPos?.[0] ?? 0, 0, fromPos?.[2] ?? 0]
-							: [
-									corridors.find((c) => c.id === path[idx - 1])?.end[0] ?? 0,
-									0,
-									corridors.find((c) => c.id === path[idx - 1])?.end[2] ?? 0,
-								];
-					const to = [corridor.end[0], 0, corridor.end[2]];
-					return `Take corridor ${corridor.id} from (${from}) to (${to})`;
-				}
-				if (room) {
-					return `Enter room ${room.name} at position (${room.position})`;
-				}
-				return "";
-			});
+					if (corridor) {
+						const from =
+							idx === 0
+								? [fromPos?.[0] ?? 0, 0, fromPos?.[2] ?? 0]
+								: [
+										corridors.find((c) => c.id === path[idx - 1])?.end[0] ?? 0,
+										0,
+										corridors.find((c) => c.id === path[idx - 1])?.end[2] ?? 0,
+									];
+						const to = [corridor.end[0], 0, corridor.end[2]];
+						return `Take corridor ${corridor.id} from (${from}) to (${to})`;
+					}
+					if (room) {
+						return `Enter room ${room.name} at position (${room.position})`;
+					}
+					return "";
+				})
+				.filter((step) => step !== ""); // Remove empty steps
 
 			return { path, directions: steps };
+		} catch (error) {
+			console.error("Error during pathfinding:", error);
+			return { path: [], directions: ["Error occurred during pathfinding."] };
 		}
-
-		return { path: [], directions: [] };
 	}, [fromId, toId, getPositionById, corridors, rooms, playerPosition]);
 
 	const resetNavigation = useCallback(() => {

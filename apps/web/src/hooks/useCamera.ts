@@ -34,8 +34,11 @@ export function useCamera({
 			fromPos = [playerPosition.x, 0, playerPosition.z];
 		} else {
 			const fromRoom = getRoomById(fromId);
+			const fromBuilding = getBuildingById(fromId);
 			if (fromRoom) {
 				fromPos = fromRoom.position;
+			} else if (fromBuilding) {
+				fromPos = fromBuilding.position;
 			}
 		}
 
@@ -51,6 +54,14 @@ export function useCamera({
 
 		// Only proceed if we have both positions
 		if (!fromPos || !toPos) return;
+
+		// Validate positions are finite numbers
+		if (
+			!fromPos.every((coord) => Number.isFinite(coord)) ||
+			!toPos.every((coord) => Number.isFinite(coord))
+		) {
+			return;
+		}
 
 		// Calculate the direction vector from "from" to "to" destination
 		const directionX = toPos[0] - fromPos[0];
@@ -84,12 +95,18 @@ export function useCamera({
 		const offsetX = centerX - normalizedDirectionX * offsetDistance;
 		const offsetZ = centerZ - normalizedDirectionZ * offsetDistance;
 
+		// Validate the calculated target
+		const target: [number, number, number] = [offsetX, centerY, offsetZ];
+		if (!target.every((coord) => Number.isFinite(coord))) {
+			return;
+		}
+
 		// Set the camera target to the offset center
-		setCameraTarget([offsetX, centerY, offsetZ]);
+		setCameraTarget(target);
 
 		// Return the calculated target and distance for zoom adjustment
 		return {
-			target: [offsetX, centerY, offsetZ] as [number, number, number],
+			target,
 			distance: padding,
 		};
 	}, [fromId, toId, getRoomById, getBuildingById, playerPosition]);

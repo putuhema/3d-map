@@ -98,26 +98,43 @@ export function findCorridorPath(
 		}
 	}
 
-	// BFS
+	// BFS with improved visited tracking
 	const queue: { pos: [number, number, number]; path: string[] }[] = [
 		{ pos: [startPos[0], 0, startPos[2]], path: [] },
 	];
 	const visited = new Set<string>();
-	while (queue.length > 0) {
+	const maxIterations = 1000; // Safety limit to prevent infinite loops
+	let iterations = 0;
+
+	while (queue.length > 0 && iterations < maxIterations) {
+		iterations++;
 		const current = queue.shift();
 		if (!current) continue;
+
 		const { pos, path } = current;
 		const key = posKey(pos);
-		if (positionsEqual(pos, [endPos[0], 0, endPos[2]])) return path;
+
+		// Check if we've reached the destination
+		if (positionsEqual(pos, [endPos[0], 0, endPos[2]])) {
+			return path;
+		}
+
+		// Skip if already visited
 		if (visited.has(key)) continue;
 		visited.add(key);
-		for (const neighbor of posToPaths.get(key) || []) {
+
+		// Process neighbors
+		const neighbors = posToPaths.get(key) || [];
+		for (const neighbor of neighbors) {
 			const nextPos: [number, number, number] = [
 				neighbor.nextPos[0],
 				0,
 				neighbor.nextPos[2],
 			];
-			if (!visited.has(posKey(nextPos))) {
+			const nextKey = posKey(nextPos);
+
+			// Only add to queue if not visited and not the same as current position
+			if (!visited.has(nextKey) && nextKey !== key) {
 				queue.push({
 					pos: nextPos,
 					path: [...path, neighbor.id],
@@ -125,5 +142,14 @@ export function findCorridorPath(
 			}
 		}
 	}
+
+	// If we hit the iteration limit, return empty path
+	if (iterations >= maxIterations) {
+		console.warn(
+			"Pathfinding exceeded maximum iterations, returning empty path",
+		);
+		return [];
+	}
+
 	return [];
 }

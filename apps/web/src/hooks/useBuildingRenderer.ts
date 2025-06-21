@@ -21,9 +21,15 @@ export function useBuildingRenderer({
 		null,
 	);
 	const animationTime = useRef(0);
+	const cameraPositionRef = useRef(new Vector3());
 
 	// Distance threshold for label visibility (in world units)
 	const LABEL_DISTANCE_THRESHOLD = 50;
+
+	// Update camera position ref
+	useEffect(() => {
+		cameraPositionRef.current.copy(camera.position);
+	}, [camera.position]);
 
 	// Preload models that are actually used by the buildings being rendered
 	useEffect(() => {
@@ -57,13 +63,10 @@ export function useBuildingRenderer({
 	);
 
 	// Function to check if a building is close enough to show its label
-	const isBuildingCloseEnough = useCallback(
-		(buildingPosition: Vector3) => {
-			const distance = camera.position.distanceTo(buildingPosition);
-			return distance <= LABEL_DISTANCE_THRESHOLD;
-		},
-		[camera],
-	);
+	const isBuildingCloseEnough = useCallback((buildingPosition: Vector3) => {
+		const distance = cameraPositionRef.current.distanceTo(buildingPosition);
+		return distance <= LABEL_DISTANCE_THRESHOLD;
+	}, []);
 
 	// Reset animation time when path changes
 	useEffect(() => {
@@ -89,9 +92,13 @@ export function useBuildingRenderer({
 	const pathData = useMemo(() => {
 		if (highlightedCorridorIds.length === 0) return null;
 
+		// Use a ref to store corridors to prevent dependency issues
+		const corridorsRef = useRef(corridors);
+		corridorsRef.current = corridors;
+
 		const highlightedCorridors: Corridor[] = [];
 		for (const corridorId of highlightedCorridorIds) {
-			const corridor = corridors.find((c) => c.id === corridorId);
+			const corridor = corridorsRef.current.find((c) => c.id === corridorId);
 			if (corridor) {
 				highlightedCorridors.push(corridor);
 			}
@@ -183,7 +190,7 @@ export function useBuildingRenderer({
 		}
 
 		return { pathPoints, totalLength };
-	}, [highlightedCorridorIds, corridors]);
+	}, [highlightedCorridorIds]); // Only depend on highlightedCorridorIds
 
 	// Memoize building positions and scales
 	const buildingPositions = useMemo(() => {

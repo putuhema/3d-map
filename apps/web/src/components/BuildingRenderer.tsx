@@ -1,29 +1,34 @@
 import { useBuildingRenderer } from "@/hooks/useBuildingRenderer";
 import { useLabelStore } from "@/lib/store";
-import type { BuildingRendererProps } from "@/types/building";
+import type { UseBuildingRendererProps } from "@/types/building";
 import { Sky } from "@react-three/drei";
-import { Select } from "@react-three/postprocessing";
-import { memo, useCallback, useMemo } from "react";
-import { BuildingLabel, BuildingModel } from "./building";
-import { CorridorRenderer } from "./corridor";
-import { PathIndicator } from "./path";
-import { RoomLabel, RoomModel } from "./room";
+import { useCallback } from "react";
+import { BuildingLabel } from "./building/BuildingLabel";
+import { BuildingModel } from "./building/BuildingModel";
+import { CorridorRenderer } from "./corridor/CorridorRenderer";
+import { PathIndicator } from "./path/PathIndicator";
+import { RoomLabel } from "./room/RoomLabel";
+import { RoomModel } from "./room/RoomModel";
 
-export const BuildingRenderer = memo(function BuildingRenderer({
+export const BuildingRenderer = ({
 	buildings,
 	corridors,
 	rooms,
+	highlightedCorridorIds,
+	highlightedBuildingIds,
+	showBuildings,
+	showRooms,
 	onBuildingClick,
 	onCorridorClick,
-	highlightedCorridorIds = [],
-	highlightedBuildingIds = [],
-	showBuildings = true,
-	showRooms = true,
 	fromId,
 	toId,
-	selectedBuildingId,
-	selectedRoomId,
-}: BuildingRendererProps) {
+}: UseBuildingRendererProps & {
+	highlightedBuildingIds: string[];
+	showBuildings: boolean;
+	showRooms: boolean;
+	onBuildingClick?: (id: string, roomId?: string) => void;
+	onCorridorClick?: (id: string) => void;
+}) => {
 	const {
 		hoveredRoomId,
 		hoveredBuildingId,
@@ -51,11 +56,32 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 
 	const { showBuildingLabels, showRoomLabels } = useLabelStore();
 
-	const handleBuildingClickForId = useCallback(
+	const handleBuildingClick = useCallback(
 		(buildingId: string) => {
-			return () => onBuildingClick?.(buildingId, undefined);
+			onBuildingClick?.(buildingId, undefined);
 		},
 		[onBuildingClick],
+	);
+
+	const handleRoomClick = useCallback(
+		(buildingId: string, roomId: string) => {
+			onBuildingClick?.(buildingId, roomId);
+		},
+		[onBuildingClick],
+	);
+
+	const handleCorridorClick = useCallback(
+		(id: string) => {
+			onCorridorClick?.(id);
+		},
+		[onCorridorClick],
+	);
+
+	const handleBuildingHoverCallback = useCallback(
+		(buildingId: string) => {
+			handleBuildingHover(buildingId);
+		},
+		[handleBuildingHover],
 	);
 
 	const handleRoomHoverCallback = useCallback(
@@ -63,42 +89,6 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 			handleRoomHover(roomId);
 		},
 		[handleRoomHover],
-	);
-
-	const handleRoomHoverOutCallback = useCallback(() => {
-		handleRoomHoverOut();
-	}, [handleRoomHoverOut]);
-
-	const handleBuildingHoverForId = useCallback(
-		(buildingId: string) => {
-			return () => handleBuildingHover(buildingId);
-		},
-		[handleBuildingHover],
-	);
-
-	const handleBuildingHoverOutCallback = useCallback(() => {
-		handleBuildingHoverOut();
-	}, [handleBuildingHoverOut]);
-
-	const handleRoomHoverForId = useCallback(
-		(roomId: string) => {
-			return () => handleRoomHover(roomId);
-		},
-		[handleRoomHover],
-	);
-
-	const handleRoomClickForIds = useCallback(
-		(buildingId: string, roomId: string) => {
-			return () => onBuildingClick?.(buildingId, roomId);
-		},
-		[onBuildingClick],
-	);
-
-	const handleCorridorClick = useCallback(
-		(id: string, e: unknown) => {
-			onCorridorClick?.(id);
-		},
-		[onCorridorClick],
 	);
 
 	return (
@@ -124,7 +114,7 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 					const buildingRooms = roomsByBuilding.get(building.id) || [];
 					const hasRooms = building.hasRooms && buildingRooms.length > 0;
 					const isHovered = hoveredBuildingId === building.id;
-					const isSelected = selectedBuildingId === building.id;
+					const isSelected = highlightedBuildingIds.includes(building.id);
 					const isHighlighted = highlightedBuildingIds.includes(building.id);
 					const buildingPosition = buildingPositions.positions.get(building.id);
 					const buildingScale = buildingPositions.scales.get(building.id);
@@ -144,24 +134,15 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 								isSelected={isSelected}
 								opacity={hasRooms ? 0.2 : 1}
 								isHovered={isHovered}
-								// borderColor={
-								// 	isSelected
-								// 		? "#3b82f6" // Blue for selected
-								// 		: isHighlighted
-								// 			? "#f59e0b" // Amber for highlighted
-								// 			: isHovered
-								// 				? "#10b981" // Green for hovered
-								// 				: "#3b82f6"
-								// }
 								onClick={
-									!hasRooms ? handleBuildingClickForId(building.id) : undefined
+									!hasRooms ? () => handleBuildingClick(building.id) : undefined
 								}
 								onPointerOver={
-									!hasRooms ? handleBuildingHoverForId(building.id) : undefined
+									!hasRooms
+										? () => handleBuildingHoverCallback(building.id)
+										: undefined
 								}
-								onPointerOut={
-									!hasRooms ? handleBuildingHoverOutCallback : undefined
-								}
+								onPointerOut={!hasRooms ? handleBuildingHoverOut : undefined}
 							/>
 							{building.name &&
 								showBuildingLabels &&
@@ -187,7 +168,7 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 			{showRooms &&
 				rooms.map((room) => {
 					const isHovered = hoveredRoomId === room.id;
-					const isSelected = selectedRoomId === room.id;
+					const isSelected = highlightedBuildingIds.includes(room.id);
 					const roomPosition = roomPositions.positions.get(room.id);
 					const roomScale = roomPositions.scales.get(room.id);
 
@@ -202,9 +183,9 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 								color={getDestinationColor(room.id) || undefined}
 								isHovered={isHovered}
 								isSelected={isSelected}
-								onClick={handleRoomClickForIds(room.buildingId, room.id)}
-								onPointerOver={handleRoomHoverForId(room.id)}
-								onPointerOut={handleRoomHoverOutCallback}
+								onClick={() => handleRoomClick(room.buildingId, room.id)}
+								onPointerOver={() => handleRoomHoverCallback(room.id)}
+								onPointerOut={handleRoomHoverOut}
 								rotation={room.rotation}
 							/>
 							{room.name && room.name !== "Wall" && showRoomLabels && (
@@ -232,4 +213,4 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 			/>
 		</group>
 	);
-});
+};

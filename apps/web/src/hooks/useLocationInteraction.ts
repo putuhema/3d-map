@@ -25,31 +25,11 @@ export function useLocationInteraction({
 }: UseLocationInteractionProps) {
 	const handleToSelect = useCallback(
 		(id: string, type: "building" | "room" | "corridor") => {
-			clearPath();
-
-			// Show location dialog for rooms and buildings
-			if (type === "room") {
-				const room = getRoomById(id);
-				if (room) {
-					setSelectedLocation(room);
-					setLocationDialogOpen(true);
-				}
-			} else if (type === "building") {
-				const building = getBuildingById(id);
-				if (building) {
-					setSelectedLocation(building);
-					setLocationDialogOpen(true);
-				}
-			}
-			// For corridors, we don't show a dialog since they're just path points
+			// Don't automatically open dialog when selecting destination
+			// The dialog should only open when clicking on locations, not when selecting them as destinations
+			// This prevents the freezing issue when selecting destinations
 		},
-		[
-			getRoomById,
-			getBuildingById,
-			setSelectedLocation,
-			setLocationDialogOpen,
-			clearPath,
-		],
+		[],
 	);
 
 	const handleLocationClick = useCallback(

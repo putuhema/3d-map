@@ -12,11 +12,6 @@ import { useNavigation } from "@/hooks/useNavigation";
 import { usePlayerState } from "@/hooks/usePlayerState";
 import { useUIState } from "@/hooks/useUIState";
 import { Canvas } from "@react-three/fiber";
-import {
-	EffectComposer,
-	Outline,
-	Selection,
-} from "@react-three/postprocessing";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -54,6 +49,9 @@ export default function HospitalMap() {
 		showRooms,
 		selectedBuildings,
 		pathCorridorIds,
+		setPathCorridorIds,
+		directions,
+		setDirections,
 		roomDialogOpen,
 		setRoomDialogOpen,
 		selectedLocation,
@@ -116,12 +114,23 @@ export default function HospitalMap() {
 		[navigationHandleToSelect, locationHandleToSelect],
 	);
 
-	// Pathfinding handler
+	// Pathfinding handler with loading state
+	const [isPathfinding, setIsPathfinding] = useState(false);
+
 	const handleFindPath = useCallback(() => {
-		const { path, directions: pathDirections } = findPath();
-		// Update path state through navigation store
-		// This will be handled by the navigation hook
-	}, [findPath]);
+		if (isPathfinding) return; // Prevent multiple simultaneous operations
+
+		setIsPathfinding(true);
+		try {
+			const { path, directions: pathDirections } = findPath();
+			setPathCorridorIds(path);
+			setDirections(pathDirections);
+		} catch (error) {
+			console.error("Pathfinding error:", error);
+		} finally {
+			setIsPathfinding(false);
+		}
+	}, [findPath, setPathCorridorIds, setDirections, isPathfinding]);
 
 	// Reset function
 	const handleReset = useCallback(() => {
@@ -181,6 +190,7 @@ export default function HospitalMap() {
 				playerPosition={playerPosition}
 				isExpanded={destinationSelectorExpanded}
 				onExpandedChange={setDestinationSelectorExpanded}
+				isPathfinding={isPathfinding}
 			/>
 
 			<LocationDialog
@@ -211,24 +221,19 @@ export default function HospitalMap() {
 				/>
 				<directionalLight position={[-5, 8, -10]} intensity={0.3} />
 
-				<Selection>
-					<EffectComposer multisampling={0} autoClear={false}>
-						<Outline blur visibleEdgeColor={0xffffff} edgeStrength={50} />
-					</EffectComposer>
-					<BuildingRenderer
-						buildings={buildings}
-						corridors={corridors}
-						rooms={rooms}
-						onBuildingClick={handleLocationClick}
-						onCorridorClick={handleCorridorClick}
-						highlightedCorridorIds={pathCorridorIds}
-						highlightedBuildingIds={selectedBuildings}
-						showBuildings={showBuildings}
-						showRooms={showRooms}
-						fromId={fromId}
-						toId={toId}
-					/>
-				</Selection>
+				<BuildingRenderer
+					buildings={buildings}
+					corridors={corridors}
+					rooms={rooms}
+					onBuildingClick={handleLocationClick}
+					onCorridorClick={handleCorridorClick}
+					highlightedCorridorIds={pathCorridorIds}
+					highlightedBuildingIds={selectedBuildings}
+					showBuildings={showBuildings}
+					showRooms={showRooms}
+					fromId={fromId}
+					toId={toId}
+				/>
 			</Canvas>
 
 			<MapControl onReset={handleReset} />

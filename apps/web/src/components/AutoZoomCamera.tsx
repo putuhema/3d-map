@@ -37,6 +37,7 @@ export function AutoZoomCamera({
 	const controlsRef = useRef<OrbitControlsImpl>(null);
 	const { viewMode, cameraMode, setViewMode, setCameraMode } = useViewStore();
 	const animationRef = useRef<number | null>(null);
+	const debounceRef = useRef<NodeJS.Timeout | null>(null);
 	const [userHasMovedCamera, setUserHasMovedCamera] = useState(false);
 	const [previousViewMode, setPreviousViewMode] = useState(viewMode);
 	const [isMobileDevice, setIsMobileDevice] = useState(false);
@@ -44,6 +45,15 @@ export function AutoZoomCamera({
 	// Detect mobile device on mount
 	useEffect(() => {
 		setIsMobileDevice(isMobile());
+	}, []);
+
+	// Cleanup debounce on unmount
+	useEffect(() => {
+		return () => {
+			if (debounceRef.current) {
+				clearTimeout(debounceRef.current);
+			}
+		};
 	}, []);
 
 	// Function to calculate optimal distance for two rooms
@@ -76,6 +86,14 @@ export function AutoZoomCamera({
 		// Only proceed if we have both positions
 		if (!fromPos || !toPos) return null;
 
+		// Validate positions are finite numbers
+		if (
+			!fromPos.every((coord) => Number.isFinite(coord)) ||
+			!toPos.every((coord) => Number.isFinite(coord))
+		) {
+			return null;
+		}
+
 		// Calculate distance between positions
 		const distanceX = Math.abs(toPos[0] - fromPos[0]);
 		const distanceZ = Math.abs(toPos[2] - fromPos[2]);
@@ -93,6 +111,16 @@ export function AutoZoomCamera({
 			maxDistance * paddingMultiplier + totalSize,
 			isMobileDevice ? 8 : 5, // Higher minimum distance for mobile
 		);
+
+		// Ensure the distance is finite and reasonable
+		if (
+			!Number.isFinite(optimalDistance) ||
+			optimalDistance <= 0 ||
+			optimalDistance > 1000
+		) {
+			return null;
+		}
+
 		return optimalDistance;
 	}, [fromId, toId, rooms, isMobileDevice, playerPosition]);
 
@@ -100,6 +128,27 @@ export function AutoZoomCamera({
 	const animateCamera = useCallback(
 		(targetPos: [number, number, number], targetDistance: number | null) => {
 			if (!controlsRef.current) return;
+
+			// Validate target position
+			if (!targetPos.every((coord) => Number.isFinite(coord))) {
+				console.warn(
+					"Invalid target position for camera animation:",
+					targetPos,
+				);
+				return;
+			}
+
+			// Validate target distance if provided
+			if (
+				targetDistance !== null &&
+				(!Number.isFinite(targetDistance) || targetDistance <= 0)
+			) {
+				console.warn(
+					"Invalid target distance for camera animation:",
+					targetDistance,
+				);
+				return;
+			}
 
 			// Cancel any existing animation
 			if (animationRef.current) {
@@ -153,38 +202,66 @@ export function AutoZoomCamera({
 
 	// Effect to handle auto-zoom when room selection changes
 	useEffect(() => {
-		if (!controlsRef.current) return;
-
-		// Reset user movement flag when room selection changes
-		setUserHasMovedCamera(false);
-
-		const optimalDistance = calculateOptimalDistance();
-
-		if (optimalDistance) {
-			// Store the current view mode before switching to top-down
-			if (viewMode !== "topDown") {
-				setPreviousViewMode(viewMode);
-				setViewMode("topDown");
-			}
-
-			if (cameraMode !== "topDown") {
-				setCameraMode("topDown");
-			}
-
-			// Animate to the new target and distance
-			animateCamera(cameraTarget, optimalDistance);
-		} else {
-			// Restore the previous view mode when no rooms are selected
-			if (previousViewMode && previousViewMode !== viewMode) {
-				setViewMode(previousViewMode);
-				setCameraMode("free");
-			}
-
-			// Reset to default target if no rooms are selected
-			// Use higher default distance for mobile
-			const defaultDistance = isMobileDevice ? 12 : 6;
-			animateCamera([0, 0, defaultDistance], null);
+		// Clear any existing debounce
+		if (debounceRef.current) {
+			clearTimeout(debounceRef.current);
 		}
+
+		// Debounce the camera animation to prevent excessive updates
+		debounceRef.current = setTimeout(() => {
+			if (!controlsRef.current) return;
+
+			// Only auto-zoom if both fromId and toId are set
+			if (!fromId || !toId) {
+				// Reset to default target if no rooms are selected
+				// Use higher default distance for mobile
+				const defaultDistance = isMobileDevice ? 12 : 6;
+				animateCamera([0, 0, defaultDistance], null);
+				return;
+			}
+
+			// Safety check: ensure rooms array is valid
+			if (!Array.isArray(rooms) || rooms.length === 0) {
+				return;
+			}
+
+			// Reset user movement flag when room selection changes
+			setUserHasMovedCamera(false);
+
+			const optimalDistance = calculateOptimalDistance();
+
+			if (optimalDistance) {
+				// Store the current view mode before switching to top-down
+				if (viewMode !== "topDown") {
+					setPreviousViewMode(viewMode);
+					setViewMode("topDown");
+				}
+
+				if (cameraMode !== "topDown") {
+					setCameraMode("topDown");
+				}
+
+				// Animate to the new target and distance
+				animateCamera(cameraTarget, optimalDistance);
+			} else {
+				// Restore the previous view mode when no rooms are selected
+				if (previousViewMode && previousViewMode !== viewMode) {
+					setViewMode(previousViewMode);
+					setCameraMode("free");
+				}
+
+				// Reset to default target if no rooms are selected
+				// Use higher default distance for mobile
+				const defaultDistance = isMobileDevice ? 12 : 6;
+				animateCamera([0, 0, defaultDistance], null);
+			}
+		}, 100); // 100ms debounce delay
+
+		return () => {
+			if (debounceRef.current) {
+				clearTimeout(debounceRef.current);
+			}
+		};
 	}, [
 		cameraTarget,
 		fromId,
@@ -196,6 +273,7 @@ export function AutoZoomCamera({
 		setCameraMode,
 		previousViewMode,
 		isMobileDevice,
+		rooms,
 	]);
 
 	// Cleanup animation on unmount
