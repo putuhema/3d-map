@@ -64,6 +64,8 @@ export function useEditMode({
 				const adjustedX = centerX - (buildingSize[0] - 1) / 2;
 				const adjustedZ = centerZ - (buildingSize[2] - 1) / 2;
 
+				console.log("selectedBuildingForRoom", selectedBuildingForRoom);
+
 				// Find a building to place the room in
 				const targetBuilding = selectedBuildingForRoom
 					? buildings.find((b) => b.id === selectedBuildingForRoom)
@@ -96,7 +98,7 @@ export function useEditMode({
 						id: crypto.randomUUID(),
 						start: [corridorStart[0], 0, corridorStart[2]],
 						end: [x - (gridSize / 2 - 0.5), 0, y - (gridSize / 2 - 0.5)],
-						width: 0.8,
+						width: 0.3,
 					});
 					setIsDrawingCorridor(false);
 					setCorridorStart(null);

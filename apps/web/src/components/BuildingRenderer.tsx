@@ -7,7 +7,7 @@ import { memo, useCallback, useMemo } from "react";
 import { BuildingLabel, BuildingModel } from "./building";
 import { CorridorRenderer } from "./corridor";
 import { PathIndicator } from "./path";
-import { RoomLabel } from "./room";
+import { RoomLabel, RoomModel } from "./room";
 
 export const BuildingRenderer = memo(function BuildingRenderer({
 	buildings,
@@ -51,24 +51,9 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 
 	const { showBuildingLabels, showRoomLabels } = useLabelStore();
 
-	// Memoize event handlers to prevent recreation on every render
-	const handleBuildingClick = useCallback(
-		(buildingId: string) => {
-			onBuildingClick?.(buildingId, undefined);
-		},
-		[onBuildingClick],
-	);
-
 	const handleBuildingClickForId = useCallback(
 		(buildingId: string) => {
 			return () => onBuildingClick?.(buildingId, undefined);
-		},
-		[onBuildingClick],
-	);
-
-	const handleRoomClick = useCallback(
-		(buildingId: string, roomId: string) => {
-			onBuildingClick?.(buildingId, roomId);
 		},
 		[onBuildingClick],
 	);
@@ -83,13 +68,6 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 	const handleRoomHoverOutCallback = useCallback(() => {
 		handleRoomHoverOut();
 	}, [handleRoomHoverOut]);
-
-	const handleBuildingHoverCallback = useCallback(
-		(buildingId: string) => {
-			handleBuildingHover(buildingId);
-		},
-		[handleBuildingHover],
-	);
 
 	const handleBuildingHoverForId = useCallback(
 		(buildingId: string) => {
@@ -164,17 +142,17 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 								hasRooms={hasRooms}
 								isHighlighted={isHighlighted}
 								isSelected={isSelected}
-								opacity={0}
+								opacity={hasRooms ? 0.2 : 1}
 								isHovered={isHovered}
-								borderColor={
-									isSelected
-										? "#3b82f6" // Blue for selected
-										: isHighlighted
-											? "#f59e0b" // Amber for highlighted
-											: isHovered
-												? "#10b981" // Green for hovered
-												: "#3b82f6"
-								}
+								// borderColor={
+								// 	isSelected
+								// 		? "#3b82f6" // Blue for selected
+								// 		: isHighlighted
+								// 			? "#f59e0b" // Amber for highlighted
+								// 			: isHovered
+								// 				? "#10b981" // Green for hovered
+								// 				: "#3b82f6"
+								// }
 								onClick={
 									!hasRooms ? handleBuildingClickForId(building.id) : undefined
 								}
@@ -215,39 +193,29 @@ export const BuildingRenderer = memo(function BuildingRenderer({
 
 					if (!roomPosition || !roomScale) return null;
 
-					// Memoize the enabled state for Select component
-					const isSelectEnabled = isHovered || isSelected;
-
 					return (
 						<group key={room.id}>
-							<Select enabled={isSelectEnabled}>
-								<mesh
-									ref={undefined}
-									position={roomPosition}
-									scale={roomScale}
-									onPointerOver={handleRoomHoverForId(room.id)}
-									onPointerDown={handleRoomClickForIds(
-										room.buildingId,
-										room.id,
-									)}
-									onPointerOut={handleRoomHoverOutCallback}
-									renderOrder={2}
-								>
-									<boxGeometry args={[1, 1, 1]} />
-									<meshStandardMaterial
-										color={getDestinationColor(room.id) || room.color}
-										transparent={true}
-										opacity={1}
-										metalness={isHovered ? 0.3 : 0.1}
-										roughness={isHovered ? 0.3 : 0.5}
-										depthWrite={true}
-									/>
-								</mesh>
-							</Select>
-							{room.name && showRoomLabels && (
+							<RoomModel
+								room={room}
+								position={roomPosition}
+								scale={roomScale}
+								color={getDestinationColor(room.id) || undefined}
+								isHovered={isHovered}
+								isSelected={isSelected}
+								onClick={handleRoomClickForIds(room.buildingId, room.id)}
+								onPointerOver={handleRoomHoverForId(room.id)}
+								onPointerOut={handleRoomHoverOutCallback}
+								rotation={room.rotation}
+							/>
+							{room.name && room.name !== "Wall" && showRoomLabels && (
 								<RoomLabel
 									roomName={room.name}
-									position={[0, room.size[1] / 2 + 0.5, 0]}
+									position={[
+										roomPosition.x,
+										roomPosition.y + roomScale.y / 2,
+										roomPosition.z,
+									]}
+									rotation={room.rotation}
 									isDestination={isDestination(room.id)}
 									isFromDestination={isFromDestination(room.id)}
 								/>

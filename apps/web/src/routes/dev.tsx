@@ -298,7 +298,12 @@ export default function DevMode() {
 					cellSize={1}
 					onCellClick={(x: number, y: number) => {
 						if (editMode) {
-							handleGridClick(x, y, 100);
+							handleGridClick(
+								x,
+								y,
+								100,
+								"1c775b86-68c3-478d-a8c5-3e869dd35919",
+							);
 						}
 					}}
 					onCellHover={handleCellHover}

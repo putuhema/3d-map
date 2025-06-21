@@ -12,52 +12,52 @@ export function useDataState() {
 	const [corridorsState, setCorridorsState] = useState<Corridor[]>(corridors);
 	const [roomsState, setRoomsState] = useState<Room[]>(rooms);
 
-	// Load saved state from localStorage on mount
-	useEffect(() => {
-		const storedBuildings = localStorage.getItem("buildings");
-		const storedCorridors = localStorage.getItem("corridors");
-		const storedRooms = localStorage.getItem("rooms");
+	// // Load saved state from localStorage on mount
+	// useEffect(() => {
+	// 	const storedBuildings = localStorage.getItem("buildings");
+	// 	const storedCorridors = localStorage.getItem("corridors");
+	// 	const storedRooms = localStorage.getItem("rooms");
 
-		if (storedBuildings) {
-			try {
-				const parsedBuildings = JSON.parse(storedBuildings);
-				setBuildingsState(parsedBuildings);
-			} catch (e) {
-				console.warn("Failed to parse stored buildings", e);
-			}
-		}
+	// 	if (storedBuildings) {
+	// 		try {
+	// 			const parsedBuildings = JSON.parse(storedBuildings);
+	// 			setBuildingsState(parsedBuildings);
+	// 		} catch (e) {
+	// 			console.warn("Failed to parse stored buildings", e);
+	// 		}
+	// 	}
 
-		if (storedCorridors) {
-			try {
-				const parsedCorridors = JSON.parse(storedCorridors);
-				setCorridorsState(parsedCorridors);
-			} catch (e) {
-				console.warn("Failed to parse stored corridors", e);
-			}
-		}
+	// 	if (storedCorridors) {
+	// 		try {
+	// 			const parsedCorridors = JSON.parse(storedCorridors);
+	// 			setCorridorsState(parsedCorridors);
+	// 		} catch (e) {
+	// 			console.warn("Failed to parse stored corridors", e);
+	// 		}
+	// 	}
 
-		if (storedRooms) {
-			try {
-				const parsedRooms = JSON.parse(storedRooms);
-				setRoomsState(parsedRooms);
-			} catch (e) {
-				console.warn("Failed to parse stored rooms", e);
-			}
-		}
-	}, []);
+	// 	if (storedRooms) {
+	// 		try {
+	// 			const parsedRooms = JSON.parse(storedRooms);
+	// 			setRoomsState(parsedRooms);
+	// 		} catch (e) {
+	// 			console.warn("Failed to parse stored rooms", e);
+	// 		}
+	// 	}
+	// }, []);
 
-	// Save state to localStorage when data changes
-	useEffect(() => {
-		localStorage.setItem("buildings", JSON.stringify(buildingsState));
-	}, [buildingsState]);
+	// // Save state to localStorage when data changes
+	// useEffect(() => {
+	// 	localStorage.setItem("buildings", JSON.stringify(buildingsState));
+	// }, [buildingsState]);
 
-	useEffect(() => {
-		localStorage.setItem("corridors", JSON.stringify(corridorsState));
-	}, [corridorsState]);
+	// useEffect(() => {
+	// 	localStorage.setItem("corridors", JSON.stringify(corridorsState));
+	// }, [corridorsState]);
 
-	useEffect(() => {
-		localStorage.setItem("rooms", JSON.stringify(roomsState));
-	}, [roomsState]);
+	// useEffect(() => {
+	// 	localStorage.setItem("rooms", JSON.stringify(roomsState));
+	// }, [roomsState]);
 
 	// Helper: Find building by id
 	const getBuildingById = useCallback(

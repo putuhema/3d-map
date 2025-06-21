@@ -33,7 +33,7 @@ export const buildings: Building[] = [
 		position: [4.5, 0.5, 21.5],
 		size: [5, 2, 7],
 		color: "#4f46e5",
-		hasRooms: false,
+		hasRooms: true,
 		rotation: [0, Math.PI, 0],
 	},
 	{
@@ -60,7 +60,7 @@ export const buildings: Building[] = [
 		position: [4.5, 0.5, 11.5],
 		size: [5, 2, 9],
 		color: "#4f46e5",
-		hasRooms: false,
+		hasRooms: true,
 		rotation: [0, Math.PI, 0],
 	},
 	{
@@ -99,11 +99,11 @@ export const buildings: Building[] = [
 	},
 	{
 		id: "1c775b86-68c3-478d-a8c5-3e869dd35919",
-		name: "Kantor",
+		name: "Poliklinik",
 		position: [-3.5, 0.5, 9.5],
 		size: [5, 2, 9],
 		color: "#4f46e5",
-		hasRooms: false,
+		hasRooms: true,
 	},
 	{
 		id: "af1abd8a-8e71-42ac-9227-11483329901d",

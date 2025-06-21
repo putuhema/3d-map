@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import type { Building } from "@/data/building";
-import type { Corridor } from "@/data/corridor";
 import type { Room } from "@/data/room";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, MapPin, X } from "lucide-react";
@@ -74,7 +73,7 @@ export function DestinationSelector({
 			}));
 
 		const roomLocations = rooms
-			.filter((room) => room.name !== "")
+			.filter((room) => room.name !== "" && room.name !== "Wall")
 			.map((room) => ({
 				id: room.id,
 				name: room.name,
