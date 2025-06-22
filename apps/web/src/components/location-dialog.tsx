@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
@@ -231,7 +232,7 @@ function ZoomableImage({ src, alt }: ZoomableImageProps) {
 export function LocationDialog() {
 	const { getRoomById, getBuildingById } = useHospitalMapStore();
 	const { handleFindPath } = useHospitalMap();
-	const { dialog, toId, type } = useSearch({ from: Route.fullPath });
+	const { dialog, toId, fromId, type } = useSearch({ from: Route.fullPath });
 	const navigate = useNavigate({ from: Route.fullPath });
 
 	const id = toId || dialog;
@@ -261,13 +262,13 @@ export function LocationDialog() {
 				});
 			}}
 		>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle className="font-semibold text-xl">
 						{location.name}
 					</DialogTitle>
 				</DialogHeader>
-				<div className="space-y-4">
+				<div className="space-y-2">
 					{location.image && (
 						<ZoomableImage src={location.image} alt={location.name} />
 					)}
@@ -277,8 +278,28 @@ export function LocationDialog() {
 							<span>{location.id}</span>
 						</div>
 					</div>
+					<p className="text-center font-bold">Jam Operasional</p>
+					<div className="grid grid-cols-3 gap-2">
+						<span>Hari</span>
+						<span>Jam Pertama</span>
+						<span>Jam Kedua</span>
+					</div>
+					<div className="grid grid-cols-3 gap-2">
+						<span className="font-medium text-muted-foreground text-sm">
+							Senin, Selasa, Rabu, Kamis
+						</span>
+						<span>08:00 - 12:00</span>
+						<span>14:00 - 16:00</span>
+					</div>
+					<div className="grid grid-cols-3 gap-2">
+						<span className="font-medium text-muted-foreground text-sm">
+							Jumat
+						</span>
+						<span>08:00 - 12:00</span>
+						<span>14:00 - 16:30</span>
+					</div>
 				</div>
-				{handleFindPath && (
+				{handleFindPath && fromId && toId && (
 					<DialogFooter>
 						<Button variant="outline" onClick={handleFindPath}>
 							Cari Rute

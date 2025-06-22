@@ -1,9 +1,11 @@
 import type { Corridor } from "@/data/corridor";
 import type { Room } from "@/data/room";
+import { Route } from "@/routes/__root";
 import type { UseBuildingRendererProps } from "@/types/building";
 import { getUniqueModelPaths } from "@/utils/buildingModels";
 import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
+import { useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Vector3 } from "three";
 
@@ -12,9 +14,8 @@ export function useBuildingRenderer({
 	corridors,
 	rooms,
 	highlightedCorridorIds,
-	fromId,
-	toId,
 }: UseBuildingRendererProps) {
+	const { fromId, toId } = useSearch({ from: Route.fullPath });
 	const { camera } = useThree();
 	const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
 	const [hoveredBuildingId, setHoveredBuildingId] = useState<string | null>(
@@ -63,7 +64,7 @@ export function useBuildingRenderer({
 		(id: string) => {
 			if (isFromDestination(id)) return "#D1D8BE";
 			if (isToDestination(id)) return "#80D8C3";
-			return null;
+			return undefined;
 		},
 		[isFromDestination, isToDestination],
 	);

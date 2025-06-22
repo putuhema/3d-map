@@ -23,6 +23,4 @@ export interface UseBuildingRendererProps {
 	corridors: Corridor[];
 	rooms: Room[];
 	highlightedCorridorIds: string[];
-	fromId?: string | null;
-	toId?: string | null;
 }

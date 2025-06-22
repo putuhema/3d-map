@@ -1,6 +1,4 @@
 import { Button } from "@/components/ui/button";
-import type { Building } from "@/data/building";
-import type { Room } from "@/data/room";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, MapPin, X } from "lucide-react";
 import { useCallback, useMemo } from "react";

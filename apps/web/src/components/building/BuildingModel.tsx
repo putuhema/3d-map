@@ -39,7 +39,6 @@ export const BuildingModel = memo(function BuildingModel({
 	rotation,
 	borderColor,
 }: BuildingModelProps) {
-	// Use the building's custom model path or default to the standard building model
 	const modelPath = getBuildingModelPath(building);
 	const { scene } = useGLTF(modelPath);
 	const buildingRef = useRef<Mesh>(null);
@@ -48,7 +47,7 @@ export const BuildingModel = memo(function BuildingModel({
 	const clonedScene = useMemo(() => {
 		if (!scene) return null;
 		return scene.clone();
-	}, [scene]);
+	}, [scene, color]);
 
 	// Apply material overrides only when necessary
 	useEffect(() => {
@@ -62,8 +61,12 @@ export const BuildingModel = memo(function BuildingModel({
 		}
 		clonedMaterialsRef.current = [];
 
-		// Always apply overrides if we have any changes (color, opacity, or hasRooms)
-		const shouldOverride = color || opacity !== 1 || hasRooms;
+		// Only apply overrides if we have actual changes
+		const hasColorOverride = color !== undefined;
+		const hasOpacityOverride = opacity !== 1;
+		const hasRoomOverride = hasRooms;
+		const shouldOverride =
+			hasColorOverride || hasOpacityOverride || hasRoomOverride;
 
 		if (shouldOverride) {
 			clonedScene.traverse((child) => {
@@ -76,12 +79,12 @@ export const BuildingModel = memo(function BuildingModel({
 							clonedMaterialsRef.current.push(clonedMat);
 
 							// Only override color if explicitly provided
-							if (color && clonedMat.color) {
+							if (hasColorOverride && clonedMat.color) {
 								clonedMat.color.set(color);
 							}
 
 							// Always set transparency if opacity is not 1
-							if (opacity !== 1) {
+							if (hasOpacityOverride) {
 								clonedMat.transparent = true;
 								clonedMat.opacity = opacity;
 								// Ensure depthWrite is false for transparent materials
@@ -89,7 +92,7 @@ export const BuildingModel = memo(function BuildingModel({
 							}
 
 							// Apply room-specific settings
-							if (hasRooms) {
+							if (hasRoomOverride) {
 								clonedMat.depthWrite = false;
 								clonedMat.side = 2; // DoubleSide
 							}
@@ -111,12 +114,12 @@ export const BuildingModel = memo(function BuildingModel({
 						clonedMaterialsRef.current.push(clonedMat);
 
 						// Only override color if explicitly provided
-						if (color && clonedMat.color) {
+						if (hasColorOverride && clonedMat.color) {
 							clonedMat.color.set(color);
 						}
 
 						// Always set transparency if opacity is not 1
-						if (opacity !== 1) {
+						if (hasOpacityOverride) {
 							clonedMat.transparent = true;
 							clonedMat.opacity = opacity;
 							// Ensure depthWrite is false for transparent materials
@@ -124,7 +127,7 @@ export const BuildingModel = memo(function BuildingModel({
 						}
 
 						// Apply room-specific settings
-						if (hasRooms) {
+						if (hasRoomOverride) {
 							clonedMat.depthWrite = false;
 							clonedMat.side = 2; // DoubleSide
 						}
@@ -184,8 +187,6 @@ export const BuildingModel = memo(function BuildingModel({
 						color={color || "#8B7355"}
 						transparent={true}
 						opacity={opacity}
-						metalness={0.1}
-						roughness={0.5}
 					/>
 				</mesh>
 

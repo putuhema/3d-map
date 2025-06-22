@@ -22,22 +22,22 @@ export function RoomLabel({
 			position={position}
 			rotation={rotation}
 			style={{
+				position: "relative",
+				textAlign: "left",
 				background: isDestination
 					? isFromDestination
 						? "#D1D8BE"
 						: "#80D8C3"
 					: "#FF6F3C",
 				color: "white",
-				padding: "8px 12px",
-				borderRadius: "6px",
+				padding: "10px 15px",
+				borderRadius: "5px",
 				fontSize: "12px",
 				whiteSpace: "nowrap",
 				pointerEvents: "none",
 				fontWeight: isDestination ? "bold" : "normal",
 				boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
 				border: "1px solid rgba(255, 255, 255, 0.2)",
-				position: "relative",
-				transform: "translateY(-8px)",
 			}}
 		>
 			{isDestination
@@ -49,11 +49,9 @@ export function RoomLabel({
 					top: "100%",
 					left: "50%",
 					transform: "translateX(-50%)",
-					width: "0",
-					height: "0",
-					borderLeft: "6px solid transparent",
-					borderRight: "6px solid transparent",
-					borderTop: isDestination
+					height: "40px",
+					width: "1px",
+					background: isDestination
 						? isFromDestination
 							? "#D1D8BE"
 							: "#80D8C3"

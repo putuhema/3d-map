@@ -2,8 +2,8 @@ import { useBuildingRenderer } from "@/hooks/useBuildingRenderer";
 import { useLabelStore } from "@/lib/store";
 import { useHospitalMapStore } from "@/lib/store";
 import { Route } from "@/routes/__root";
-import { Sky } from "@react-three/drei";
-import { useSearch } from "@tanstack/react-router";
+import { Plane, Sky } from "@react-three/drei";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { BuildingLabel } from "./building/BuildingLabel";
 import { BuildingModel } from "./building/BuildingModel";
@@ -24,7 +24,6 @@ export const BuildingRenderer = () => {
 		handleLocationClick,
 	} = useHospitalMapStore();
 
-	const { fromId, toId } = useSearch({ from: Route.fullPath });
 	const {
 		hoveredRoomId,
 		hoveredBuildingId,
@@ -45,24 +44,34 @@ export const BuildingRenderer = () => {
 		corridors,
 		rooms,
 		highlightedCorridorIds: pathCorridorIds,
-		fromId,
-		toId,
 	});
-
+	const navigate = useNavigate({ from: Route.fullPath });
 	const { showBuildingLabels, showRoomLabels } = useLabelStore();
 
 	const handleBuildingClick = useCallback(
 		(buildingId: string) => {
 			handleLocationClick(buildingId, undefined);
+			navigate({
+				search: {
+					dialog: buildingId,
+					type: "building",
+				},
+			});
 		},
-		[handleLocationClick],
+		[handleLocationClick, navigate],
 	);
 
 	const handleRoomClick = useCallback(
 		(buildingId: string, roomId: string) => {
 			handleLocationClick(buildingId, roomId);
+			navigate({
+				search: {
+					dialog: roomId,
+					type: "room",
+				},
+			});
 		},
-		[handleLocationClick],
+		[handleLocationClick, navigate],
 	);
 
 	const handleBuildingHoverCallback = useCallback(
@@ -82,7 +91,7 @@ export const BuildingRenderer = () => {
 	return (
 		<group>
 			<Sky
-				distance={450000}
+				distance={4500}
 				sunPosition={[0, 1, 0]}
 				inclination={0.5}
 				azimuth={0.25}
@@ -91,11 +100,17 @@ export const BuildingRenderer = () => {
 				mieDirectionalG={0.8}
 			/>
 
-			{/* Path Indicator */}
-			{pathCorridorIds.length > 0 && <PathIndicator pathData={pathData} />}
-			{/* Debug: PathIndicator not rendered when pathCorridorIds.length === 0 */}
+			{/* Grass foundation */}
+			<Plane
+				args={[1000, 1000]}
+				rotation={[-Math.PI / 2, 0, 0]}
+				position={[0, -1, 0]}
+			>
+				<meshStandardMaterial color="#89C041" />
+			</Plane>
 
-			{/* Buildings */}
+			{pathCorridorIds.length > 0 && <PathIndicator pathData={pathData} />}
+
 			{showBuildings &&
 				buildings.map((building) => {
 					const buildingRooms = roomsByBuilding.get(building.id) || [];
@@ -114,7 +129,7 @@ export const BuildingRenderer = () => {
 								building={building}
 								position={buildingPosition}
 								scale={buildingScale}
-								color={getDestinationColor(building.id) || undefined}
+								color={getDestinationColor(building.id)}
 								rotation={building.rotation}
 								hasRooms={hasRooms}
 								isHighlighted={isHighlighted}
@@ -154,7 +169,6 @@ export const BuildingRenderer = () => {
 					);
 				})}
 
-			{/* Rooms */}
 			{showRooms &&
 				rooms.map((room) => {
 					const isHovered = hoveredRoomId === room.id;
@@ -170,7 +184,7 @@ export const BuildingRenderer = () => {
 								room={room}
 								position={roomPosition}
 								scale={roomScale}
-								color={getDestinationColor(room.id) || undefined}
+								color={getDestinationColor(room.id)}
 								isHovered={isHovered}
 								isSelected={isSelected}
 								onClick={() => handleRoomClick(room.buildingId, room.id)}
@@ -187,7 +201,7 @@ export const BuildingRenderer = () => {
 										roomName={room.name}
 										position={[
 											roomPosition.x,
-											roomPosition.y + roomScale.y / 2,
+											roomPosition.y + roomScale.y / 2 + 1,
 											roomPosition.z,
 										]}
 										rotation={room.rotation}
