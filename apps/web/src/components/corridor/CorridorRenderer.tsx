@@ -1,20 +1,15 @@
 import type { Corridor } from "@/data/corridor";
+import { useHospitalMapStore } from "@/lib/store";
 import { Line } from "@react-three/drei";
-import type { ThreeEvent } from "@react-three/fiber";
 import { useMemo } from "react";
 import { MeshStandardMaterial, Vector3 } from "three";
 
 interface CorridorRendererProps {
 	corridors: Corridor[];
-	highlightedCorridorIds: string[];
-	onCorridorClick: (id: string, event: ThreeEvent<MouseEvent>) => void;
 }
 
-export function CorridorRenderer({
-	corridors,
-	highlightedCorridorIds,
-	onCorridorClick,
-}: CorridorRendererProps) {
+export function CorridorRenderer({ corridors }: CorridorRendererProps) {
+	const { pathCorridorIds } = useHospitalMapStore();
 	const corridorMaterial = useMemo(
 		() => new MeshStandardMaterial({ color: "#E4E0E1" }),
 		[],
@@ -51,7 +46,7 @@ export function CorridorRenderer({
 
 			{/* Highlighted corridor lines */}
 			{corridors.map((corridor) => {
-				if (!highlightedCorridorIds.includes(corridor.id)) return null;
+				if (!pathCorridorIds.includes(corridor.id)) return null;
 
 				return (
 					<Line
@@ -72,11 +67,9 @@ export function CorridorRenderer({
 				return [0, 1].map((i) => {
 					const point = i === 0 ? corridor.start : corridor.end;
 					return (
-						// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 						<mesh
 							key={`${corridor.id}-joint-${i}`}
 							position={[point[0], -0.001, point[2]]}
-							onClick={(e) => onCorridorClick(corridor.id, e)}
 							receiveShadow
 						>
 							<cylinderGeometry

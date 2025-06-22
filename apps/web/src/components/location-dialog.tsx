@@ -6,7 +6,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { useHospitalMap } from "@/hooks";
+import { useHospitalMap } from "@/hooks/useHospitalMap";
+import { useHospitalMapStore } from "@/lib/store";
 import { Route } from "@/routes/__root";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
@@ -227,20 +228,14 @@ function ZoomableImage({ src, alt }: ZoomableImageProps) {
 	);
 }
 
-export function LocationDialog({
-	onFindPath,
-}: {
-	onFindPath?: () => void;
-}) {
-	const { getRoomById, getBuildingById } = useHospitalMap();
-
-	const { fromId, dialog, toId, type } = useSearch({ from: Route.fullPath });
+export function LocationDialog() {
+	const { getRoomById, getBuildingById } = useHospitalMapStore();
+	const { handleFindPath } = useHospitalMap();
+	const { dialog, toId, type } = useSearch({ from: Route.fullPath });
 	const navigate = useNavigate({ from: Route.fullPath });
 
+	const id = toId || dialog;
 	const location = useMemo(() => {
-		if (!toId && !dialog) return null;
-
-		const id = toId || dialog;
 		if (!id) return null;
 
 		if (type === "room") {
@@ -250,19 +245,18 @@ export function LocationDialog({
 			return getBuildingById(id);
 		}
 		return null;
-	}, [toId, dialog, type, getRoomById, getBuildingById]);
+	}, [id, type, getRoomById, getBuildingById]);
 
 	if (!location) return null;
 
 	return (
 		<Dialog
-			open={!!dialog || !!toId}
+			open={!!id}
 			onOpenChange={(newOpen) => {
 				navigate({
 					search: {
-						dialog: newOpen ? dialog : undefined,
+						dialog: newOpen ? id : undefined,
 						type: undefined,
-						toId: newOpen ? toId : undefined,
 					},
 				});
 			}}
@@ -284,14 +278,9 @@ export function LocationDialog({
 						</div>
 					</div>
 				</div>
-				{fromId && toId && (
+				{handleFindPath && (
 					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => {
-								onFindPath?.();
-							}}
-						>
+						<Button variant="outline" onClick={handleFindPath}>
 							Cari Rute
 						</Button>
 					</DialogFooter>

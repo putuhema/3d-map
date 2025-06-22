@@ -204,7 +204,7 @@ export const buildings: Building[] = [
 		id: "c14d81cf-65e7-447c-a181-de852908ecee",
 		name: "Perawatan Kebidanan",
 		position: [6.5, 0.5, -17.5],
-		size: [9, 1, 3],
+		size: [9, 2, 3],
 		color: "#4f46e5",
 		hasRooms: false,
 		rotation: [0, Math.PI, 0],

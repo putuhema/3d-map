@@ -12,23 +12,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useHospitalMap } from "@/hooks/useHospitalMap";
+import { useHospitalMapStore } from "@/lib/store";
 import { Route } from "@/routes/__root";
 import { useNavigate } from "@tanstack/react-router";
 import { useSearch } from "@tanstack/react-router";
 
-interface DestinationSelectorProps {
-	buildings: Building[];
-	rooms: Room[];
-	onFindPath: () => void;
-	isPathfinding?: boolean;
-}
-
-export function DestinationSelector({
-	buildings,
-	rooms,
-	onFindPath,
-	isPathfinding = false,
-}: DestinationSelectorProps) {
+export function DestinationSelector() {
+	const { buildings, rooms, handleReset } = useHospitalMapStore();
+	const { handleFindPath } = useHospitalMap();
 	const { fromId, toId, selector, type } = useSearch({ from: Route.fullPath });
 	const navigate = useNavigate({ from: Route.fullPath });
 
@@ -56,7 +48,7 @@ export function DestinationSelector({
 			}));
 
 		return [...buildingLocations, ...roomLocations].sort((a, b) =>
-			a.displayName.localeCompare(b.displayName),
+			a.displayName.localeCompare(b.name),
 		);
 	}, [buildings, rooms]);
 
@@ -64,7 +56,7 @@ export function DestinationSelector({
 		(id: string | null | undefined) => {
 			if (!id) return "Pilih lokasi";
 			const location = allLocations.find((loc) => loc.id === id);
-			return location ? location.displayName : "Pilih lokasi";
+			return location ? location.name : "Pilih lokasi";
 		},
 		[allLocations],
 	);
@@ -88,6 +80,17 @@ export function DestinationSelector({
 		return `${getSelectedName(fromId)} → ${getSelectedName(toId)}`;
 	};
 
+	const onReset = () => {
+		handleReset();
+		navigate({ search: {} });
+	};
+
+	const onFindPath = () => {
+		if (canFindPath) {
+			handleFindPath();
+		}
+	};
+
 	return (
 		<div className="absolute top-0 right-0 left-0 z-20 p-4">
 			<AnimatePresence mode="popLayout">
@@ -98,18 +101,22 @@ export function DestinationSelector({
 						animate={{ opacity: 1, scale: 1 }}
 						exit={{ opacity: 0, scale: 0.8 }}
 						transition={{ duration: 0.2 }}
+						className="mx-auto w-sm space-y-2 md:w-xl"
 					>
 						<Button
 							onClick={() => handleExpandedChange(true)}
-							className="justify-between border bg-background/95 shadow-lg backdrop-blur-sm"
+							className="h-12 w-full justify-between border bg-background/95 shadow-lg backdrop-blur-sm"
 							variant="outline"
 						>
-							<div className="flex items-center gap-2">
-								<MapPin className="h-4 w-4" />
+							<div className="flex min-w-0 flex-1 items-center gap-2">
+								<MapPin className="h-4 w-4 flex-shrink-0" />
 								<span className="truncate">{getSummaryText()}</span>
 							</div>
-							<ChevronDown className="h-4 w-4 opacity-50" />
+							<ChevronDown className="h-4 w-4 flex-shrink-0 opacity-50" />
 						</Button>
+						{fromId && toId && !selector && (
+							<Button onClick={onReset}>Hapus Rute</Button>
+						)}
 					</motion.div>
 				) : (
 					<motion.div
@@ -123,9 +130,9 @@ export function DestinationSelector({
 							height: { duration: 0.3 },
 							opacity: { duration: 0.2 },
 						}}
-						className="space-y-4 overflow-hidden rounded-lg border bg-background/70 shadow-lg backdrop-blur-sm"
+						className="mx-auto w-sm space-y-4 overflow-hidden rounded-lg border bg-background/95 shadow-lg backdrop-blur-sm md:w-xl"
 					>
-						<div className="p-4">
+						<div className="w-full p-4">
 							<div className="mb-4 flex items-center justify-between">
 								<h3 className="font-semibold text-foreground">Pilih Tujuan</h3>
 								<Button
@@ -150,7 +157,7 @@ export function DestinationSelector({
 										className="flex w-20 items-center gap-2 font-medium text-foreground text-sm"
 									>
 										<MapPin className="h-4 w-4" />
-										From
+										Dari
 									</label>
 									<Select
 										value={`${fromId},${type}` || ""}
@@ -175,7 +182,7 @@ export function DestinationSelector({
 													key={location.id}
 													value={`${location.id},${location.type}`}
 												>
-													{location.displayName}
+													{location.name}
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -193,7 +200,7 @@ export function DestinationSelector({
 										className="flex w-20 items-center gap-2 font-medium text-foreground text-sm"
 									>
 										<MapPin className="h-4 w-4" />
-										To
+										Ke
 									</label>
 									<Select
 										value={`${toId},${type}` || ""}
@@ -220,7 +227,7 @@ export function DestinationSelector({
 													key={location.id}
 													value={`${location.id},${location.type}`}
 												>
-													{location.displayName}
+													{location.name}
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -234,10 +241,10 @@ export function DestinationSelector({
 								>
 									<Button
 										onClick={onFindPath}
-										disabled={!canFindPath || isPathfinding}
+										disabled={!canFindPath}
 										className="w-full"
 									>
-										{isPathfinding ? "Mencari..." : "Cari Rute"}
+										Cari Rute
 									</Button>
 								</motion.div>
 							</motion.div>

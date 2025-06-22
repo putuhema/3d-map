@@ -1,4 +1,6 @@
+import { useHospitalMap } from "@/hooks/useHospitalMap";
 import { useViewStore } from "@/lib/store";
+import { useHospitalMapStore } from "@/lib/store";
 import { Route } from "@/routes/__root";
 import { cameraPositions } from "@/utils/constants";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
@@ -7,15 +9,6 @@ import { useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TOUCH } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-
-interface AutoZoomCameraProps {
-	cameraTarget: [number, number, number];
-	rooms: Array<{
-		id: string;
-		position: [number, number, number];
-		size: [number, number, number];
-	}>;
-}
 
 // Mobile detection utility
 const isMobile = () => {
@@ -26,7 +19,9 @@ const isMobile = () => {
 	);
 };
 
-export function AutoZoomCamera({ cameraTarget, rooms }: AutoZoomCameraProps) {
+export function AutoZoomCamera() {
+	const { cameraTarget, rooms } = useHospitalMapStore();
+	const { calculateCameraTargetForRooms } = useHospitalMap();
 	const { fromId, toId } = useSearch({ from: Route.fullPath });
 	const controlsRef = useRef<OrbitControlsImpl>(null);
 	const { viewMode, cameraMode, setViewMode, setCameraMode } = useViewStore();
@@ -40,6 +35,11 @@ export function AutoZoomCamera({ cameraTarget, rooms }: AutoZoomCameraProps) {
 	useEffect(() => {
 		setIsMobileDevice(isMobile());
 	}, []);
+
+	// Effect to recalculate camera target when room selection changes
+	useEffect(() => {
+		calculateCameraTargetForRooms();
+	}, [fromId, toId, calculateCameraTargetForRooms]);
 
 	// Cleanup debounce on unmount
 	useEffect(() => {

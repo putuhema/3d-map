@@ -1,168 +1,76 @@
-import { buildings } from "@/data/building";
-import type { Building } from "@/data/building";
-import { corridors } from "@/data/corridor";
-import type { Corridor } from "@/data/corridor";
-import { rooms } from "@/data/room";
-import type { Room } from "@/data/room";
+import { useHospitalMapStore } from "@/lib/store";
 import { Route } from "@/routes/__root";
 import { findCorridorPath } from "@/utils/pathfinding";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 
 export function useHospitalMap() {
-	const { fromId, toId, dialog, type } = useSearch({ from: Route.fullPath });
+	const { fromId, toId } = useSearch({ from: Route.fullPath });
 	const navigate = useNavigate({ from: Route.fullPath });
-	const [showBuildings, setShowBuildings] = useState(true);
-	3;
-	const [showRooms, setShowRooms] = useState(true);
-	const [selectedBuildings, setSelectedBuildings] = useState<string[]>([]);
-	const [pathCorridorIds, setPathCorridorIds] = useState<string[]>([]);
-	const [directions, setDirections] = useState<string[]>([]);
-	const [hoveredCellCoords, setHoveredCellCoords] = useState<
-		[number, number] | null
-	>(null);
-	const [mousePos, setMousePos] = useState<[number, number] | null>(null);
-	const [editMode, setEditMode] = useState(false);
-	const [toolMode, setToolMode] = useState<
-		"place" | "room" | "corridor" | "remove"
-	>("place");
-	const [isDrawingCorridor, setIsDrawingCorridor] = useState(false);
-	const [corridorStart, setCorridorStart] = useState<
-		[number, number, number] | null
-	>(null);
-	const [buildingName, setBuildingName] = useState("");
-	const [buildingSize, setBuildingSize] = useState<[number, number, number]>([
-		2, 1, 2,
+
+	const {
+		corridors,
+		rooms,
+		getPositionById,
+		setPathCorridorIds,
+		setDirections,
+		setCameraTarget,
+	} = useHospitalMapStore();
+
+	const handleFindPath = useCallback(() => {
+		if (!fromId || !toId || fromId === toId || fromId === "" || toId === "") {
+			return;
+		}
+
+		const fromPos = getPositionById(fromId);
+		const toPos = getPositionById(toId);
+
+		if (fromPos && toPos) {
+			const path = findCorridorPath(
+				corridors,
+				rooms,
+				[fromPos[0], 0, fromPos[2]],
+				[toPos[0], 0, toPos[2]],
+			);
+			setPathCorridorIds(path);
+			if (path.length === 0) {
+				setDirections(["No path found between the selected locations."]);
+			} else {
+				const steps = path.map((pathId, idx) => {
+					const corridor = corridors.find((c) => c.id === pathId);
+					const room = rooms.find((r) => r.id === pathId);
+
+					if (corridor) {
+						const from =
+							idx === 0
+								? [fromPos[0], 0, fromPos[2]]
+								: [
+										corridors.find((c) => c.id === path[idx - 1])?.end[0] ?? 0,
+										0,
+										corridors.find((c) => c.id === path[idx - 1])?.end[2] ?? 0,
+									];
+						const to = [corridor.end[0], 0, corridor.end[2]];
+						return `Take corridor ${corridor.id} from (${from}) to (${to})`;
+					}
+					if (room) {
+						return `Enter room ${room.name} at position (${room.position})`;
+					}
+					return "";
+				});
+				setDirections(steps);
+			}
+		}
+		navigate({ search: { fromId, toId } });
+	}, [
+		fromId,
+		toId,
+		getPositionById,
+		corridors,
+		rooms,
+		setPathCorridorIds,
+		setDirections,
+		navigate,
 	]);
-	const [buildingColor, setBuildingColor] = useState("#4F46E5");
-	const [locationError, setLocationError] = useState<string | null>(null);
-
-	const [roomDialogOpen, setRoomDialogOpen] = useState(false);
-	const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-	const [locationDialogOpen, setLocationDialogOpen] = useState(false);
-	const [selectedLocation, setSelectedLocation] = useState<
-		Building | Room | null
-	>(null);
-	const [cameraTarget, setCameraTarget] = useState<[number, number, number]>([
-		0, 0, 0,
-	]);
-	const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(
-		null,
-	);
-	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-	const [selectedBuildingForRoom, setSelectedBuildingForRoom] = useState<
-		string | null
-	>(null);
-
-	// State for editable data
-	const [buildingsState, setBuildingsState] = useState<Building[]>(buildings);
-	const [corridorsState, setCorridorsState] = useState<Corridor[]>(corridors);
-	const [roomsState, setRoomsState] = useState<Room[]>(rooms);
-
-	// Navigation store integration
-	// const { fromId, toId, setFromId, setToId } = useNavigationStore();
-
-	// // Load saved state from localStorage
-	// useEffect(() => {
-	// 	const storedBuildings = localStorage.getItem("buildings");
-	// 	const storedCorridors = localStorage.getItem("corridors");
-	// 	const storedRooms = localStorage.getItem("rooms");
-	// 	if (storedBuildings) {
-	// 		try {
-	// 			setBuildings(JSON.parse(storedBuildings));
-	// 		} catch (e) {
-	// 			console.warn("Failed to parse stored buildings", e);
-	// 		}
-	// 	}
-	// 	if (storedCorridors) {
-	// 		try {
-	// 			setCorridors(JSON.parse(storedCorridors));
-	// 		} catch (e) {
-	// 			console.warn("Failed to parse stored corridors", e);
-	// 		}
-	// 	}
-	// 	if (storedRooms) {
-	// 		try {
-	// 			setRooms(JSON.parse(storedRooms));
-	// 		} catch (e) {
-	// 			console.warn("Failed to parse stored rooms", e);
-	// 		}
-	// 	}
-	// }, []);
-
-	// // Save state to localStorage
-	// useEffect(() => {
-	// 	localStorage.setItem("buildings", JSON.stringify(buildings));
-	// }, [buildings]);
-
-	// useEffect(() => {
-	// 	localStorage.setItem("corridors", JSON.stringify(corridors));
-	// }, [corridors]);
-
-	// useEffect(() => {
-	// 	localStorage.setItem("rooms", JSON.stringify(rooms));
-	// }, [rooms]);
-
-	// Helper: Find building by id
-	const getBuildingById = useCallback(
-		(id: string) => buildingsState.find((b) => b.id === id),
-		[buildingsState],
-	);
-
-	// Helper: Find room by id
-	const getRoomById = useCallback(
-		(id: string) => {
-			return roomsState.find((r) => r.id === id);
-		},
-		[roomsState],
-	);
-
-	// Helper: Find corridor by id
-	const getCorridorById = useCallback(
-		(id: string) => corridorsState.find((c) => c.id === id),
-		[corridorsState],
-	);
-
-	// Helper: Get position from building, room, or corridor id
-	const getPositionById = useCallback(
-		(id: string): [number, number, number] | null => {
-			const building = getBuildingById(id);
-			if (building) {
-				return building.position;
-			}
-			const room = getRoomById(id);
-			if (room) {
-				return room.position;
-			}
-			const corridor = getCorridorById(id);
-			if (corridor) {
-				// For corridors, use the start position as the reference point
-				return corridor.start;
-			}
-			return null;
-		},
-		[getBuildingById, getRoomById, getCorridorById],
-	);
-
-	// Reset UI function
-	const resetUI = useCallback(() => {
-		setSelectedBuildings([]);
-		setPathCorridorIds([]);
-		setDirections([]);
-		setLocationDialogOpen(false);
-		setSelectedLocation(null);
-	}, []);
-
-	// Clear path function
-	const clearPath = useCallback(() => {
-		setPathCorridorIds([]);
-		setDirections([]);
-	}, []);
-
-	// Reset navigation function
-	const resetNavigation = () => {
-		navigate({ search: { fromId: "", toId: "", selector: false } });
-	};
 
 	// Function to calculate camera target for two selected rooms
 	const calculateCameraTargetForRooms = useCallback(() => {
@@ -215,405 +123,10 @@ export function useHospitalMap() {
 			target: [offsetX, centerY, offsetZ] as [number, number, number],
 			distance: padding,
 		};
-	}, [fromId, toId, getRoomById, getBuildingById]);
-
-	// Effect to recalculate camera target when room selection changes
-	useEffect(() => {
-		calculateCameraTargetForRooms();
-	}, [fromId, toId]);
-
-	// const handleToSelect = useCallback(
-	// 	(id: string, type: "building" | "room" | "corridor") => {
-	// 		setSelectedBuildings([]);
-	// 		setPathCorridorIds([]);
-	// 		setDirections([]);
-
-	// 		// Show location dialog for rooms and buildings
-	// 		if (type === "room") {
-	// 			const room = getRoomById(id);
-	// 			if (room) {
-	// 				setSelectedLocation(room);
-	// 				setLocationDialogOpen(true);
-	// 			}
-	// 		} else if (type === "building") {
-	// 			const building = getBuildingById(id);
-	// 			if (building) {
-	// 				setSelectedLocation(building);
-	// 				setLocationDialogOpen(true);
-	// 			}
-	// 		}
-	// 		// For corridors, we don't show a dialog since they're just path points
-	// 	},
-	// 	[getRoomById, getBuildingById, fromId, toId],
-	// );
-
-	const handleUseCurrentLocation = useCallback(() => {
-		// navigate({ search: { fromId: "current", toId } });
-		setSelectedBuildings([]);
-		setPathCorridorIds([]);
-		setDirections([]);
-	}, []);
-
-	const handleFindPath = useCallback(() => {
-		if (!fromId || !toId || fromId === toId) return;
-
-		const fromPos = getPositionById(fromId);
-		const toPos = getPositionById(toId);
-
-		if (fromPos && toPos) {
-			const path = findCorridorPath(
-				corridorsState,
-				roomsState,
-				[fromPos[0], 0, fromPos[2]],
-				[toPos[0], 0, toPos[2]],
-			);
-			setPathCorridorIds(path);
-			if (path.length === 0) {
-				setDirections(["No path found between the selected locations."]);
-			} else {
-				const steps = path.map((pathId, idx) => {
-					const corridor = corridorsState.find((c) => c.id === pathId);
-					const room = roomsState.find((r) => r.id === pathId);
-
-					if (corridor) {
-						const from =
-							idx === 0
-								? [fromPos[0], 0, fromPos[2]]
-								: [
-										corridorsState.find((c) => c.id === path[idx - 1])
-											?.end[0] ?? 0,
-										0,
-										corridorsState.find((c) => c.id === path[idx - 1])
-											?.end[2] ?? 0,
-									];
-						const to = [corridor.end[0], 0, corridor.end[2]];
-						return `Take corridor ${corridor.id} from (${from}) to (${to})`;
-					}
-					if (room) {
-						return `Enter room ${room.name} at position (${room.position})`;
-					}
-					return "";
-				});
-				setDirections(steps);
-			}
-		}
-		navigate({ search: { fromId, toId, selector: false } });
-	}, [fromId, toId, getPositionById, corridorsState, roomsState]);
-
-	const handleRoomDialogClose = useCallback(() => {
-		// Close the destination selector
-		// Trigger pathfinding when location dialog closes
-		if (fromId && toId && fromId !== toId) {
-			handleFindPath();
-		}
-	}, [fromId, toId, handleFindPath]);
-
-	// Reset function to clear navigation and tracking
-	const handleReset = useCallback(() => {
-		setSelectedBuildings([]);
-		setPathCorridorIds([]);
-		setDirections([]);
-		navigate({ search: { fromId: "", toId: "", selector: false } });
-		setLocationDialogOpen(false);
-		setSelectedLocation(null);
-	}, []);
-
-	const handleBuildingPlace = (building: Building) => {
-		// Set hasRooms to false by default for new buildings
-		const newBuilding = {
-			...building,
-			hasRooms: false,
-		};
-		setBuildingsState((prev) => [...prev, newBuilding]);
-	};
-
-	const handleBuildingRemove = (id: string) => {
-		setBuildingsState((prev) => prev.filter((b) => b.id !== id));
-	};
-
-	const handleRoomRemove = (id: string) => {
-		setRoomsState((prev) => prev.filter((r) => r.id !== id));
-	};
-
-	const handleCorridorDraw = (corridor: Corridor) => {
-		setCorridorsState((prev) => [...prev, corridor]);
-	};
-
-	const handleCorridorRemove = (id: string) => {
-		if (toolMode !== "remove" || !editMode) return;
-		setCorridorsState((prev) => prev.filter((c) => c.id !== id));
-		if (pathCorridorIds.includes(id)) {
-			setPathCorridorIds([]);
-			setDirections([]);
-		}
-	};
-
-	const handleRoomPlace = (room: Room) => {
-		// If no building is selected for room placement, use the first building with hasRooms=true
-		if (!room.buildingId) {
-			const buildingWithRooms = buildingsState.find((b) => b.hasRooms);
-			if (buildingWithRooms) {
-				room.buildingId = buildingWithRooms.id;
-			} else {
-				console.warn("No building available for room placement");
-				return;
-			}
-		}
-		setRoomsState((prev) => [...prev, room]);
-	};
-
-	const handleGridClick = (x: number, y: number, gridSize = 100) => {
-		if (toolMode === "place") {
-			const centerX = x - (gridSize / 2 - 0.5);
-			const centerZ = y - (gridSize / 2 - 0.5);
-
-			const adjustedX = centerX - (buildingSize[0] - 1) / 2;
-			const adjustedZ = centerZ - (buildingSize[2] - 1) / 2;
-
-			handleBuildingPlace({
-				id: crypto.randomUUID(),
-				name: buildingName || "New Building",
-				position: [adjustedX, 0.5, adjustedZ],
-				size: buildingSize,
-				color: buildingColor,
-			});
-		} else if (toolMode === "room") {
-			const centerX = x - (gridSize / 2 - 0.5);
-			const centerZ = y - (gridSize / 2 - 0.5);
-
-			const adjustedX = centerX - (buildingSize[0] - 1) / 2;
-			const adjustedZ = centerZ - (buildingSize[2] - 1) / 2;
-
-			// Find a building to place the room in
-			const targetBuilding = selectedBuildingForRoom
-				? buildingsState.find((b) => b.id === selectedBuildingForRoom)
-				: buildingsState.find((b) => b.hasRooms);
-
-			if (!targetBuilding) {
-				console.warn("No building available for room placement");
-				return;
-			}
-
-			handleRoomPlace({
-				id: crypto.randomUUID(),
-				name: buildingName || "New Room",
-				position: [adjustedX, 0.5, adjustedZ],
-				size: buildingSize,
-				color: buildingColor,
-				buildingId: targetBuilding.id,
-				image: "",
-			});
-		} else if (toolMode === "corridor") {
-			if (!isDrawingCorridor) {
-				setCorridorStart([
-					x - (gridSize / 2 - 0.5),
-					0,
-					y - (gridSize / 2 - 0.5),
-				]);
-				setIsDrawingCorridor(true);
-			} else if (corridorStart) {
-				handleCorridorDraw({
-					id: crypto.randomUUID(),
-					start: [corridorStart[0], 0, corridorStart[2]],
-					end: [x - (gridSize / 2 - 0.5), 0, y - (gridSize / 2 - 0.5)],
-					width: 0.8,
-				});
-				setIsDrawingCorridor(false);
-				setCorridorStart(null);
-			}
-		}
-	};
-
-	const handleBuildingClick = useCallback(
-		(id: string, roomId?: string) => {
-			if (editMode && toolMode === "remove") {
-				if (roomId) {
-					handleRoomRemove(roomId);
-				} else {
-					handleBuildingRemove(id);
-				}
-				return;
-			}
-
-			// Show location dialog for the clicked building or room
-			if (roomId) {
-				// Clicked on a room
-				const room = getRoomById(roomId);
-				if (room) {
-					setSelectedLocation(room);
-					navigate({ search: { dialog: roomId, type: "room" } });
-				}
-			} else {
-				// Clicked on a building
-				const building = getBuildingById(id);
-				if (building) {
-					setSelectedLocation(building);
-					navigate({ search: { dialog: id, type: "building" } });
-				}
-			}
-
-			// Original pathfinding logic (keep for backward compatibility)
-			if (selectedBuildings.length === 0) {
-				setSelectedBuildings([id]);
-				setPathCorridorIds([]);
-				setDirections([]);
-				return;
-			}
-
-			if (selectedBuildings.length === 1) {
-				if (selectedBuildings[0] === id) return;
-				const firstPos = getPositionById(selectedBuildings[0]);
-				const secondPos = getPositionById(id);
-				if (firstPos && secondPos) {
-					const path = findCorridorPath(
-						corridorsState,
-						roomsState,
-						[firstPos[0], 0, firstPos[2]],
-						[secondPos[0], 0, secondPos[2]],
-					);
-					setPathCorridorIds(path);
-					if (path.length === 0) {
-						setDirections(["No path found between the selected buildings."]);
-					} else {
-						const steps = path.map((pathId, idx) => {
-							const corridor = corridorsState.find((c) => c.id === pathId);
-							const room = roomsState.find((r) => r.id === pathId);
-
-							if (corridor) {
-								const from =
-									idx === 0
-										? [firstPos[0], 0, firstPos[2]]
-										: [
-												corridorsState.find((c) => c.id === path[idx - 1])
-													?.end[0] ?? 0,
-												0,
-												corridorsState.find((c) => c.id === path[idx - 1])
-													?.end[2] ?? 0,
-											];
-								const to = [corridor.end[0], 0, corridor.end[2]];
-								return `Take corridor ${corridor.id} from (${from}) to (${to})`;
-							}
-							if (room) {
-								return `Enter room ${room.name} at position (${room.position})`;
-							}
-							return "";
-						});
-						setDirections(steps);
-					}
-				}
-				setSelectedBuildings([]);
-				return;
-			}
-
-			setSelectedBuildings([id]);
-			setPathCorridorIds([]);
-			setDirections([]);
-		},
-		[
-			editMode,
-			toolMode,
-			getRoomById,
-			getBuildingById,
-			selectedBuildings,
-			getPositionById,
-			corridorsState,
-			roomsState,
-		],
-	);
-
-	// New function specifically for showing location information
-	const handleLocationClick = useCallback(
-		(id: string, roomId?: string) => {
-			if (roomId) {
-				// Clicked on a room
-				const room = getRoomById(roomId);
-				if (room) {
-					setSelectedLocation(room);
-					navigate({ search: { dialog: roomId, type: "room" } });
-					setSelectedRoomId(roomId);
-					setSelectedBuildingId(null); // Clear building selection
-				}
-			} else {
-				// Clicked on a building
-				const building = getBuildingById(id);
-				if (building) {
-					setSelectedLocation(building);
-					navigate({ search: { dialog: id, type: "building" } });
-					setSelectedBuildingId(id);
-					setSelectedRoomId(null); // Clear room selection
-				}
-			}
-		},
-		[getRoomById, getBuildingById],
-	);
+	}, [fromId, toId, getPositionById, setCameraTarget]);
 
 	return {
-		buildings: buildingsState,
-		corridors: corridorsState,
-		rooms: roomsState,
-		showBuildings,
-		setShowBuildings,
-		showRooms,
-		setShowRooms,
 		handleFindPath,
-		handleUseCurrentLocation,
-		selectedBuildings,
-		pathCorridorIds,
-		directions,
-		hoveredCellCoords,
-		setHoveredCellCoords,
-		mousePos,
-		setMousePos,
-		editMode,
-		setEditMode,
-		handleGridClick,
-		handleBuildingClick,
-		handleCorridorRemove,
-		setSelectedBuildings,
-		setPathCorridorIds,
-		setDirections,
-		selectedBuildingForRoom,
-		setSelectedBuildingForRoom,
-		handleBuildingPlace,
-		handleBuildingRemove,
-		handleRoomRemove,
-		handleCorridorDraw,
-		handleRoomPlace,
-		toolMode,
-		setToolMode,
-		isDrawingCorridor,
-		corridorStart,
-		setCorridorStart,
-		buildingName,
-		setBuildingName,
-		setBuildingSize,
-		setBuildingColor,
-		buildingSize,
-		buildingColor,
-		locationError,
-		setLocationError,
-		roomDialogOpen,
-		setRoomDialogOpen,
-		selectedRoom,
-		setSelectedRoom,
-		handleRoomDialogClose,
-		locationDialogOpen,
-		setLocationDialogOpen,
-		selectedLocation,
-		setSelectedLocation,
-		cameraTarget,
-		setCameraTarget,
-		handleReset,
-		handleLocationClick,
-		selectedBuildingId,
-		setSelectedBuildingId,
-		selectedRoomId,
-		setSelectedRoomId,
-		getBuildingById,
-		getRoomById,
-		getPositionById,
-		resetUI,
-		clearPath,
-		resetNavigation,
+		calculateCameraTargetForRooms,
 	};
 }

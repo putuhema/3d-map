@@ -1,7 +1,7 @@
 import { useBuildingRenderer } from "@/hooks/useBuildingRenderer";
 import { useLabelStore } from "@/lib/store";
+import { useHospitalMapStore } from "@/lib/store";
 import { Route } from "@/routes/__root";
-import type { UseBuildingRendererProps } from "@/types/building";
 import { Sky } from "@react-three/drei";
 import { useSearch } from "@tanstack/react-router";
 import { useCallback } from "react";
@@ -12,21 +12,18 @@ import { PathIndicator } from "./path/PathIndicator";
 import { RoomLabel } from "./room/RoomLabel";
 import { RoomModel } from "./room/RoomModel";
 
-export const BuildingRenderer = ({
-	buildings,
-	corridors,
-	rooms,
-	highlightedCorridorIds,
-	highlightedBuildingIds,
-	showBuildings,
-	showRooms,
-	onBuildingClick,
-}: UseBuildingRendererProps & {
-	highlightedBuildingIds: string[];
-	showBuildings: boolean;
-	showRooms: boolean;
-	onBuildingClick?: (id: string, roomId?: string) => void;
-}) => {
+export const BuildingRenderer = () => {
+	const {
+		buildings,
+		corridors,
+		rooms,
+		pathCorridorIds,
+		selectedBuildings,
+		showBuildings,
+		showRooms,
+		handleLocationClick,
+	} = useHospitalMapStore();
+
 	const { fromId, toId } = useSearch({ from: Route.fullPath });
 	const {
 		hoveredRoomId,
@@ -47,7 +44,7 @@ export const BuildingRenderer = ({
 		buildings,
 		corridors,
 		rooms,
-		highlightedCorridorIds,
+		highlightedCorridorIds: pathCorridorIds,
 		fromId,
 		toId,
 	});
@@ -56,16 +53,16 @@ export const BuildingRenderer = ({
 
 	const handleBuildingClick = useCallback(
 		(buildingId: string) => {
-			onBuildingClick?.(buildingId, undefined);
+			handleLocationClick(buildingId, undefined);
 		},
-		[onBuildingClick],
+		[handleLocationClick],
 	);
 
 	const handleRoomClick = useCallback(
 		(buildingId: string, roomId: string) => {
-			onBuildingClick?.(buildingId, roomId);
+			handleLocationClick(buildingId, roomId);
 		},
-		[onBuildingClick],
+		[handleLocationClick],
 	);
 
 	const handleBuildingHoverCallback = useCallback(
@@ -95,9 +92,8 @@ export const BuildingRenderer = ({
 			/>
 
 			{/* Path Indicator */}
-			{highlightedCorridorIds.length > 0 && (
-				<PathIndicator pathData={pathData} />
-			)}
+			{pathCorridorIds.length > 0 && <PathIndicator pathData={pathData} />}
+			{/* Debug: PathIndicator not rendered when pathCorridorIds.length === 0 */}
 
 			{/* Buildings */}
 			{showBuildings &&
@@ -105,8 +101,8 @@ export const BuildingRenderer = ({
 					const buildingRooms = roomsByBuilding.get(building.id) || [];
 					const hasRooms = building.hasRooms && buildingRooms.length > 0;
 					const isHovered = hoveredBuildingId === building.id;
-					const isSelected = highlightedBuildingIds.includes(building.id);
-					const isHighlighted = highlightedBuildingIds.includes(building.id);
+					const isSelected = selectedBuildings.includes(building.id);
+					const isHighlighted = selectedBuildings.includes(building.id);
 					const buildingPosition = buildingPositions.positions.get(building.id);
 					const buildingScale = buildingPositions.scales.get(building.id);
 
@@ -162,7 +158,7 @@ export const BuildingRenderer = ({
 			{showRooms &&
 				rooms.map((room) => {
 					const isHovered = hoveredRoomId === room.id;
-					const isSelected = highlightedBuildingIds.includes(room.id);
+					const isSelected = selectedBuildings.includes(room.id);
 					const roomPosition = roomPositions.positions.get(room.id);
 					const roomScale = roomPositions.scales.get(room.id);
 
@@ -204,11 +200,7 @@ export const BuildingRenderer = ({
 				})}
 
 			{/* Corridors */}
-			<CorridorRenderer
-				corridors={corridors}
-				highlightedCorridorIds={highlightedCorridorIds}
-				onCorridorClick={() => {}}
-			/>
+			<CorridorRenderer corridors={corridors} />
 		</group>
 	);
 };

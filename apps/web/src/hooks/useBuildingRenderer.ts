@@ -96,7 +96,9 @@ export function useBuildingRenderer({
 
 	// Memoize path calculation
 	const pathData = useMemo(() => {
-		if (highlightedCorridorIds.length === 0) return null;
+		if (highlightedCorridorIds.length === 0) {
+			return null;
+		}
 
 		const highlightedCorridors: Corridor[] = [];
 		for (const corridorId of highlightedCorridorIds) {
@@ -106,7 +108,9 @@ export function useBuildingRenderer({
 			}
 		}
 
-		if (highlightedCorridors.length === 0) return null;
+		if (highlightedCorridors.length === 0) {
+			return null;
+		}
 
 		const pathPoints: Vector3[] = [];
 		const pointConnections = new Map<

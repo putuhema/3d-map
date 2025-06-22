@@ -6,14 +6,10 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLabelStore, useTutorialStore, useViewStore } from "@/lib/store";
-import { Check, HelpCircle, Menu, RotateCcw } from "lucide-react";
+import { Check, HelpCircle, Menu } from "lucide-react";
 import { Button } from "./ui/button";
 
-interface MapControlProps {
-	onReset?: () => void;
-}
-
-export default function MapControl({ onReset }: MapControlProps) {
+export default function MapControl() {
 	const {
 		showBuildingLabels,
 		showRoomLabels,
@@ -71,16 +67,6 @@ export default function MapControl({ onReset }: MapControlProps) {
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
-			{onReset && (
-				<Button
-					variant="outline"
-					size="icon"
-					onClick={onReset}
-					title="Stop tracking / Reset navigation"
-				>
-					<RotateCcw className="h-4 w-4" />
-				</Button>
-			)}
 		</div>
 	);
 }

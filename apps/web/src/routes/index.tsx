@@ -5,11 +5,10 @@ import { BuildingRenderer } from "@/components/building-renderer";
 import { DestinationSelector } from "@/components/destination-selector";
 import { LocationDialog } from "@/components/location-dialog";
 import MapControl from "@/components/map-control";
-import { useHospitalMap } from "@/hooks/useHospitalMap";
 
 import { Canvas } from "@react-three/fiber";
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/")({
 	component: HospitalMap,
@@ -25,41 +24,6 @@ const isMobile = () => {
 
 export default function HospitalMap() {
 	const [isMobileDevice, setIsMobileDevice] = useState(false);
-
-	const {
-		buildings,
-		corridors,
-		rooms,
-		showBuildings,
-		showRooms,
-		selectedBuildings,
-		pathCorridorIds,
-		resetUI,
-		resetNavigation,
-		handleFindPath,
-		cameraTarget,
-		handleLocationClick,
-	} = useHospitalMap();
-
-	const [isPathfinding, setIsPathfinding] = useState(false);
-
-	const handleFindPathWithLoading = useCallback(() => {
-		if (isPathfinding) return; // Prevent multiple simultaneous operations
-
-		setIsPathfinding(true);
-		try {
-			handleFindPath();
-		} catch (error) {
-			console.error("Pathfinding error:", error);
-		} finally {
-			setIsPathfinding(false);
-		}
-	}, [handleFindPath, isPathfinding]);
-
-	const handleReset = useCallback(() => {
-		resetUI();
-		resetNavigation();
-	}, [resetUI, resetNavigation]);
 
 	// Detect mobile device on mount
 	useEffect(() => {
@@ -93,17 +57,12 @@ export default function HospitalMap() {
 			<TutorialOverlay />
 			<CameraModeIndicator />
 
-			<DestinationSelector
-				buildings={buildings}
-				rooms={rooms}
-				onFindPath={handleFindPathWithLoading}
-				isPathfinding={isPathfinding}
-			/>
+			<DestinationSelector />
 
-			<LocationDialog onFindPath={handleFindPathWithLoading} />
+			<LocationDialog />
 
 			<Canvas {...canvasConfig}>
-				<AutoZoomCamera cameraTarget={cameraTarget} rooms={rooms} />
+				<AutoZoomCamera />
 
 				<ambientLight intensity={0.5} />
 				<directionalLight
@@ -115,19 +74,10 @@ export default function HospitalMap() {
 				/>
 				<directionalLight position={[-5, 8, -10]} intensity={0.3} />
 
-				<BuildingRenderer
-					buildings={buildings}
-					corridors={corridors}
-					rooms={rooms}
-					onBuildingClick={handleLocationClick}
-					highlightedCorridorIds={pathCorridorIds}
-					highlightedBuildingIds={selectedBuildings}
-					showBuildings={showBuildings}
-					showRooms={showRooms}
-				/>
+				<BuildingRenderer />
 			</Canvas>
 
-			<MapControl onReset={handleReset} />
+			<MapControl />
 		</div>
 	);
 }

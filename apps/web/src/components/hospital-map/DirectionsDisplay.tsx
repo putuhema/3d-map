@@ -1,12 +1,8 @@
-interface DirectionsDisplayProps {
-	directions: string[];
-	onClear: () => void;
-}
+import { useHospitalMapStore } from "@/lib/store";
 
-export function DirectionsDisplay({
-	directions,
-	onClear,
-}: DirectionsDisplayProps) {
+export function DirectionsDisplay() {
+	const { directions, clearPath } = useHospitalMapStore();
+
 	if (directions.length === 0) return null;
 
 	return (
@@ -19,7 +15,7 @@ export function DirectionsDisplay({
 			</ol>
 			<button
 				className="mt-2 rounded bg-gray-200 px-3 py-1"
-				onClick={onClear}
+				onClick={clearPath}
 				type="button"
 			>
 				Clear Selection
