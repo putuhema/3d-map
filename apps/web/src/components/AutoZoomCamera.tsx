@@ -20,7 +20,7 @@ const isMobile = () => {
 };
 
 export function AutoZoomCamera() {
-	const { cameraTarget, rooms } = useHospitalMapStore();
+	const { cameraTarget, rooms, corridors } = useHospitalMapStore();
 	const { calculateCameraTargetForRooms } = useHospitalMap();
 	const { fromId, toId } = useSearch({ from: Route.fullPath });
 	const controlsRef = useRef<OrbitControlsImpl>(null);
@@ -197,12 +197,74 @@ export function AutoZoomCamera() {
 		debounceRef.current = setTimeout(() => {
 			if (!controlsRef.current) return;
 
-			// Only auto-zoom if both fromId and toId are set
-			if (!fromId || !toId) {
-				// Reset to default target if no rooms are selected
-				// Use higher default distance for mobile
-				const defaultDistance = isMobileDevice ? 12 : 6;
-				animateCamera([0, 0, defaultDistance], null);
+			// Check if fromId is a corridor
+			const isFromIdCorridor = fromId
+				? corridors.find((c) => c.id === fromId)
+				: null;
+
+			// Only auto-zoom if both fromId and toId are set, OR if fromId is a corridor
+			if (!fromId || (!toId && !isFromIdCorridor)) {
+				// Reset to default zoomed-out view of the entire map with 45-degree angle
+				const defaultDistance = isMobileDevice ? 25 : 80;
+				const angle = Math.PI / 4; // 45 degrees
+				const cameraOffsetX = defaultDistance * Math.cos(angle);
+				const cameraOffsetY = defaultDistance * Math.sin(angle);
+				const cameraOffsetZ = defaultDistance * Math.cos(angle);
+
+				const cameraPosition: [number, number, number] = [
+					-cameraOffsetX,
+					cameraOffsetY,
+					-cameraOffsetZ,
+				];
+
+				// Set camera position and target
+				if (controlsRef.current) {
+					controlsRef.current.target.set(0, 0, 0);
+					controlsRef.current.object.position.set(
+						cameraPosition[0],
+						cameraPosition[1],
+						cameraPosition[2],
+					);
+					controlsRef.current.update();
+				}
+				return;
+			}
+
+			// If fromId is a corridor but no toId, focus on the corridor
+			if (isFromIdCorridor && !toId) {
+				const corridorPosition: [number, number, number] = [
+					isFromIdCorridor.start[0],
+					2,
+					isFromIdCorridor.start[2],
+				];
+				const corridorDistance = isMobileDevice ? 15 : 30;
+
+				// Calculate camera position for 45-degree angle view
+				const angle = Math.PI / 4; // 45 degrees
+				const cameraOffsetX = corridorDistance * Math.cos(angle);
+				const cameraOffsetY = corridorDistance * Math.sin(angle);
+				const cameraOffsetZ = corridorDistance * Math.cos(angle);
+
+				const cameraPosition: [number, number, number] = [
+					corridorPosition[0] - cameraOffsetX,
+					corridorPosition[1] + cameraOffsetY,
+					corridorPosition[2] - cameraOffsetZ,
+				];
+
+				// Set camera position and target
+				if (controlsRef.current) {
+					controlsRef.current.target.set(
+						corridorPosition[0],
+						corridorPosition[1],
+						corridorPosition[2],
+					);
+					controlsRef.current.object.position.set(
+						cameraPosition[0],
+						cameraPosition[1],
+						cameraPosition[2],
+					);
+					controlsRef.current.update();
+				}
 				return;
 			}
 
@@ -233,10 +295,29 @@ export function AutoZoomCamera() {
 					setCameraMode("free");
 				}
 
-				// Reset to default target if no rooms are selected
-				// Use higher default distance for mobile
-				const defaultDistance = isMobileDevice ? 12 : 6;
-				animateCamera([0, 0, defaultDistance], null);
+				// Reset to default zoomed-out view of the entire map with 45-degree angle
+				const defaultDistance = isMobileDevice ? 25 : 80;
+				const angle = Math.PI / 4; // 45 degrees
+				const cameraOffsetX = defaultDistance * Math.cos(angle);
+				const cameraOffsetY = defaultDistance * Math.sin(angle);
+				const cameraOffsetZ = defaultDistance * Math.cos(angle);
+
+				const cameraPosition: [number, number, number] = [
+					-cameraOffsetX,
+					cameraOffsetY,
+					-cameraOffsetZ,
+				];
+
+				// Set camera position and target
+				if (controlsRef.current) {
+					controlsRef.current.target.set(0, 0, 0);
+					controlsRef.current.object.position.set(
+						cameraPosition[0],
+						cameraPosition[1],
+						cameraPosition[2],
+					);
+					controlsRef.current.update();
+				}
 			}
 		}, 100); // 100ms debounce delay
 
@@ -257,6 +338,7 @@ export function AutoZoomCamera() {
 		previousViewMode,
 		isMobileDevice,
 		rooms,
+		corridors,
 	]);
 
 	// Cleanup animation on unmount
@@ -300,10 +382,14 @@ export function AutoZoomCamera() {
 		<>
 			<PerspectiveCamera
 				makeDefault
-				position={
-					cameraPositions[viewMode === "topDown" ? "topDown" : "perspective"]
-						.position
-				}
+				position={(() => {
+					const defaultDistance = isMobileDevice ? 25 : 80;
+					const angle = Math.PI / 4; // 45 degrees
+					const cameraOffsetX = defaultDistance * Math.cos(angle);
+					const cameraOffsetY = defaultDistance * Math.sin(angle);
+					const cameraOffsetZ = defaultDistance * Math.cos(angle);
+					return [-cameraOffsetX, cameraOffsetY, -cameraOffsetZ];
+				})()}
 			/>
 			<OrbitControls
 				ref={controlsRef}

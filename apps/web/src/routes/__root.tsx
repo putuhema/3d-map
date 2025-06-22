@@ -1,5 +1,4 @@
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
 import {
 	HeadContent,
 	Outlet,
@@ -56,7 +55,6 @@ function RootComponent() {
 			<HeadContent />
 			<ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
 				<Outlet />
-				<Toaster richColors />
 			</ThemeProvider>
 			<TanStackRouterDevtools position="bottom-right" />
 		</>

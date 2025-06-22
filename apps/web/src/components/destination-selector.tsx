@@ -23,7 +23,9 @@ export function DestinationSelector() {
 	const navigate = useNavigate({ from: Route.fullPath });
 
 	const handleExpandedChange = (expanded: boolean) => {
-		navigate({ search: { selector: expanded } });
+		navigate({
+			search: { selector: expanded, fromId, toId, type },
+		});
 	};
 
 	const allLocations = useMemo(() => {
@@ -45,9 +47,28 @@ export function DestinationSelector() {
 				displayName: `${room.name} (Room)`,
 			}));
 
-		return [...buildingLocations, ...roomLocations].sort((a, b) =>
-			a.displayName.localeCompare(b.name),
-		);
+		return [
+			...buildingLocations,
+			...roomLocations,
+			{
+				id: "8d504f48-9d86-44d0-86be-3c1fd125dece",
+				name: "Pos Satpam",
+				type: "corridor" as const,
+				displayName: "Post Satpam (Corridor)",
+			},
+			{
+				id: "cdcaa148-eaa3-4031-94de-5c1aaa800b03",
+				name: "Check Point 1",
+				type: "corridor" as const,
+				displayName: "Check Point 1 (Corridor)",
+			},
+			{
+				id: "bc3af950-429f-4434-b866-f60f897f82ee",
+				name: "Check Point 2", // Close with Kaber
+				type: "corridor" as const,
+				displayName: "Check Point 2 (Corridor)",
+			},
+		].sort((a, b) => a.displayName.localeCompare(b.name));
 	}, [buildings, rooms]);
 
 	const getSelectedName = useCallback(

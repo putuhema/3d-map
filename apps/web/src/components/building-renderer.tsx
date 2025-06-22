@@ -152,10 +152,7 @@ export const BuildingRenderer = () => {
 							{building.name &&
 								(showBuildingLabels ||
 									isDestination(building.id) ||
-									isFromDestination(building.id)) &&
-								(isDestination(building.id) ||
-									isFromDestination(building.id) ||
-									isBuildingCloseEnough(buildingPosition)) && (
+									isFromDestination(building.id)) && (
 									<BuildingLabel
 										buildingName={building.name}
 										position={[

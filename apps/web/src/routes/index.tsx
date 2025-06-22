@@ -1,5 +1,4 @@
 import { AutoZoomCamera } from "@/components/AutoZoomCamera";
-import { CameraModeIndicator } from "@/components/CameraModeIndicator";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { BuildingRenderer } from "@/components/building-renderer";
 import { DestinationSelector } from "@/components/destination-selector";
@@ -52,6 +51,18 @@ export default function HospitalMap() {
 				fov: isMobileDevice ? 50 : 45, // Slightly wider FOV on mobile
 				near: 0.1,
 				far: 1000,
+				position: (() => {
+					const defaultDistance = isMobileDevice ? 50 : 60;
+					const angle = isMobileDevice ? Math.PI / 4 : Math.PI / 2;
+					const cameraOffsetX = defaultDistance * Math.cos(angle);
+					const cameraOffsetY = defaultDistance * Math.sin(angle);
+					const cameraOffsetZ = defaultDistance * Math.cos(angle);
+					return [-cameraOffsetX, cameraOffsetY, -cameraOffsetZ] as [
+						number,
+						number,
+						number,
+					];
+				})(),
 			},
 		}),
 		[isMobileDevice],
@@ -60,11 +71,10 @@ export default function HospitalMap() {
 	return (
 		<div className="relative h-screen w-full">
 			<TutorialOverlay />
-			<CameraModeIndicator />
 			<DestinationSelector />
 			<LocationDialog />
 			<Canvas {...canvasConfig}>
-				<fog attach="fog" args={["#ffffff", 50, 100]} />
+				<fog attach="fog" args={["#ffffff", 50, 250]} />
 				<AutoZoomCamera />
 
 				<ambientLight intensity={0.5} />

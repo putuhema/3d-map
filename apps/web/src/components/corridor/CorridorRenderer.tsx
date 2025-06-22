@@ -1,19 +1,45 @@
 import type { Corridor } from "@/data/corridor";
 import { useHospitalMapStore } from "@/lib/store";
+import { Route } from "@/routes/__root";
 import { Line } from "@react-three/drei";
-import { useMemo } from "react";
+import { useSearch } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo } from "react";
 import { MeshStandardMaterial, Vector3 } from "three";
+import { CorridorLabel } from "./CorridorLabel";
 
 interface CorridorRendererProps {
 	corridors: Corridor[];
 }
 
 export function CorridorRenderer({ corridors }: CorridorRendererProps) {
-	const { pathCorridorIds } = useHospitalMapStore();
+	const { pathCorridorIds, setCameraTarget } = useHospitalMapStore();
+	const { fromId } = useSearch({ from: Route.fullPath });
 	const corridorMaterial = useMemo(
 		() => new MeshStandardMaterial({ color: "#E4E0E1" }),
 		[],
 	);
+
+	// Find the corridor that matches the fromId for the "You are here" label
+	const currentLocationCorridor = useMemo(() => {
+		if (!fromId) return null;
+		return corridors.find((corridor) => corridor.id === fromId);
+	}, [corridors, fromId]);
+
+	// Focus camera on the "You are here" label when fromId is a corridor
+	useEffect(() => {
+		if (currentLocationCorridor) {
+			const targetPosition: [number, number, number] = [
+				currentLocationCorridor.start[0],
+				2,
+				currentLocationCorridor.start[2],
+			];
+			setCameraTarget(targetPosition);
+		}
+	}, [currentLocationCorridor, setCameraTarget]);
+
+	const handleCorridorClick = useCallback((corridorId: string) => {
+		console.log("Corridor clicked:", corridorId);
+	}, []);
 
 	return (
 		<>
@@ -31,6 +57,7 @@ export function CorridorRenderer({ corridors }: CorridorRendererProps) {
 				if (length === 0) return null;
 
 				return (
+					// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 					<mesh
 						key={corridor.id}
 						position={[midPoint.x, 0.01, midPoint.z]}
@@ -38,6 +65,7 @@ export function CorridorRenderer({ corridors }: CorridorRendererProps) {
 						scale={[1, 1, 1]}
 						receiveShadow
 						material={corridorMaterial}
+						onClick={() => handleCorridorClick(corridor.id)}
 					>
 						<planeGeometry args={[length, corridor.width]} />
 					</mesh>
@@ -80,6 +108,18 @@ export function CorridorRenderer({ corridors }: CorridorRendererProps) {
 					);
 				});
 			})}
+
+			{/* "You are here" label for current location corridor */}
+			{currentLocationCorridor && (
+				<CorridorLabel
+					label="You are here"
+					position={[
+						currentLocationCorridor.start[0],
+						2,
+						currentLocationCorridor.start[2],
+					]}
+				/>
+			)}
 		</>
 	);
 }
