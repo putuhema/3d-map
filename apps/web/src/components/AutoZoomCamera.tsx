@@ -27,7 +27,6 @@ export function AutoZoomCamera() {
 	const { viewMode, cameraMode, setViewMode, setCameraMode } = useViewStore();
 	const animationRef = useRef<number | null>(null);
 	const debounceRef = useRef<NodeJS.Timeout | null>(null);
-	const [userHasMovedCamera, setUserHasMovedCamera] = useState(false);
 	const [previousViewMode, setPreviousViewMode] = useState(viewMode);
 	const [isMobileDevice, setIsMobileDevice] = useState(false);
 
@@ -212,9 +211,6 @@ export function AutoZoomCamera() {
 				return;
 			}
 
-			// Reset user movement flag when room selection changes
-			setUserHasMovedCamera(false);
-
 			const optimalDistance = calculateOptimalDistance();
 
 			if (optimalDistance) {
@@ -275,14 +271,14 @@ export function AutoZoomCamera() {
 	// Update controls on each frame to ensure smooth animation
 	useFrame(() => {
 		if (controlsRef.current) {
+			// Prevent panning below 0 on Y-axis
+			const target = controlsRef.current.target;
+			if (target.y < 0) {
+				target.y = 0;
+			}
 			controlsRef.current.update();
 		}
 	});
-
-	// Handle user camera movement
-	const handleCameraChange = useCallback(() => {
-		setUserHasMovedCamera(true);
-	}, []);
 
 	// Mobile-specific zoom configuration
 	const mobileZoomConfig = {
@@ -321,7 +317,6 @@ export function AutoZoomCamera() {
 				maxPolarAngle={cameraMode === "topDown" ? 0 : Math.PI / 2 - 0.1}
 				enableDamping={true}
 				dampingFactor={0.05}
-				onChange={handleCameraChange}
 				// Configure touch sensitivity for better mobile experience
 				panSpeed={isMobileDevice ? 1.5 : 1.0}
 				// Use ROTATE for both mobile and desktop to allow both rotation and panning

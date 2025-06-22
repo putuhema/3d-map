@@ -1,6 +1,7 @@
 import type { Room } from "@/data/room";
 import { useGLTF } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
+import { Select } from "@react-three/postprocessing";
 import { memo, useMemo } from "react";
 import type { Vector3 } from "three";
 
@@ -16,6 +17,7 @@ interface RoomModelProps {
 	isHighlighted?: boolean;
 	isSelected?: boolean;
 	isHovered?: boolean;
+	isDestination?: boolean;
 	rotation?: [number, number, number];
 }
 
@@ -31,6 +33,7 @@ export const RoomModel = memo(function RoomModel({
 	isHighlighted = false,
 	isSelected = false,
 	isHovered = false,
+	isDestination = false,
 	rotation,
 }: RoomModelProps) {
 	const shouldUseCustomModel = room.name !== "Wall";
@@ -93,37 +96,55 @@ export const RoomModel = memo(function RoomModel({
 		);
 	}
 
-	return (
-		<group>
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: mesh elements don't support keyboard events */}
-			<mesh
-				position={[position.x, position.y - 0.5, position.z]}
-				scale={scale}
-				onClick={onClick}
-				onPointerOver={onPointerOver}
-				onPointerOut={onPointerOut}
-				renderOrder={1}
-				rotation={rotation}
-			>
-				<primitive object={clonedScene} />
-			</mesh>
+	const selectComponent = useMemo(
+		() => (
+			<Select enabled={isHovered || isDestination}>
+				<group>
+					{/* biome-ignore lint/a11y/useKeyWithClickEvents: mesh elements don't support keyboard events */}
+					<mesh
+						position={[position.x, position.y - 0.5, position.z]}
+						scale={scale}
+						onClick={onClick}
+						onPointerOver={onPointerOver}
+						onPointerOut={onPointerOut}
+						renderOrder={1}
+						rotation={rotation}
+					>
+						<primitive object={clonedScene} />
+					</mesh>
 
-			{/* Highlighted material overlay */}
-			{isHighlighted && (
-				<primitive
-					object={clonedScene.clone()}
-					position={[position.x, position.y - 0.5, position.z]}
-					scale={scale}
-					rotation={rotation}
-				>
-					<meshStandardMaterial
-						color="#f59e42"
-						roughness={0.3}
-						transparent={true}
-						opacity={0.8}
-					/>
-				</primitive>
-			)}
-		</group>
+					{/* Highlighted material overlay */}
+					{isHighlighted && (
+						<primitive
+							object={clonedScene.clone()}
+							position={[position.x, position.y - 0.5, position.z]}
+							scale={scale}
+							rotation={rotation}
+						>
+							<meshStandardMaterial
+								color="#f59e42"
+								roughness={0.3}
+								transparent={true}
+								opacity={0.8}
+							/>
+						</primitive>
+					)}
+				</group>
+			</Select>
+		),
+		[
+			isHovered,
+			position,
+			scale,
+			onClick,
+			onPointerOver,
+			onPointerOut,
+			rotation,
+			clonedScene,
+			isHighlighted,
+			isDestination,
+		],
 	);
+
+	return selectComponent;
 });

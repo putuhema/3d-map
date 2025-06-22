@@ -35,7 +35,8 @@ interface HospitalMapState {
 	// UI State
 	showBuildings: boolean;
 	showRooms: boolean;
-	selectedBuildings: string[];
+	selectedId: string | null;
+	selectedType: "building" | "room" | null;
 	pathCorridorIds: string[];
 	directions: string[];
 	hoveredCellCoords: [number, number] | null;
@@ -53,8 +54,6 @@ interface HospitalMapState {
 	locationDialogOpen: boolean;
 	selectedLocation: Building | Room | null;
 	cameraTarget: [number, number, number];
-	selectedBuildingId: string | null;
-	selectedRoomId: string | null;
 	selectedBuildingForRoom: string | null;
 
 	// Data State
@@ -65,7 +64,10 @@ interface HospitalMapState {
 	// Setters
 	setShowBuildings: (show: boolean) => void;
 	setShowRooms: (show: boolean) => void;
-	setSelectedBuildings: (buildings: string[]) => void;
+	setSelectedIdAndType: (
+		id: string | null,
+		type: "building" | "room" | null,
+	) => void;
 	setPathCorridorIds: (ids: string[]) => void;
 	setDirections: (directions: string[]) => void;
 	setHoveredCellCoords: (coords: [number, number] | null) => void;
@@ -83,8 +85,6 @@ interface HospitalMapState {
 	setLocationDialogOpen: (open: boolean) => void;
 	setSelectedLocation: (location: Building | Room | null) => void;
 	setCameraTarget: (target: [number, number, number]) => void;
-	setSelectedBuildingId: (id: string | null) => void;
-	setSelectedRoomId: (id: string | null) => void;
 	setSelectedBuildingForRoom: (id: string | null) => void;
 
 	// Data setters
@@ -151,7 +151,8 @@ export const useHospitalMapStore = create<HospitalMapState>((set, get) => ({
 	// Initial state
 	showBuildings: true,
 	showRooms: true,
-	selectedBuildings: [],
+	selectedId: null,
+	selectedType: null,
 	pathCorridorIds: [],
 	directions: [],
 	hoveredCellCoords: null,
@@ -169,8 +170,6 @@ export const useHospitalMapStore = create<HospitalMapState>((set, get) => ({
 	locationDialogOpen: false,
 	selectedLocation: null,
 	cameraTarget: [0, 0, 0],
-	selectedBuildingId: null,
-	selectedRoomId: null,
 	selectedBuildingForRoom: null,
 	buildings,
 	corridors,
@@ -179,7 +178,8 @@ export const useHospitalMapStore = create<HospitalMapState>((set, get) => ({
 	// Setters
 	setShowBuildings: (show) => set({ showBuildings: show }),
 	setShowRooms: (show) => set({ showRooms: show }),
-	setSelectedBuildings: (buildings) => set({ selectedBuildings: buildings }),
+	setSelectedIdAndType: (id, type) =>
+		set({ selectedId: id, selectedType: type }),
 	setPathCorridorIds: (ids) => set({ pathCorridorIds: ids }),
 	setDirections: (directions) => set({ directions }),
 	setHoveredCellCoords: (coords) => set({ hoveredCellCoords: coords }),
@@ -197,8 +197,6 @@ export const useHospitalMapStore = create<HospitalMapState>((set, get) => ({
 	setLocationDialogOpen: (open) => set({ locationDialogOpen: open }),
 	setSelectedLocation: (location) => set({ selectedLocation: location }),
 	setCameraTarget: (target) => set({ cameraTarget: target }),
-	setSelectedBuildingId: (id) => set({ selectedBuildingId: id }),
-	setSelectedRoomId: (id) => set({ selectedRoomId: id }),
 	setSelectedBuildingForRoom: (id) => set({ selectedBuildingForRoom: id }),
 	setBuildings: (buildings) => set({ buildings }),
 	setCorridors: (corridors) => set({ corridors }),
@@ -220,7 +218,8 @@ export const useHospitalMapStore = create<HospitalMapState>((set, get) => ({
 	},
 	resetUI: () =>
 		set({
-			selectedBuildings: [],
+			selectedId: null,
+			selectedType: null,
 			pathCorridorIds: [],
 			directions: [],
 			locationDialogOpen: false,
@@ -233,14 +232,16 @@ export const useHospitalMapStore = create<HospitalMapState>((set, get) => ({
 		}),
 	handleUseCurrentLocation: () => {
 		set({
-			selectedBuildings: [],
+			selectedId: null,
+			selectedType: null,
 			pathCorridorIds: [],
 			directions: [],
 		});
 	},
 	handleReset: () => {
 		set({
-			selectedBuildings: [],
+			selectedId: null,
+			selectedType: null,
 			pathCorridorIds: [],
 			directions: [],
 			selectedLocation: null,
@@ -354,33 +355,22 @@ export const useHospitalMapStore = create<HospitalMapState>((set, get) => ({
 		if (roomId) {
 			const room = state.getRoomById(roomId);
 			if (room) {
-				set({ selectedLocation: room });
+				set({
+					selectedLocation: room,
+					selectedId: roomId,
+					selectedType: "room",
+				});
 			}
 		} else {
 			const building = state.getBuildingById(id);
 			if (building) {
-				set({ selectedLocation: building });
+				set({
+					selectedLocation: building,
+					selectedId: id,
+					selectedType: "building",
+				});
 			}
 		}
-
-		if (state.selectedBuildings.length === 0) {
-			set({ selectedBuildings: [id], pathCorridorIds: [], directions: [] });
-			return;
-		}
-
-		if (state.selectedBuildings.length === 1) {
-			if (state.selectedBuildings[0] === id) return;
-			const firstPos = state.getPositionById(state.selectedBuildings[0]);
-			const secondPos = state.getPositionById(id);
-			if (firstPos && secondPos) {
-				// Pathfinding logic would go here
-				// For now, just clear the selection
-				set({ selectedBuildings: [] });
-			}
-			return;
-		}
-
-		set({ selectedBuildings: [id], pathCorridorIds: [], directions: [] });
 	},
 	handleLocationClick: (id, roomId) => {
 		const state = get();
@@ -389,8 +379,8 @@ export const useHospitalMapStore = create<HospitalMapState>((set, get) => ({
 			if (room) {
 				set({
 					selectedLocation: room,
-					selectedRoomId: roomId,
-					selectedBuildingId: null,
+					selectedId: roomId,
+					selectedType: "room",
 				});
 			}
 		} else {
@@ -398,8 +388,8 @@ export const useHospitalMapStore = create<HospitalMapState>((set, get) => ({
 			if (building) {
 				set({
 					selectedLocation: building,
-					selectedBuildingId: id,
-					selectedRoomId: null,
+					selectedId: id,
+					selectedType: "building",
 				});
 			}
 		}

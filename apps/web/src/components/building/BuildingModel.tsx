@@ -2,6 +2,7 @@ import type { Building } from "@/data/building";
 import { getBuildingModelPath } from "@/utils/buildingModels";
 import { useGLTF } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
+import { Select } from "@react-three/postprocessing";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type { Material, Vector3 } from "three";
 import { Mesh } from "three";
@@ -19,6 +20,7 @@ interface BuildingModelProps {
 	isHighlighted?: boolean;
 	isSelected?: boolean;
 	isHovered?: boolean;
+	isDestination?: boolean;
 	rotation?: [number, number, number];
 	borderColor?: string;
 }
@@ -36,6 +38,7 @@ export const BuildingModel = memo(function BuildingModel({
 	isHighlighted = false,
 	isSelected = false,
 	isHovered = false,
+	isDestination = false,
 	rotation,
 	borderColor,
 }: BuildingModelProps) {
@@ -198,7 +201,6 @@ export const BuildingModel = memo(function BuildingModel({
 							color={borderColor}
 							wireframe={true}
 							transparent={true}
-							opacity={0.8}
 						/>
 					</mesh>
 				)}
@@ -219,51 +221,69 @@ export const BuildingModel = memo(function BuildingModel({
 		);
 	}
 
-	return (
-		<group>
-			<primitive
-				ref={buildingRef}
-				object={clonedScene}
-				position={position}
-				scale={scale}
-				rotation={rotation}
-				onClick={onClick}
-				onKeyDown={handleKeyDown}
-				onPointerOver={onPointerOver}
-				onPointerOut={onPointerOut}
-				tabIndex={onClick ? 0 : undefined}
-			/>
-
-			{/* Border wireframe */}
-			{borderColor && (
-				<mesh position={position} scale={scale} rotation={rotation}>
-					<boxGeometry args={[1, 1, 1]} />
-					<meshBasicMaterial
-						color={borderColor}
-						wireframe={true}
-						transparent={true}
-						opacity={0.8}
-					/>
-				</mesh>
-			)}
-
-			{/* Highlighted material overlay */}
-			{isHighlighted && (
+	const selectComponent = useMemo(
+		() => (
+			<Select enabled={isHovered || isDestination}>
 				<primitive
-					object={clonedScene.clone()}
+					ref={buildingRef}
+					object={clonedScene}
 					position={position}
 					scale={scale}
 					rotation={rotation}
-				>
-					<meshStandardMaterial
-						color="#f59e42"
-						metalness={0.3}
-						roughness={0.3}
-						transparent={true}
-						opacity={0.8}
-					/>
-				</primitive>
-			)}
-		</group>
+					onClick={onClick}
+					onKeyDown={handleKeyDown}
+					onPointerOver={onPointerOver}
+					onPointerOut={onPointerOut}
+					tabIndex={onClick ? 0 : undefined}
+				/>
+
+				{/* Border wireframe */}
+				{borderColor && (
+					<mesh position={position} scale={scale} rotation={rotation}>
+						<boxGeometry args={[1, 1, 1]} />
+						<meshBasicMaterial
+							color={borderColor}
+							wireframe={true}
+							transparent={true}
+							opacity={0.8}
+						/>
+					</mesh>
+				)}
+
+				{/* Highlighted material overlay */}
+				{isHighlighted && (
+					<primitive
+						object={clonedScene.clone()}
+						position={position}
+						scale={scale}
+						rotation={rotation}
+					>
+						<meshStandardMaterial
+							color="#f59e42"
+							metalness={0.3}
+							roughness={0.3}
+							transparent={true}
+							opacity={0.8}
+						/>
+					</primitive>
+				)}
+			</Select>
+		),
+		[
+			isHovered,
+			isDestination,
+			clonedScene,
+			position,
+			scale,
+			rotation,
+			onClick,
+			onPointerOver,
+			onPointerOut,
+			handleKeyDown,
+			borderColor,
+			isHighlighted,
+		],
 	);
+
+	return selectComponent;
 });

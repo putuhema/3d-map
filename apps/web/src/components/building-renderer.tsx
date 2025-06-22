@@ -18,10 +18,11 @@ export const BuildingRenderer = () => {
 		corridors,
 		rooms,
 		pathCorridorIds,
-		selectedBuildings,
 		showBuildings,
 		showRooms,
 		handleLocationClick,
+		selectedId,
+		selectedType,
 	} = useHospitalMapStore();
 
 	const {
@@ -106,7 +107,7 @@ export const BuildingRenderer = () => {
 				rotation={[-Math.PI / 2, 0, 0]}
 				position={[0, -1, 0]}
 			>
-				<meshStandardMaterial color="#89C041" />
+				<meshStandardMaterial color="#99BC85" />
 			</Plane>
 
 			{pathCorridorIds.length > 0 && <PathIndicator pathData={pathData} />}
@@ -116,8 +117,9 @@ export const BuildingRenderer = () => {
 					const buildingRooms = roomsByBuilding.get(building.id) || [];
 					const hasRooms = building.hasRooms && buildingRooms.length > 0;
 					const isHovered = hoveredBuildingId === building.id;
-					const isSelected = selectedBuildings.includes(building.id);
-					const isHighlighted = selectedBuildings.includes(building.id);
+					const isSelected =
+						selectedId === building.id && selectedType === "building";
+					const isHighlighted = false;
 					const buildingPosition = buildingPositions.positions.get(building.id);
 					const buildingScale = buildingPositions.scales.get(building.id);
 
@@ -134,8 +136,9 @@ export const BuildingRenderer = () => {
 								hasRooms={hasRooms}
 								isHighlighted={isHighlighted}
 								isSelected={isSelected}
-								opacity={hasRooms ? 0.2 : 1}
+								opacity={hasRooms ? 0.4 : 1}
 								isHovered={isHovered}
+								isDestination={isDestination(building.id)}
 								onClick={
 									!hasRooms ? () => handleBuildingClick(building.id) : undefined
 								}
@@ -172,7 +175,7 @@ export const BuildingRenderer = () => {
 			{showRooms &&
 				rooms.map((room) => {
 					const isHovered = hoveredRoomId === room.id;
-					const isSelected = selectedBuildings.includes(room.id);
+					const isSelected = selectedId === room.id && selectedType === "room";
 					const roomPosition = roomPositions.positions.get(room.id);
 					const roomScale = roomPositions.scales.get(room.id);
 
@@ -187,6 +190,7 @@ export const BuildingRenderer = () => {
 								color={getDestinationColor(room.id)}
 								isHovered={isHovered}
 								isSelected={isSelected}
+								isDestination={isDestination(room.id)}
 								onClick={() => handleRoomClick(room.buildingId, room.id)}
 								onPointerOver={() => handleRoomHoverCallback(room.id)}
 								onPointerOut={handleRoomHoverOut}

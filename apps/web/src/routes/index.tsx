@@ -7,6 +7,11 @@ import { LocationDialog } from "@/components/location-dialog";
 import MapControl from "@/components/map-control";
 
 import { Canvas } from "@react-three/fiber";
+import {
+	EffectComposer,
+	Outline,
+	Selection,
+} from "@react-three/postprocessing";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
@@ -56,13 +61,10 @@ export default function HospitalMap() {
 		<div className="relative h-screen w-full">
 			<TutorialOverlay />
 			<CameraModeIndicator />
-
 			<DestinationSelector />
-
 			<LocationDialog />
-
 			<Canvas {...canvasConfig}>
-				<fog attach="fog" args={["#ffffff", 50, 150]} />
+				<fog attach="fog" args={["#ffffff", 50, 100]} />
 				<AutoZoomCamera />
 
 				<ambientLight intensity={0.5} />
@@ -75,9 +77,13 @@ export default function HospitalMap() {
 				/>
 				<directionalLight position={[-5, 8, -10]} intensity={0.3} />
 
-				<BuildingRenderer />
+				<Selection>
+					<EffectComposer multisampling={8} autoClear={false}>
+						<Outline blur visibleEdgeColor={0xffffff} edgeStrength={100} />
+					</EffectComposer>
+					<BuildingRenderer />
+				</Selection>
 			</Canvas>
-
 			<MapControl />
 		</div>
 	);
