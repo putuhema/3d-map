@@ -1,26 +1,50 @@
 import { Button } from "@/components/ui/button";
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, MapPin, X } from "lucide-react";
-import { useCallback, useMemo } from "react";
-
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { useHospitalMap } from "@/hooks/useHospitalMap";
 import { useHospitalMapStore } from "@/lib/store";
-import { Route } from "@/routes/__root";
 import { useNavigate } from "@tanstack/react-router";
 import { useSearch } from "@tanstack/react-router";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, MapPin, Search, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { KeyboardEvent } from "react";
+import { Input } from "./ui/input";
+import { ScrollArea } from "./ui/scroll-area";
+
+interface Location {
+	id: string;
+	name: string;
+	type: "building" | "room" | "corridor";
+	displayName: string;
+}
 
 export function DestinationSelector() {
+	const [search, setSearch] = useState("");
+	const [highlightedIndex, setHighlightedIndex] = useState(0);
 	const { buildings, rooms, handleReset } = useHospitalMapStore();
 	const { handleFindPath } = useHospitalMap();
 	const { fromId, toId, selector, type } = useSearch({ strict: false });
 	const navigate = useNavigate({ from: "/" });
+
+	// Reset search when selector closes
+	useEffect(() => {
+		if (!selector) {
+			setSearch("");
+			setHighlightedIndex(0);
+		}
+	}, [selector]);
+
+	// Reset search when location is selected
+	useEffect(() => {
+		if (fromId || toId) {
+			setSearch("");
+			setHighlightedIndex(0);
+		}
+	}, [fromId, toId]);
+
+	// Reset highlighted index when search changes
+	useEffect(() => {
+		setHighlightedIndex(0);
+	}, [search]);
 
 	const handleExpandedChange = (expanded: boolean) => {
 		navigate({
@@ -64,11 +88,11 @@ export function DestinationSelector() {
 			},
 			{
 				id: "bc3af950-429f-4434-b866-f60f897f82ee",
-				name: "Check Point 2", // Close with Kaber
+				name: "Check Point 2",
 				type: "corridor" as const,
 				displayName: "Check Point 2 (Corridor)",
 			},
-		].sort((a, b) => a.displayName.localeCompare(b.name));
+		].sort((a, b) => a.displayName.localeCompare(b.displayName));
 	}, [buildings, rooms]);
 
 	const getSelectedName = useCallback(
@@ -101,12 +125,100 @@ export function DestinationSelector() {
 
 	const onReset = () => {
 		handleReset();
+		setSearch("");
+		setHighlightedIndex(0);
 		navigate({ search: {} });
 	};
 
 	const onFindPath = () => {
 		if (canFindPath) {
 			handleFindPath();
+		}
+	};
+
+	const filterLocations = useCallback(
+		(searchTerm: string) => {
+			if (!searchTerm.trim()) return allLocations;
+
+			const filtered = allLocations.filter((location) => {
+				const matchesSearch =
+					location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+					location.displayName.toLowerCase().includes(searchTerm.toLowerCase());
+
+				// Don't show already selected locations
+				const notFrom = !fromId || location.id !== fromId;
+				const notTo = !toId || location.id !== toId;
+
+				return matchesSearch && notFrom && notTo;
+			});
+
+			return filtered.slice(0, 10); // Limit results for better UX
+		},
+		[allLocations, fromId, toId],
+	);
+
+	const handleLocationSelect = useCallback(
+		(location: Location) => {
+			if (!fromId) {
+				// Select from location
+				navigate({
+					search: {
+						fromId: location.id,
+						toId,
+						selector: true,
+					},
+				});
+			} else if (!toId) {
+				// Select to location
+				navigate({
+					search: {
+						fromId,
+						toId: location.id,
+						selector: true,
+					},
+				});
+			}
+		},
+		[fromId, toId, navigate],
+	);
+
+	const searchResults = useMemo(
+		() => filterLocations(search),
+		[filterLocations, search],
+	);
+
+	const getInputPlaceholder = () => {
+		if (!fromId) return "Cari lokasi asal...";
+		if (!toId) return "Cari lokasi tujuan...";
+		return "Lokasi sudah dipilih";
+	};
+
+	const isInputDisabled = () => {
+		return Boolean(fromId && toId);
+	};
+
+	const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+		if (isInputDisabled()) return;
+
+		if (e.key === "Enter" && searchResults.length > 0) {
+			e.preventDefault();
+			const selectedLocation = searchResults[highlightedIndex];
+			if (selectedLocation) {
+				handleLocationSelect(selectedLocation);
+			}
+		} else if (e.key === "ArrowDown") {
+			e.preventDefault();
+			setHighlightedIndex((prev) =>
+				prev < searchResults.length - 1 ? prev + 1 : 0,
+			);
+		} else if (e.key === "ArrowUp") {
+			e.preventDefault();
+			setHighlightedIndex((prev) =>
+				prev > 0 ? prev - 1 : searchResults.length - 1,
+			);
+		} else if (e.key === "Escape") {
+			setSearch("");
+			setHighlightedIndex(0);
 		}
 	};
 
@@ -170,100 +282,143 @@ export function DestinationSelector() {
 								transition={{ delay: 0.1, duration: 0.3 }}
 								className="space-y-4"
 							>
-								<div className="flex gap-2">
+								{/* Single Search Input */}
+								<div className="space-y-2">
 									<label
-										htmlFor="from-select"
-										className="flex w-20 items-center gap-2 font-medium text-foreground text-sm"
+										htmlFor="location-input"
+										className="flex items-center gap-2 font-medium text-foreground text-sm"
 									>
 										<MapPin className="h-4 w-4" />
-										Dari
+										{!fromId ? "Dari" : !toId ? "Ke" : "Lokasi"}
 									</label>
-									<Select
-										value={`${fromId},${type}` || ""}
-										onValueChange={(value) => {
-											const [id, type] = value.split(",");
-											navigate({
-												search: {
-													fromId: id,
-													toId,
-													selector,
-													type: type as "building" | "room",
-												},
-											});
-										}}
-									>
-										<SelectTrigger className="w-full bg-background">
-											<SelectValue placeholder="Pilih Lokasi" />
-										</SelectTrigger>
-										<SelectContent className="max-h-[200px] overflow-y-auto">
-											{allLocations.map((location) => (
-												<SelectItem
-													key={location.id}
-													value={`${location.id},${location.type}`}
-												>
-													{location.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+									<div className="relative">
+										<Input
+											id="location-input"
+											placeholder={getInputPlaceholder()}
+											value={search}
+											disabled={isInputDisabled()}
+											onChange={(e) => {
+												setSearch(e.target.value);
+											}}
+											onKeyDown={handleKeyDown}
+											className="pr-8"
+										/>
+										<Search className="-translate-y-1/2 absolute top-1/2 right-3 h-4 w-4 text-muted-foreground" />
+									</div>
+
+									{/* Search Results */}
+									<AnimatePresence>
+										{search && !isInputDisabled() && (
+											<motion.div
+												initial={{ opacity: 0, height: 0 }}
+												animate={{ opacity: 1, height: "auto" }}
+												exit={{ opacity: 0, height: 0 }}
+												className="relative py-4"
+											>
+												<ScrollArea className="max-h-[200px] w-full rounded-md border bg-background">
+													{searchResults.length > 0 ? (
+														searchResults.map((location, index) => (
+															<Button
+																key={location.id}
+																variant={
+																	index === highlightedIndex
+																		? "secondary"
+																		: "ghost"
+																}
+																className={`w-full justify-start rounded-none border-b last:border-b-0 ${
+																	index === highlightedIndex
+																		? "bg-secondary text-secondary-foreground"
+																		: ""
+																}`}
+																onClick={() => handleLocationSelect(location)}
+																onMouseEnter={() => setHighlightedIndex(index)}
+															>
+																<div className="flex flex-col items-start">
+																	<span className="font-medium">
+																		{location.name}
+																	</span>
+																	<span className="text-muted-foreground text-xs">
+																		{location.type}
+																	</span>
+																</div>
+															</Button>
+														))
+													) : (
+														<div className="p-4 text-center text-muted-foreground text-sm">
+															Tidak ada lokasi ditemukan
+														</div>
+													)}
+												</ScrollArea>
+											</motion.div>
+										)}
+									</AnimatePresence>
 								</div>
 
-								<motion.div
-									initial={{ opacity: 0, y: 20 }}
-									animate={{ opacity: 1, y: 0 }}
-									transition={{ delay: 0.2, duration: 0.3 }}
-									className="flex gap-2"
-								>
-									<label
-										htmlFor="to-select"
-										className="flex w-20 items-center gap-2 font-medium text-foreground text-sm"
-									>
-										<MapPin className="h-4 w-4" />
-										Ke
-									</label>
-									<Select
-										value={`${toId},${type}` || ""}
-										onValueChange={(value) => {
-											const [id, type] = value.split(",");
-											navigate({
-												search: {
-													fromId,
-													toId: id,
-													type: type as "building" | "room",
-												},
-											});
-										}}
-									>
-										<SelectTrigger
-											disabled={!fromId}
-											className="w-full bg-background"
-										>
-											<SelectValue placeholder="Pilih Lokasi" />
-										</SelectTrigger>
-										<SelectContent className="max-h-[200px] overflow-y-auto">
-											{allLocations.map((location) => (
-												<SelectItem
-													key={location.id}
-													value={`${location.id},${location.type}`}
-												>
-													{location.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</motion.div>
+								{/* Selected Locations Display */}
+								<div className="space-y-2">
+									{fromId && (
+										<div className="flex items-center gap-2 rounded-md bg-muted p-2">
+											<MapPin className="h-4 w-4 text-primary" />
+											<span className="font-medium text-sm">
+												Dari: {getSelectedName(fromId)}
+											</span>
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() =>
+													navigate({
+														search: { fromId: undefined, toId, selector: true },
+													})
+												}
+												className="ml-auto h-6 w-6 p-0"
+											>
+												<X className="h-3 w-3" />
+											</Button>
+										</div>
+									)}
 
+									{toId && (
+										<div className="flex items-center gap-2 rounded-md bg-muted p-2">
+											<MapPin className="h-4 w-4 text-primary" />
+											<span className="font-medium text-sm">
+												Ke: {getSelectedName(toId)}
+											</span>
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() =>
+													navigate({
+														search: { fromId, toId: undefined, selector: true },
+													})
+												}
+												className="ml-auto h-6 w-6 p-0"
+											>
+												<X className="h-3 w-3" />
+											</Button>
+										</div>
+									)}
+								</div>
+
+								{/* Action Buttons */}
 								<motion.div
 									initial={{ opacity: 0, y: 20 }}
 									animate={{ opacity: 1, y: 0 }}
 									transition={{ delay: 0.3, duration: 0.3 }}
+									className="flex gap-2 pt-2"
 								>
 									<Button
 										onClick={onFindPath}
 										disabled={!canFindPath}
-										className="w-full"
+										className="flex-1"
 									>
 										Cari Rute
+									</Button>
+									<Button
+										variant="outline"
+										onClick={onReset}
+										className="flex-1"
+									>
+										Reset
 									</Button>
 								</motion.div>
 							</motion.div>
