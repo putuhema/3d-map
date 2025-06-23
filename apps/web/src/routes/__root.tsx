@@ -1,3 +1,5 @@
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { ThemeProvider } from "@/components/theme-provider";
 import {
 	HeadContent,
@@ -55,6 +57,8 @@ function RootComponent() {
 			<HeadContent />
 			<ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
 				<Outlet />
+				<PWAInstallPrompt />
+				<ServiceWorkerRegistration />
 			</ThemeProvider>
 			<TanStackRouterDevtools position="bottom-right" />
 		</>
