@@ -332,7 +332,7 @@ export const rooms: Room[] = [
 	},
 	{
 		id: "0eef9340-caf4-48ae-a8f7-6c07dfcd25be",
-		name: "WC (Poli)",
+		name: "Wall",
 		position: [6.5, 0.5, 14.5],
 		size: [1, 1, 1],
 		color: "#4F46E5",

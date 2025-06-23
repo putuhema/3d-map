@@ -75,7 +75,7 @@ export const buildings: Building[] = [
 	},
 	{
 		id: "aa5d7ddf-cbe7-4b93-b17c-00088a7e6597",
-		name: "Kantor",
+		name: "Laundry",
 		position: [-17.5, 0.5, 19.5],
 		size: [5, 2, 3],
 		color: "#4f46e5",
@@ -83,7 +83,7 @@ export const buildings: Building[] = [
 	},
 	{
 		id: "6be0d0bc-d4a9-460e-9e59-9ccd4880f57e",
-		name: "Kantor",
+		name: "CASSD",
 		position: [-18, 0.5, 25.5],
 		size: [4, 2, 5],
 		color: "#4f46e5",
@@ -117,7 +117,7 @@ export const buildings: Building[] = [
 	},
 	{
 		id: "b72e27fe-010f-447b-9070-af7405c83c5c",
-		name: "Kantor",
+		name: "Laboratorium",
 		position: [-3.5, 0.5, -0.5],
 		size: [5, 2, 5],
 		color: "#4f46e5",
@@ -125,7 +125,7 @@ export const buildings: Building[] = [
 	},
 	{
 		id: "b88448c9-e0e0-4c13-ae46-174d5c7f9954",
-		name: "Kantor",
+		name: "Kamar Jenazah",
 		position: [-17.5, 0.5, -6.5],
 		size: [5, 2, 3],
 		color: "#4f46e5",
@@ -142,7 +142,7 @@ export const buildings: Building[] = [
 	},
 	{
 		id: "8e28dd6b-b602-4482-83fe-ad9e13b53717",
-		name: "Kantor",
+		name: "ISO-TB",
 		position: [-4.5, 0.5, -11.5],
 		size: [7, 2, 3],
 		color: "#4f46e5",
@@ -150,7 +150,7 @@ export const buildings: Building[] = [
 	},
 	{
 		id: "96126cdd-b8ef-4782-9d46-aa7252d20945",
-		name: "Kantor",
+		name: "Perawatan Interna",
 		position: [-5.5, 0.5, -17.5],
 		size: [9, 2, 3],
 		color: "#4f46e5",
@@ -158,7 +158,7 @@ export const buildings: Building[] = [
 	},
 	{
 		id: "d64a1024-ff44-4a38-9957-8fda5ad05c21",
-		name: "Kantor",
+		name: "Kelas 2",
 		position: [-4.5, 0.5, -22.5],
 		size: [7, 2, 3],
 		color: "#4f46e5",
@@ -180,7 +180,7 @@ export const buildings: Building[] = [
 		size: [5, 2, 5],
 		color: "#4f46e5",
 		hasRooms: false,
-		rotation: [0, Math.PI, 0],
+		rotation: [0, -Math.PI / 2, 0],
 	},
 	{
 		id: "e28859ce-79fd-4489-b9cc-64895999da9b",
@@ -211,17 +211,17 @@ export const buildings: Building[] = [
 	},
 	{
 		id: "bcde851c-935b-4f01-beaa-f0fd516afbb9",
-		name: "New Building",
+		name: "Gudang",
 		position: [-18.5, 0.5, 34.5],
-		size: [5, 1, 7],
+		size: [5, 2, 7],
 		color: "#4f46e5",
 		hasRooms: false,
 	},
 	{
 		id: "f81c072b-92eb-4f37-b1a6-1c8b43d8d9c5",
-		name: "New Building",
+		name: "Transfusi Darah (Baru)",
 		position: [-2.5, 0.5, 26.5],
-		size: [3, 1, 3],
+		size: [3, 2, 3],
 		color: "#4f46e5",
 		hasRooms: false,
 	},

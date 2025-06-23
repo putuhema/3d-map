@@ -38,7 +38,7 @@ export function CorridorRenderer({ corridors }: CorridorRendererProps) {
 	}, [currentLocationCorridor, setCameraTarget]);
 
 	const handleCorridorClick = useCallback((corridorId: string) => {
-		console.log("Corridor clicked:", corridorId);
+		// console.log("Corridor clicked:", corridorId);
 	}, []);
 
 	return (

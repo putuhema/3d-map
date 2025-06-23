@@ -74,7 +74,7 @@ export default function HospitalMap() {
 			<DestinationSelector />
 			<LocationDialog />
 			<Canvas {...canvasConfig}>
-				<fog attach="fog" args={["#ffffff", 50, 250]} />
+				<fog attach="fog" args={["#ffffff", 50, isMobileDevice ? 250 : 150]} />
 				<AutoZoomCamera />
 
 				<ambientLight intensity={0.5} />

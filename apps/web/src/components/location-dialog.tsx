@@ -272,32 +272,30 @@ export function LocationDialog() {
 					{location.image && (
 						<ZoomableImage src={location.image} alt={location.name} />
 					)}
-					<div className="space-y-2">
-						<div className="flex justify-between">
-							<span className="font-medium text-muted-foreground">ID :</span>
-							<span>{location.id}</span>
+					{location.name.toLowerCase().startsWith("poli") && (
+						<div>
+							<p className="text-center font-bold">Jam Operasional</p>
+							<div className="grid grid-cols-3 gap-2">
+								<span>Hari</span>
+								<span>Jam Pertama</span>
+								<span>Jam Kedua</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2">
+								<span className="font-medium text-muted-foreground text-sm">
+									Senin, Selasa, Rabu, Kamis
+								</span>
+								<span>08:00 - 12:00</span>
+								<span>14:00 - 16:00</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2">
+								<span className="font-medium text-muted-foreground text-sm">
+									Jumat
+								</span>
+								<span>08:00 - 12:00</span>
+								<span>14:00 - 16:30</span>
+							</div>
 						</div>
-					</div>
-					<p className="text-center font-bold">Jam Operasional</p>
-					<div className="grid grid-cols-3 gap-2">
-						<span>Hari</span>
-						<span>Jam Pertama</span>
-						<span>Jam Kedua</span>
-					</div>
-					<div className="grid grid-cols-3 gap-2">
-						<span className="font-medium text-muted-foreground text-sm">
-							Senin, Selasa, Rabu, Kamis
-						</span>
-						<span>08:00 - 12:00</span>
-						<span>14:00 - 16:00</span>
-					</div>
-					<div className="grid grid-cols-3 gap-2">
-						<span className="font-medium text-muted-foreground text-sm">
-							Jumat
-						</span>
-						<span>08:00 - 12:00</span>
-						<span>14:00 - 16:30</span>
-					</div>
+					)}
 				</div>
 				{handleFindPath && fromId && toId && (
 					<DialogFooter>

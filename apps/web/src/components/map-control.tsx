@@ -21,7 +21,7 @@ export default function MapControl() {
 	const { setShowTutorial } = useTutorialStore();
 
 	return (
-		<div className="absolute bottom-0 left-0 z-20 flex gap-2 p-6">
+		<div className="absolute bottom-0 left-0 z-20 flex gap-2 px-6 py-20 sm:p-6">
 			<Button
 				variant="outline"
 				size="icon"
