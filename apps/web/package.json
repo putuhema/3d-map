@@ -8,8 +8,7 @@
 		"build": "vite build",
 		"serve": "vite preview",
 		"start": "vite",
-		"check-types": "tsc --noEmit",
-		"generate-icons": "node scripts/generate-icons.js"
+		"check-types": "tsc --noEmit"
 	},
 	"devDependencies": {
 		"@tanstack/react-router-devtools": "^1.114.27",
@@ -23,8 +22,7 @@
 		"vite": "^6.2.2",
 		"@tanstack/react-query-devtools": "^5.80.5",
 		"vite-plugin-pwa": "^0.20.0",
-		"workbox-window": "^7.2.0",
-		"canvas": "^2.11.2"
+		"workbox-window": "^7.2.0"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^3.10.0",
