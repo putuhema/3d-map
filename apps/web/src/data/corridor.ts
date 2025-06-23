@@ -295,12 +295,6 @@ export const corridors: Corridor[] = [
 		width: 0.3,
 	},
 	{
-		id: "53a64a1c-5073-48d7-8153-332f2521c709",
-		start: [4.5, 0, 21.5],
-		end: [4.5, 0, 23.5],
-		width: 0.3,
-	},
-	{
 		id: "b3b1a789-7484-49f6-8645-296811d5aa8f",
 		start: [4.5, 0, 23.5],
 		end: [4.5, 0, 26.5],

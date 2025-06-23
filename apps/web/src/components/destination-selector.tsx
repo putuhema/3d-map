@@ -54,7 +54,9 @@ export function DestinationSelector() {
 
 	const allLocations = useMemo(() => {
 		const buildingLocations = buildings
-			.filter((building) => building.name !== "")
+			.filter(
+				(building) => building.name !== "" && building.name !== "Rekam Medis",
+			)
 			.map((building) => ({
 				id: building.id,
 				name: building.name,
@@ -313,9 +315,9 @@ export function DestinationSelector() {
 												initial={{ opacity: 0, height: 0 }}
 												animate={{ opacity: 1, height: "auto" }}
 												exit={{ opacity: 0, height: 0 }}
-												className="relative py-4"
+												className="relative overflow-hidden py-4"
 											>
-												<ScrollArea className="max-h-[200px] w-full rounded-md border bg-background">
+												<ScrollArea className="h-[100px] w-full ">
 													{searchResults.length > 0 ? (
 														searchResults.map((location, index) => (
 															<Button
@@ -404,7 +406,7 @@ export function DestinationSelector() {
 									initial={{ opacity: 0, y: 20 }}
 									animate={{ opacity: 1, y: 0 }}
 									transition={{ delay: 0.3, duration: 0.3 }}
-									className="flex gap-2 pt-2"
+									className="flex gap-2 "
 								>
 									<Button
 										onClick={onFindPath}
