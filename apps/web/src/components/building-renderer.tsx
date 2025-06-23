@@ -3,11 +3,11 @@ import { useLabelStore } from "@/lib/store";
 import { useHospitalMapStore } from "@/lib/store";
 import { Route } from "@/routes/__root";
 import { Plane, Sky } from "@react-three/drei";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { BuildingLabel } from "./building/BuildingLabel";
 import { BuildingModel } from "./building/BuildingModel";
-import { CorridorRenderer } from "./corridor/CorridorRenderer";
+import { CorridorRenderer } from "./corridor/corridor-renderer";
 import { PathIndicator } from "./path/PathIndicator";
 import { RoomLabel } from "./room/RoomLabel";
 import { RoomModel } from "./room/RoomModel";
@@ -21,6 +21,7 @@ export const BuildingRenderer = () => {
 		showBuildings,
 		showRooms,
 		handleLocationClick,
+		handleBuildingClick: handleBuildingClickFromStore,
 		selectedId,
 		selectedType,
 	} = useHospitalMapStore();
@@ -35,7 +36,6 @@ export const BuildingRenderer = () => {
 		isFromDestination,
 		isDestination,
 		getDestinationColor,
-		isBuildingCloseEnough,
 		handleBuildingHover,
 		handleBuildingHoverOut,
 		handleRoomHover,
@@ -46,11 +46,12 @@ export const BuildingRenderer = () => {
 		rooms,
 		highlightedCorridorIds: pathCorridorIds,
 	});
-	const navigate = useNavigate({ from: Route.fullPath });
+	const navigate = useNavigate({ from: "/" });
 	const { showBuildingLabels, showRoomLabels } = useLabelStore();
 
 	const handleBuildingClick = useCallback(
 		(buildingId: string) => {
+			handleBuildingClickFromStore(buildingId);
 			handleLocationClick(buildingId, undefined);
 			navigate({
 				search: {
@@ -59,7 +60,7 @@ export const BuildingRenderer = () => {
 				},
 			});
 		},
-		[handleLocationClick, navigate],
+		[handleLocationClick, navigate, handleBuildingClickFromStore],
 	);
 
 	const handleRoomClick = useCallback(
@@ -136,7 +137,7 @@ export const BuildingRenderer = () => {
 								hasRooms={hasRooms}
 								isHighlighted={isHighlighted}
 								isSelected={isSelected}
-								opacity={hasRooms ? 0.4 : 1}
+								opacity={hasRooms ? 0.4 : 0.3}
 								isHovered={isHovered}
 								isDestination={isDestination(building.id)}
 								onClick={

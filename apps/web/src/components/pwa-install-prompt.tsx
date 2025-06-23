@@ -18,12 +18,21 @@ interface BeforeInstallPromptEvent extends Event {
 	prompt(): Promise<void>;
 }
 
+function isMobileDevice() {
+	return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+		navigator.userAgent,
+	);
+}
+
 export function PWAInstallPrompt() {
 	const [deferredPrompt, setDeferredPrompt] =
 		useState<BeforeInstallPromptEvent | null>(null);
 	const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
 	useEffect(() => {
+		// Only show on mobile devices
+		if (!isMobileDevice()) return;
+
 		const handler = (e: Event) => {
 			e.preventDefault();
 			setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -61,7 +70,7 @@ export function PWAInstallPrompt() {
 			<Card className="shadow-lg">
 				<CardHeader className="pb-3">
 					<div className="flex items-center justify-between">
-						<CardTitle className="text-lg">Install Hospital Map</CardTitle>
+						<CardTitle className="text-lg">Install RSMT Map</CardTitle>
 						<Button
 							variant="ghost"
 							size="sm"

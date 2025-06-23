@@ -1,7 +1,7 @@
 {
-	"name": "Hospital Map",
-	"short_name": "Hospital Map",
-	"description": "3D Hospital Map Application for navigation",
+	"name": "RSMT Map",
+	"short_name": "RSMT Map",
+	"description": "3D RSMT Map Application for navigation",
 	"start_url": "/",
 	"display": "standalone",
 	"background_color": "#ffffff",

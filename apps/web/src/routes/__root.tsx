@@ -1,5 +1,5 @@
-import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
-import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { ThemeProvider } from "@/components/theme-provider";
 import {
 	HeadContent,

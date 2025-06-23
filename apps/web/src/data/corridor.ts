@@ -13,21 +13,9 @@ export const corridors: Corridor[] = [
 		width: 0.8,
 	},
 	{
-		id: "40e6e4ec-6a59-4e2d-8c18-154cceb6bd7f",
-		start: [0.5, 0, 34.5],
-		end: [10.5, 0, 34.5],
-		width: 0.8,
-	},
-	{
 		id: "fd02affd-1d75-4cbb-bfcf-32d2407b29c7",
 		start: [0.5, 0, 34.5],
 		end: [-11.5, 0, 34.5],
-		width: 0.8,
-	},
-	{
-		id: "1c010cb9-45e0-45ff-8a59-05daba288ac7",
-		start: [3.5, 0, 26.5],
-		end: [3.5, 0, 30.5],
 		width: 0.8,
 	},
 	{
@@ -130,12 +118,6 @@ export const corridors: Corridor[] = [
 		id: "df622327-8a5e-4f07-ae85-aac22bd4c2b6",
 		start: [0.5, 0, -0.5],
 		end: [-3.5, 0, -0.5],
-		width: 0.8,
-	},
-	{
-		id: "4f8d24b0-ea7c-4cc6-85d6-d8b83d9a2e21",
-		start: [-17.5, 0, -6.5],
-		end: [0.5, 0, -6.5],
 		width: 0.8,
 	},
 	{
@@ -497,5 +479,41 @@ export const corridors: Corridor[] = [
 		start: [3.5, 0, 18.5],
 		end: [4.5, 0, 18.5],
 		width: 0.3,
+	},
+	{
+		id: "a4672fba-1998-4aab-ba42-f6a7a57df8ab",
+		start: [-13.5, 0, -6.5],
+		end: [0.5, 0, -6.5],
+		width: 0.8,
+	},
+	{
+		id: "86e9a2d8-c1ac-4982-82f1-3658ece6e3d0",
+		start: [-13.5, 0, -6.5],
+		end: [-17.5, 0, -6.5],
+		width: 0.8,
+	},
+	{
+		id: "aacd21e0-89d5-402d-a028-77cdddb0840f",
+		start: [0.5, 0, 34.5],
+		end: [3.5, 0, 34.5],
+		width: 0.8,
+	},
+	{
+		id: "27421972-3fd3-4e62-8df5-ba339aed9909",
+		start: [7.5, 0, 34.5],
+		end: [3.5, 0, 34.5],
+		width: 0.8,
+	},
+	{
+		id: "b55830ab-af8b-4fe9-9179-f2354b16d6bb",
+		start: [10.5, 0, 34.5],
+		end: [7.5, 0, 34.5],
+		width: 0.8,
+	},
+	{
+		id: "d0dd3459-ff4c-4c0a-b5c9-d9fe4538618a",
+		start: [3.5, 0, 34.5],
+		end: [3.5, 0, 30.5],
+		width: 0.8,
 	},
 ];

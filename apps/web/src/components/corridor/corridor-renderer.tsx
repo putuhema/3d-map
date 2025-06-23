@@ -12,8 +12,9 @@ interface CorridorRendererProps {
 }
 
 export function CorridorRenderer({ corridors }: CorridorRendererProps) {
-	const { pathCorridorIds, setCameraTarget } = useHospitalMapStore();
-	const { fromId } = useSearch({ from: Route.fullPath });
+	const { pathCorridorIds, setCameraTarget, handleCorridorRemove } =
+		useHospitalMapStore();
+	const { fromId } = useSearch({ strict: false });
 	const corridorMaterial = useMemo(
 		() => new MeshStandardMaterial({ color: "#E4E0E1" }),
 		[],
@@ -37,9 +38,13 @@ export function CorridorRenderer({ corridors }: CorridorRendererProps) {
 		}
 	}, [currentLocationCorridor, setCameraTarget]);
 
-	const handleCorridorClick = useCallback((corridorId: string) => {
-		// console.log("Corridor clicked:", corridorId);
-	}, []);
+	const handleCorridorClick = useCallback(
+		(corridorId: string) => {
+			console.log("corridorId", corridorId);
+			handleCorridorRemove(corridorId);
+		},
+		[handleCorridorRemove],
+	);
 
 	return (
 		<>

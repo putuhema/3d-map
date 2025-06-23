@@ -232,8 +232,8 @@ function ZoomableImage({ src, alt }: ZoomableImageProps) {
 export function LocationDialog() {
 	const { getRoomById, getBuildingById } = useHospitalMapStore();
 	const { handleFindPath } = useHospitalMap();
-	const { dialog, toId, fromId, type } = useSearch({ from: Route.fullPath });
-	const navigate = useNavigate({ from: Route.fullPath });
+	const { dialog, toId, fromId, type } = useSearch({ strict: false });
+	const navigate = useNavigate({ from: "/" });
 
 	const id = toId || dialog;
 	const location = useMemo(() => {

@@ -1,3 +1,4 @@
+import { useHospitalMapStore } from "@/lib/store";
 import { Line } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useRef, useState } from "react";
@@ -7,20 +8,11 @@ import type { Group } from "three";
 interface GridSystemProps {
 	gridSize: number;
 	cellSize: number;
-	onCellClick: (x: number, y: number) => void;
 	locked?: boolean;
-	/**
-	 * Called with the world coordinates of the hovered cell, or null if not hovering any cell.
-	 */
-	onCellHover?: (coords: { x: number; y: number; z: number } | null) => void;
 }
 
-export function GridSystem({
-	gridSize,
-	cellSize,
-	onCellClick,
-	onCellHover,
-}: GridSystemProps) {
+export function GridSystem({ gridSize, cellSize }: GridSystemProps) {
+	const { handleGridClick } = useHospitalMapStore();
 	const gridRef = useRef<Group>(null);
 	const [hoveredCell, setHoveredCell] = useState<[number, number] | null>(null);
 
@@ -52,7 +44,7 @@ export function GridSystem({
 
 		// Check if within grid bounds
 		if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
-			onCellClick(gridX, gridY);
+			handleGridClick(gridX, gridY);
 		}
 	};
 

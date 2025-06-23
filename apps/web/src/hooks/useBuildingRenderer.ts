@@ -15,7 +15,7 @@ export function useBuildingRenderer({
 	rooms,
 	highlightedCorridorIds,
 }: UseBuildingRendererProps) {
-	const { fromId, toId } = useSearch({ from: Route.fullPath });
+	const { fromId, toId } = useSearch({ strict: false });
 	const { camera } = useThree();
 	const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
 	const [hoveredBuildingId, setHoveredBuildingId] = useState<string | null>(

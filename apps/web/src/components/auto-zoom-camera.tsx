@@ -22,7 +22,7 @@ const isMobile = () => {
 export function AutoZoomCamera() {
 	const { cameraTarget, rooms, corridors } = useHospitalMapStore();
 	const { calculateCameraTargetForRooms } = useHospitalMap();
-	const { fromId, toId } = useSearch({ from: Route.fullPath });
+	const { fromId, toId } = useSearch({ strict: false });
 	const controlsRef = useRef<OrbitControlsImpl>(null);
 	const { viewMode, cameraMode, setViewMode, setCameraMode } = useViewStore();
 	const animationRef = useRef<number | null>(null);

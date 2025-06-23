@@ -1,12 +1,11 @@
 import { useHospitalMapStore } from "@/lib/store";
-import { Route } from "@/routes/__root";
 import { findCorridorPath } from "@/utils/pathfinding";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback } from "react";
 
 export function useHospitalMap() {
-	const { fromId, toId } = useSearch({ from: Route.fullPath });
-	const navigate = useNavigate({ from: Route.fullPath });
+	const { fromId, toId } = useSearch({ strict: false });
+	const navigate = useNavigate({ from: "/" });
 
 	const {
 		corridors,

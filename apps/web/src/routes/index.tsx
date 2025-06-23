@@ -1,5 +1,5 @@
-import { AutoZoomCamera } from "@/components/AutoZoomCamera";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
+import { AutoZoomCamera } from "@/components/auto-zoom-camera";
 import { BuildingRenderer } from "@/components/building-renderer";
 import { DestinationSelector } from "@/components/destination-selector";
 import { LocationDialog } from "@/components/location-dialog";
@@ -74,7 +74,7 @@ export default function HospitalMap() {
 			<DestinationSelector />
 			<LocationDialog />
 			<Canvas {...canvasConfig}>
-				<fog attach="fog" args={["#ffffff", 50, isMobileDevice ? 250 : 150]} />
+				<fog attach="fog" args={["#ffffff", 50, isMobileDevice ? 300 : 150]} />
 				<AutoZoomCamera />
 
 				<ambientLight intensity={0.5} />

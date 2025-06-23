@@ -19,8 +19,8 @@ import { useSearch } from "@tanstack/react-router";
 export function DestinationSelector() {
 	const { buildings, rooms, handleReset } = useHospitalMapStore();
 	const { handleFindPath } = useHospitalMap();
-	const { fromId, toId, selector, type } = useSearch({ from: Route.fullPath });
-	const navigate = useNavigate({ from: Route.fullPath });
+	const { fromId, toId, selector, type } = useSearch({ strict: false });
+	const navigate = useNavigate({ from: "/" });
 
 	const handleExpandedChange = (expanded: boolean) => {
 		navigate({

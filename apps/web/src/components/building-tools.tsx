@@ -1,22 +1,9 @@
 import type { Building } from "@/data/building";
 import type { Corridor } from "@/data/corridor";
+import { useHospitalMapStore } from "@/lib/store";
 import { useState } from "react";
 
 type ToolMode = "place" | "remove" | "corridor" | "room";
-
-interface BuildingToolsProps {
-	onCorridorRemove: (id: string) => void;
-	selectedMode: ToolMode;
-	onModeChange: (mode: ToolMode) => void;
-	buildingName: string;
-	onBuildingNameChange: (name: string) => void;
-	buildingSize: [number, number, number];
-	onBuildingSizeChange: (size: [number, number, number]) => void;
-	buildingColor: string;
-	onBuildingColorChange: (color: string) => void;
-	buildings: Building[];
-	corridors: Corridor[];
-}
 
 function Minimap({
 	buildings,
@@ -202,23 +189,23 @@ function Minimap({
 	);
 }
 
-export function BuildingTools({
-	onCorridorRemove,
-	selectedMode,
-	onModeChange,
-	buildingName,
-	onBuildingNameChange,
-	buildingSize,
-	onBuildingSizeChange,
-	buildingColor,
-	onBuildingColorChange,
-	buildings,
-	corridors,
-}: BuildingToolsProps) {
+export function BuildingTools() {
+	const {
+		toolMode,
+		buildingName,
+		buildingSize,
+		buildingColor,
+		handleCorridorRemove,
+		setToolMode,
+		setBuildingName,
+		setBuildingSize,
+		setBuildingColor,
+	} = useHospitalMapStore();
+
 	const [corridorWidth, setCorridorWidth] = useState(1.2);
 
 	const handleRemoveCorridor = (id: string) => {
-		onCorridorRemove(id);
+		handleCorridorRemove(id);
 	};
 
 	return (
@@ -227,63 +214,55 @@ export function BuildingTools({
 				<h3 className="mb-4 font-semibold text-emerald-700 text-lg">
 					Building Tools
 				</h3>
-				<Minimap
-					buildings={buildings}
-					corridors={corridors}
-					selectedMode={selectedMode}
-					onCorridorRemove={handleRemoveCorridor}
-					gridSize={100}
-					cellSize={1}
-				/>
 
 				<div className="mb-4 flex gap-2">
 					<button
 						type="button"
 						className={`rounded-md px-3 py-1.5 font-medium text-sm ${
-							selectedMode === "place"
+							toolMode === "place"
 								? "bg-emerald-600 text-white"
 								: "bg-gray-200 text-gray-700"
 						}`}
-						onClick={() => onModeChange("place")}
+						onClick={() => setToolMode("place")}
 					>
 						Place
 					</button>
 					<button
 						type="button"
 						className={`rounded-md px-3 py-1.5 font-medium text-sm ${
-							selectedMode === "remove"
+							toolMode === "remove"
 								? "bg-emerald-600 text-white"
 								: "bg-gray-200 text-gray-700"
 						}`}
-						onClick={() => onModeChange("remove")}
+						onClick={() => setToolMode("remove")}
 					>
 						Remove
 					</button>
 					<button
 						type="button"
 						className={`rounded-md px-3 py-1.5 font-medium text-sm ${
-							selectedMode === "corridor"
+							toolMode === "corridor"
 								? "bg-emerald-600 text-white"
 								: "bg-gray-200 text-gray-700"
 						}`}
-						onClick={() => onModeChange("corridor")}
+						onClick={() => setToolMode("corridor")}
 					>
 						Corridor
 					</button>
 					<button
 						type="button"
 						className={`rounded-md px-3 py-1.5 font-medium text-sm ${
-							selectedMode === "room"
+							toolMode === "room"
 								? "bg-emerald-600 text-white"
 								: "bg-gray-200 text-gray-700"
 						}`}
-						onClick={() => onModeChange("room")}
+						onClick={() => setToolMode("room")}
 					>
 						Room
 					</button>
 				</div>
 
-				{(selectedMode === "place" || selectedMode === "room") && (
+				{(toolMode === "place" || toolMode === "room") && (
 					<div className="space-y-3">
 						<div>
 							<label
@@ -296,7 +275,7 @@ export function BuildingTools({
 								id="building-name"
 								type="text"
 								value={buildingName}
-								onChange={(e) => onBuildingNameChange(e.target.value)}
+								onChange={(e) => setBuildingName(e.target.value)}
 								className="w-full rounded-md border p-2"
 								placeholder="Enter building name"
 							/>
@@ -314,7 +293,7 @@ export function BuildingTools({
 									type="number"
 									value={buildingSize[0]}
 									onChange={(e) =>
-										onBuildingSizeChange([
+										setBuildingSize([
 											Number(e.target.value),
 											buildingSize[1],
 											buildingSize[2],
@@ -329,7 +308,7 @@ export function BuildingTools({
 									type="number"
 									value={buildingSize[1]}
 									onChange={(e) =>
-										onBuildingSizeChange([
+										setBuildingSize([
 											buildingSize[0],
 											Number(e.target.value),
 											buildingSize[2],
@@ -344,7 +323,7 @@ export function BuildingTools({
 									type="number"
 									value={buildingSize[2]}
 									onChange={(e) =>
-										onBuildingSizeChange([
+										setBuildingSize([
 											buildingSize[0],
 											buildingSize[1],
 											Number(e.target.value),
@@ -367,14 +346,14 @@ export function BuildingTools({
 								id="building-color"
 								type="color"
 								value={buildingColor}
-								onChange={(e) => onBuildingColorChange(e.target.value)}
+								onChange={(e) => setBuildingColor(e.target.value)}
 								className="h-10 w-full rounded-md border"
 							/>
 						</div>
 					</div>
 				)}
 
-				{selectedMode === "corridor" && (
+				{toolMode === "corridor" && (
 					<div>
 						<label
 							htmlFor="corridor-width"
@@ -396,15 +375,11 @@ export function BuildingTools({
 
 				{/* Instructions */}
 				<div className="mt-4 text-gray-600 text-sm">
-					{selectedMode === "place" && (
-						<p>Click on the grid to place a building</p>
-					)}
-					{selectedMode === "remove" && (
+					{toolMode === "place" && <p>Click on the grid to place a building</p>}
+					{toolMode === "remove" && (
 						<p>Click on a building or corridor to remove it</p>
 					)}
-					{selectedMode === "corridor" && (
-						<p>Click and drag to draw a corridor</p>
-					)}
+					{toolMode === "corridor" && <p>Click and drag to draw a corridor</p>}
 				</div>
 			</div>
 		</div>
