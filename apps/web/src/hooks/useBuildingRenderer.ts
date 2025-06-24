@@ -1,5 +1,6 @@
 import type { Corridor } from "@/data/corridor";
 import type { Room } from "@/data/room";
+import { useHospitalMapStore } from "@/lib/store";
 import { Route } from "@/routes/__root";
 import type { UseBuildingRendererProps } from "@/types/building";
 import { getUniqueModelPaths } from "@/utils/buildingModels";
@@ -16,6 +17,7 @@ export function useBuildingRenderer({
 	highlightedCorridorIds,
 }: UseBuildingRendererProps) {
 	const { fromId, toId } = useSearch({ strict: false });
+	const { startingLocationId } = useHospitalMapStore();
 	const { camera } = useThree();
 	const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
 	const [hoveredBuildingId, setHoveredBuildingId] = useState<string | null>(
@@ -24,6 +26,9 @@ export function useBuildingRenderer({
 	const animationTime = useRef(0);
 	const cameraPositionRef = useRef(new Vector3());
 	const corridorsRef = useRef(corridors);
+
+	// Use starting location as fromId if available and no fromId is set
+	const effectiveFromId = fromId || startingLocationId;
 
 	// Update corridors ref when corridors change
 	useEffect(() => {
@@ -48,8 +53,8 @@ export function useBuildingRenderer({
 
 	// Helper functions to determine destination status
 	const isFromDestination = useCallback(
-		(id: string) => fromId === id,
-		[fromId],
+		(id: string) => effectiveFromId === id,
+		[effectiveFromId],
 	);
 
 	const isToDestination = useCallback((id: string) => toId === id, [toId]);

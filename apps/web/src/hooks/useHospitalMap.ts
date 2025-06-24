@@ -6,6 +6,10 @@ import { useCallback } from "react";
 export function useHospitalMap() {
 	const { fromId, toId } = useSearch({ strict: false });
 	const navigate = useNavigate({ from: "/" });
+	const { startingLocationId } = useHospitalMapStore();
+
+	// Use starting location as fromId if available and no fromId is set
+	const effectiveFromId = fromId || startingLocationId;
 
 	const {
 		corridors,
@@ -17,11 +21,17 @@ export function useHospitalMap() {
 	} = useHospitalMapStore();
 
 	const handleFindPath = useCallback(() => {
-		if (!fromId || !toId || fromId === toId || fromId === "" || toId === "") {
+		if (
+			!effectiveFromId ||
+			!toId ||
+			effectiveFromId === toId ||
+			effectiveFromId === "" ||
+			toId === ""
+		) {
 			return;
 		}
 
-		const fromPos = getPositionById(fromId);
+		const fromPos = getPositionById(effectiveFromId);
 		const toPos = getPositionById(toId);
 
 		if (fromPos && toPos) {
@@ -59,9 +69,9 @@ export function useHospitalMap() {
 				setDirections(steps);
 			}
 		}
-		navigate({ search: { fromId, toId } });
+		navigate({ search: { fromId: effectiveFromId, toId } });
 	}, [
-		fromId,
+		effectiveFromId,
 		toId,
 		getPositionById,
 		corridors,

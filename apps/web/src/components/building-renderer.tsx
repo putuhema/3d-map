@@ -137,7 +137,7 @@ export const BuildingRenderer = () => {
 								hasRooms={hasRooms}
 								isHighlighted={isHighlighted}
 								isSelected={isSelected}
-								opacity={hasRooms ? 0.4 : 0.3}
+								opacity={hasRooms ? 0.4 : 1}
 								isHovered={isHovered}
 								isDestination={isDestination(building.id)}
 								onClick={

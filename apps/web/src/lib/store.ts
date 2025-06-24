@@ -55,6 +55,7 @@ interface HospitalMapState {
 	selectedLocation: Building | Room | null;
 	cameraTarget: [number, number, number];
 	selectedBuildingForRoom: string | null;
+	startingLocationId: string | null;
 
 	// Data State
 	buildings: Building[];
@@ -86,6 +87,7 @@ interface HospitalMapState {
 	setSelectedLocation: (location: Building | Room | null) => void;
 	setCameraTarget: (target: [number, number, number]) => void;
 	setSelectedBuildingForRoom: (id: string | null) => void;
+	setStartingLocationId: (id: string | null) => void;
 
 	// Data setters
 	setBuildings: (buildings: Building[]) => void;
@@ -173,6 +175,7 @@ export const useHospitalMapStore = create<HospitalMapState>()(
 			selectedLocation: null,
 			cameraTarget: [0, 0, 0],
 			selectedBuildingForRoom: null,
+			startingLocationId: null,
 			buildings,
 			corridors,
 			rooms,
@@ -200,6 +203,7 @@ export const useHospitalMapStore = create<HospitalMapState>()(
 			setSelectedLocation: (location) => set({ selectedLocation: location }),
 			setCameraTarget: (target) => set({ cameraTarget: target }),
 			setSelectedBuildingForRoom: (id) => set({ selectedBuildingForRoom: id }),
+			setStartingLocationId: (id) => set({ startingLocationId: id }),
 			setBuildings: (buildings) => set({ buildings }),
 			setCorridors: (corridors) => set({ corridors }),
 			setRooms: (rooms) => set({ rooms }),
@@ -410,6 +414,7 @@ export const useHospitalMapStore = create<HospitalMapState>()(
 				buildings: state.buildings,
 				corridors: state.corridors,
 				rooms: state.rooms,
+				startingLocationId: state.startingLocationId,
 			}),
 		},
 	),

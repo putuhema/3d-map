@@ -20,10 +20,14 @@ interface Location {
 export function DestinationSelector() {
 	const [search, setSearch] = useState("");
 	const [highlightedIndex, setHighlightedIndex] = useState(0);
-	const { buildings, rooms, handleReset } = useHospitalMapStore();
+	const { buildings, rooms, handleReset, startingLocationId } =
+		useHospitalMapStore();
 	const { handleFindPath } = useHospitalMap();
 	const { fromId, toId, selector, type } = useSearch({ strict: false });
 	const navigate = useNavigate({ from: "/" });
+
+	// Use starting location as fromId if available and no fromId is set
+	const effectiveFromId = fromId || startingLocationId;
 
 	// Reset search when selector closes
 	useEffect(() => {
@@ -35,11 +39,11 @@ export function DestinationSelector() {
 
 	// Reset search when location is selected
 	useEffect(() => {
-		if (fromId || toId) {
+		if (effectiveFromId || toId) {
 			setSearch("");
 			setHighlightedIndex(0);
 		}
-	}, [fromId, toId]);
+	}, [effectiveFromId, toId]);
 
 	// Reset highlighted index when search changes
 	useEffect(() => {
@@ -48,7 +52,7 @@ export function DestinationSelector() {
 
 	const handleExpandedChange = (expanded: boolean) => {
 		navigate({
-			search: { selector: expanded, fromId, toId, type },
+			search: { selector: expanded, fromId: effectiveFromId, toId, type },
 		});
 	};
 
@@ -107,22 +111,22 @@ export function DestinationSelector() {
 	);
 
 	const canFindPath = useMemo(
-		() => fromId && toId && fromId !== toId,
-		[fromId, toId],
+		() => effectiveFromId && toId && effectiveFromId !== toId,
+		[effectiveFromId, toId],
 	);
 
 	const getSummaryText = () => {
-		if (!fromId && !toId) {
+		if (!effectiveFromId && !toId) {
 			return "Pilih lokasi";
 		}
-		if (fromId && !toId) {
-			return `Dari: ${getSelectedName(fromId)}`;
+		if (effectiveFromId && !toId) {
+			return `Dari: ${getSelectedName(effectiveFromId)}`;
 		}
-		if (!fromId && toId) {
+		if (!effectiveFromId && toId) {
 			return `Ke: ${getSelectedName(toId)}`;
 		}
 
-		return `${getSelectedName(fromId)} → ${getSelectedName(toId)}`;
+		return `${getSelectedName(effectiveFromId)} → ${getSelectedName(toId)}`;
 	};
 
 	const onReset = () => {
@@ -148,7 +152,7 @@ export function DestinationSelector() {
 					location.displayName.toLowerCase().includes(searchTerm.toLowerCase());
 
 				// Don't show already selected locations
-				const notFrom = !fromId || location.id !== fromId;
+				const notFrom = !effectiveFromId || location.id !== effectiveFromId;
 				const notTo = !toId || location.id !== toId;
 
 				return matchesSearch && notFrom && notTo;
@@ -156,13 +160,17 @@ export function DestinationSelector() {
 
 			return filtered.slice(0, 10); // Limit results for better UX
 		},
-		[allLocations, fromId, toId],
+		[allLocations, effectiveFromId, toId],
 	);
+
+	const showChangeStartingPoint = startingLocationId && !fromId;
+	const isChangingStartingPoint =
+		showChangeStartingPoint && search.trim() !== "";
 
 	const handleLocationSelect = useCallback(
 		(location: Location) => {
-			if (!fromId) {
-				// Select from location
+			if (!effectiveFromId || isChangingStartingPoint) {
+				// Select from location (when no starting location or explicitly changing it)
 				navigate({
 					search: {
 						fromId: location.id,
@@ -174,14 +182,14 @@ export function DestinationSelector() {
 				// Select to location
 				navigate({
 					search: {
-						fromId,
+						fromId: effectiveFromId,
 						toId: location.id,
 						selector: true,
 					},
 				});
 			}
 		},
-		[fromId, toId, navigate],
+		[effectiveFromId, toId, navigate, isChangingStartingPoint],
 	);
 
 	const searchResults = useMemo(
@@ -190,13 +198,17 @@ export function DestinationSelector() {
 	);
 
 	const getInputPlaceholder = () => {
-		if (!fromId) return "Cari lokasi asal...";
+		if (!effectiveFromId || isChangingStartingPoint)
+			return "Cari lokasi asal...";
 		if (!toId) return "Cari lokasi tujuan...";
 		return "Lokasi sudah dipilih";
 	};
 
 	const isInputDisabled = () => {
-		return Boolean(fromId && toId);
+		// Enable input when changing starting point
+		if (isChangingStartingPoint) return false;
+		// Disable when both locations are selected
+		return Boolean(effectiveFromId && toId);
 	};
 
 	const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -238,7 +250,7 @@ export function DestinationSelector() {
 					>
 						<Button
 							onClick={() => handleExpandedChange(true)}
-							className="h-12 w-full justify-between border bg-background/95 shadow-lg backdrop-blur-sm"
+							className="h-12 w-full justify-between border-none bg-background/50 shadow-lg backdrop-blur-sm"
 							variant="outline"
 						>
 							<div className="flex min-w-0 flex-1 items-center gap-2">
@@ -247,7 +259,7 @@ export function DestinationSelector() {
 							</div>
 							<ChevronDown className="h-4 w-4 flex-shrink-0 opacity-50" />
 						</Button>
-						{fromId && toId && !selector && (
+						{effectiveFromId && toId && !selector && (
 							<Button onClick={onReset}>Hapus Rute</Button>
 						)}
 					</motion.div>
@@ -263,7 +275,7 @@ export function DestinationSelector() {
 							height: { duration: 0.3 },
 							opacity: { duration: 0.2 },
 						}}
-						className="mx-auto w-sm space-y-4 overflow-hidden rounded-lg border bg-background/95 shadow-lg backdrop-blur-sm md:w-xl"
+						className="mx-auto w-sm space-y-4 overflow-hidden rounded-lg bg-background/50 shadow-lg backdrop-blur-sm md:w-xl"
 					>
 						<div className="w-full p-4">
 							<div className="mb-4 flex items-center justify-between">
@@ -291,7 +303,11 @@ export function DestinationSelector() {
 										className="flex items-center gap-2 font-medium text-foreground text-sm"
 									>
 										<MapPin className="h-4 w-4" />
-										{!fromId ? "Dari" : !toId ? "Ke" : "Lokasi"}
+										{isChangingStartingPoint || !effectiveFromId
+											? "Dari"
+											: !toId
+												? "Ke"
+												: "Lokasi"}
 									</label>
 									<div className="relative">
 										<Input
@@ -303,79 +319,39 @@ export function DestinationSelector() {
 												setSearch(e.target.value);
 											}}
 											onKeyDown={handleKeyDown}
-											className="pr-8"
+											className="bg-background pr-8"
 										/>
 										<Search className="-translate-y-1/2 absolute top-1/2 right-3 h-4 w-4 text-muted-foreground" />
 									</div>
-
-									{/* Search Results */}
-									<AnimatePresence>
-										{search && !isInputDisabled() && (
-											<motion.div
-												initial={{ opacity: 0, height: 0 }}
-												animate={{ opacity: 1, height: "auto" }}
-												exit={{ opacity: 0, height: 0 }}
-												className="relative overflow-hidden py-4"
-											>
-												<ScrollArea className="h-[100px] w-full ">
-													{searchResults.length > 0 ? (
-														searchResults.map((location, index) => (
-															<Button
-																key={location.id}
-																variant={
-																	index === highlightedIndex
-																		? "secondary"
-																		: "ghost"
-																}
-																className={`w-full justify-start rounded-none border-b last:border-b-0 ${
-																	index === highlightedIndex
-																		? "bg-secondary text-secondary-foreground"
-																		: ""
-																}`}
-																onClick={() => handleLocationSelect(location)}
-																onMouseEnter={() => setHighlightedIndex(index)}
-															>
-																<div className="flex flex-col items-start">
-																	<span className="font-medium">
-																		{location.name}
-																	</span>
-																	<span className="text-muted-foreground text-xs">
-																		{location.type}
-																	</span>
-																</div>
-															</Button>
-														))
-													) : (
-														<div className="p-4 text-center text-muted-foreground text-sm">
-															Tidak ada lokasi ditemukan
-														</div>
-													)}
-												</ScrollArea>
-											</motion.div>
-										)}
-									</AnimatePresence>
 								</div>
 
 								{/* Selected Locations Display */}
 								<div className="space-y-2">
-									{fromId && (
+									{effectiveFromId && (
 										<div className="flex items-center gap-2 rounded-md bg-muted p-2">
 											<MapPin className="h-4 w-4 text-primary" />
 											<span className="font-medium text-sm">
-												Dari: {getSelectedName(fromId)}
+												Dari: {getSelectedName(effectiveFromId)}
+												{startingLocationId && !fromId && " (Default)"}
 											</span>
-											<Button
-												variant="ghost"
-												size="sm"
-												onClick={() =>
-													navigate({
-														search: { fromId: undefined, toId, selector: true },
-													})
-												}
-												className="ml-auto h-6 w-6 p-0"
-											>
-												<X className="h-3 w-3" />
-											</Button>
+											{fromId && (
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() =>
+														navigate({
+															search: {
+																fromId: undefined,
+																toId,
+																selector: true,
+															},
+														})
+													}
+													className="ml-auto h-6 w-6 p-0"
+												>
+													<X className="h-3 w-3" />
+												</Button>
+											)}
 										</div>
 									)}
 
@@ -390,7 +366,11 @@ export function DestinationSelector() {
 												size="sm"
 												onClick={() =>
 													navigate({
-														search: { fromId, toId: undefined, selector: true },
+														search: {
+															fromId: effectiveFromId,
+															toId: undefined,
+															selector: true,
+														},
 													})
 												}
 												className="ml-auto h-6 w-6 p-0"
@@ -398,6 +378,21 @@ export function DestinationSelector() {
 												<X className="h-3 w-3" />
 											</Button>
 										</div>
+									)}
+
+									{/* Change Starting Point Button */}
+									{showChangeStartingPoint && !toId && (
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => {
+												setSearch("");
+												setHighlightedIndex(0);
+											}}
+											className="w-full"
+										>
+											Change Starting Point
+										</Button>
 									)}
 								</div>
 
@@ -424,6 +419,50 @@ export function DestinationSelector() {
 									</Button>
 								</motion.div>
 							</motion.div>
+							{/* Search Results */}
+							<AnimatePresence>
+								{search && (isChangingStartingPoint || !isInputDisabled()) && (
+									<motion.div
+										initial={{ opacity: 0, height: 0 }}
+										animate={{ opacity: 1, height: "auto" }}
+										exit={{ opacity: 0, height: 0 }}
+										className="relative overflow-hidden py-4"
+									>
+										<ScrollArea className=" w-full ">
+											{searchResults.length > 0 ? (
+												searchResults.map((location, index) => (
+													<Button
+														key={location.id}
+														variant={
+															index === highlightedIndex ? "secondary" : "ghost"
+														}
+														className={`w-full justify-start rounded-none border-b last:border-b-0 ${
+															index === highlightedIndex
+																? "bg-secondary text-secondary-foreground"
+																: ""
+														}`}
+														onClick={() => handleLocationSelect(location)}
+														onMouseEnter={() => setHighlightedIndex(index)}
+													>
+														<div className="flex flex-col items-start">
+															<span className="font-medium">
+																{location.name}
+															</span>
+															<span className="text-muted-foreground text-xs">
+																{location.type}
+															</span>
+														</div>
+													</Button>
+												))
+											) : (
+												<div className="p-4 text-center text-muted-foreground text-sm">
+													Tidak ada lokasi ditemukan
+												</div>
+											)}
+										</ScrollArea>
+									</motion.div>
+								)}
+							</AnimatePresence>
 						</div>
 					</motion.div>
 				)}

@@ -27,6 +27,7 @@ export const buildings: Building[] = [
 		color: "#4f46e5",
 		hasRooms: false,
 		modelPath: "ROTATED_90",
+		rotation: [0, Math.PI, 0],
 	},
 	{
 		id: "a0531362-2533-48cb-994f-b511aed9da8b",
